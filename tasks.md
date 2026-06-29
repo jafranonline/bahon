@@ -881,13 +881,13 @@ Create `src/components/primitives/Select/Select.tsx`:
    - No-scrollbar class
 
 **TEST**
-- [ ] TopBar: back button only shows when `onBack` provided
-- [ ] TopBar: settings icon present
-- [ ] BottomNav: FAB is elevated above the bar
-- [ ] Drawer: slides in from right on open, slides back on close
-- [ ] Drawer: tap overlay closes it
-- [ ] Screen: scrolls content correctly
-- [ ] `npx tsc --noEmit` — no errors
+- [x] TopBar: back button only shows when `onBack` provided
+- [x] TopBar: settings icon present
+- [x] BottomNav: FAB is elevated above the bar
+- [x] Drawer: slides in from right on open, slides back on close
+- [x] Drawer: tap overlay closes it
+- [x] Screen: scrolls content correctly
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
