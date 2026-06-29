@@ -110,11 +110,13 @@ export function StatsScreen() {
   return (
     <div className={styles.root}>
       <TopBar title="Stats" />
-      <div className={styles.tabBar}>
+      <nav aria-label="Stats sections">
+      <div className={styles.tabBar} role="tablist" aria-label="Stats tabs">
         {(['summary', 'fuel', 'service'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
+            role="tab"
             className={[styles.tabBtn, tab === t ? styles.tabBtnActive : ''].filter(Boolean).join(' ')}
             onClick={() => setTab(t)}
             aria-selected={tab === t}
@@ -123,6 +125,7 @@ export function StatsScreen() {
           </button>
         ))}
       </div>
+      </nav>
 
       <Screen>
         {tab === 'summary' && (

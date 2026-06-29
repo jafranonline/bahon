@@ -6,9 +6,10 @@ interface ToggleProps {
   onChange: (checked: boolean) => void
   label?: string
   disabled?: boolean
+  'aria-label'?: string
 }
 
-export function Toggle({ checked, onChange, label, disabled = false }: ToggleProps) {
+export function Toggle({ checked, onChange, label, disabled = false, 'aria-label': ariaLabel }: ToggleProps) {
   const id = useId()
 
   return (
@@ -24,6 +25,7 @@ export function Toggle({ checked, onChange, label, disabled = false }: TogglePro
         onChange={(e) => onChange(e.target.checked)}
         disabled={disabled}
         aria-checked={checked}
+        aria-label={!label ? ariaLabel : undefined}
       />
       <span className={`${styles.track} ${checked ? styles.checked : ''}`}>
         <span className={styles.thumb} />

@@ -26,7 +26,7 @@ export function TopBar({ title, subtitle, onBack, onSettings, actions }: TopBarP
       </div>
 
       <div className={styles.center}>
-        <span className={styles.title}>{title}</span>
+        <h1 className={styles.title}>{title}</h1>
         {subtitle && <span className={styles.subtitle}>{subtitle}</span>}
       </div>
 
