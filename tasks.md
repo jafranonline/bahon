@@ -1602,9 +1602,9 @@ Create `README.md` with:
 10. Contributing guidelines
 
 **TEST**
-- [ ] README renders correctly on GitHub
-- [ ] All code examples in README are correct and copy-pasteable
-- [ ] A new developer could set up the project following README alone
+- [x] README renders correctly on GitHub
+- [x] All code examples in README are correct and copy-pasteable
+- [x] A new developer could set up the project following README alone
 
 ---
 
