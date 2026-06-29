@@ -1,0 +1,197 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.infoCard {
+  background: var(--surface-1);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  gap: var(--gap-md);
+  align-items: flex-start;
+}
+
+.vehicleIcon {
+  font-size: 36px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px var(--gap-md);
+  flex: 1;
+}
+
+.infoLabel {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-transform: capitalize;
+}
+
+.infoValue {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap-sm);
+}
+
+.statCard {
+  background: var(--surface-1);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.statLabel {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.statValue {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tabBar {
+  display: flex;
+  background: var(--surface-1);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 2px;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 8px 4px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.tabBtnActive {
+  background: var(--surface-0);
+  color: var(--text-accent);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.logList {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.logItem {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logItem:last-child {
+  border-bottom: none;
+}
+
+.logIcon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.logMeta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.logTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logDate {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.logAmount {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.deleteBtn {
+  padding: 13px;
+  background: var(--red-50);
+  border: 1px solid var(--red-400);
+  border-radius: var(--radius-md);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-danger);
+  cursor: pointer;
+  min-height: 44px;
+  width: 100%;
+}
+
+.deleteBtn:hover {
+  background: var(--red-400);
+  color: #fff;
+}
+
+.confirmCard {
+  background: var(--red-50);
+  border: 1px solid var(--red-400);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+}
+
+.confirmText {
+  font-size: var(--text-md);
+  color: var(--text-danger);
+  margin: 0;
+}
+
+.confirmActions {
+  display: flex;
+  gap: var(--gap-sm);
+}
+
+.empty {
+  font-size: var(--text-md);
+  color: var(--text-muted);
+  text-align: center;
+  padding: 24px 0;
+}

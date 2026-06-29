@@ -160,12 +160,22 @@ export function HomeScreen() {
       <Screen>
         <div className={styles.vehicleStrip} role="list" aria-label="Your vehicles">
           {vehicles.map((v) => (
-            <div key={v.id} role="listitem">
+            <div key={v.id} role="listitem" className={styles.vehiclePillWrap}>
               <VehiclePill
                 vehicle={v}
                 selected={vehicleId === v.id}
                 onSelect={() => setActiveVehicle(v.id)}
               />
+              {vehicleId === v.id && (
+                <button
+                  type="button"
+                  className={styles.vehicleDetailBtn}
+                  onClick={() => navigate(`/vehicles/${v.id}`)}
+                  aria-label={`View details for ${v.name}`}
+                >
+                  ›
+                </button>
+              )}
             </div>
           ))}
           <div role="listitem">

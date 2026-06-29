@@ -1125,12 +1125,12 @@ const routes = [
 6. Delete button: confirmation prompt → `deleteVehicle(id)` → navigate to Home
 
 **TEST**
-- [ ] Correct vehicle loaded from URL param
-- [ ] Lifetime stats sum correctly
-- [ ] Tab switching shows filtered logs
-- [ ] Delete confirmation required
-- [ ] After delete: navigated back to Home, vehicle gone from strip
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Correct vehicle loaded from URL param
+- [x] Lifetime stats sum correctly
+- [x] Tab switching shows filtered logs
+- [x] Delete confirmation required
+- [x] After delete: navigated back to Home, vehicle gone from strip
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
