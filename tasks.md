@@ -1396,8 +1396,8 @@ test: {
    - Dismiss at 42,000 km with 5,000 km interval → next due 47,000
 
 **TEST**
-- [ ] All integration tests pass
-- [ ] `npm test` exits 0
+- [x] All integration tests pass — 6 integration tests across vehicles, fuelLogs, reminders (61 total tests pass)
+- [x] `npm test` exits 0 — 10 test files, 61 tests, all pass
 
 ---
 
