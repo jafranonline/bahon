@@ -365,10 +365,10 @@ export const db = new BahonDatabase();
    - `advanceRepeatReminder(reminder: Reminder, currentOdometer: number): Reminder` — pure function, calculates next trigger
 
 **TEST**
-- [ ] Unit test: add repeat monthly reminder, dismiss it, verify nextDueDate advanced by 1 month
-- [ ] Unit test: `advanceRepeatReminder` with 'km' type, verify nextDueOdometer = current + repeatValue
-- [ ] Unit test: `useOverdueReminders` returns reminder with past dueDate
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Unit test: add repeat monthly reminder, dismiss it, verify nextDueDate advanced by 1 month
+- [x] Unit test: `advanceRepeatReminder` with 'km' type, verify nextDueOdometer = current + repeatValue
+- [x] Unit test: `useOverdueReminders` returns reminder with past dueDate
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
