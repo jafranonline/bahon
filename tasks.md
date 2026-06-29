@@ -1096,16 +1096,16 @@ const routes = [
 5. Dismiss: calls `dismissReminder()`, advances repeat reminders
 
 **TEST**
-- [ ] Overdue reminder shows red badge "Overdue"
-- [ ] Within days-before: shows "X days" amber badge
-- [ ] Repeat reminder shows blue "Repeat" badge
-- [ ] Switching to Repeat mode: repeat-specific fields appear
-- [ ] Save one-time reminder: appears in list
-- [ ] Save repeat reminder: appears in list with Repeat badge
-- [ ] Dismiss one-time: removed from list
-- [ ] Dismiss repeat: nextDueDate advances, reappears with new date
-- [ ] Days-before-alert default is 3
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Overdue reminder shows red badge "Overdue"
+- [x] Within days-before: shows "X days" amber badge
+- [x] Repeat reminder shows blue "Repeat" badge
+- [x] Switching to Repeat mode: repeat-specific fields appear
+- [x] Save one-time reminder: appears in list
+- [x] Save repeat reminder: appears in list with Repeat badge
+- [x] Dismiss one-time: removed from list
+- [x] Dismiss repeat: nextDueDate advances, reappears with new date
+- [x] Days-before-alert default is 3
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 

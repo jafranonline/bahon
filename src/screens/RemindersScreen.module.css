@@ -1,0 +1,121 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+}
+
+.card {
+  background: var(--surface-1);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardOverdue {
+  border-color: var(--red-400);
+  background: var(--red-50);
+}
+
+.cardUrgent {
+  border-color: var(--amber-400);
+  background: var(--amber-50);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+}
+
+.cardTitle {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.cardBadges {
+  display: flex;
+  gap: var(--gap-xs);
+  flex-shrink: 0;
+}
+
+.cardDue {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.dismissBtn {
+  align-self: flex-end;
+  margin-top: 4px;
+  padding: 6px 14px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.dismissBtn:hover {
+  background: var(--bg-danger);
+  color: var(--text-danger);
+  border-color: var(--red-400);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+  padding-top: var(--gap-lg);
+  border-top: 1px solid var(--border);
+}
+
+.formTitle {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.fieldLabel {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0 0 6px;
+}
+
+.chipRow {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: var(--gap-sm);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.chipRow::-webkit-scrollbar {
+  display: none;
+}
+
+.empty {
+  font-size: var(--text-md);
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px 0 8px;
+}
