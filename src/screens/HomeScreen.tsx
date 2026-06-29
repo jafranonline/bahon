@@ -26,6 +26,7 @@ import { useVehicleStore } from '@store/vehicleStore'
 import { useUIStore } from '@store/uiStore'
 import { useCurrency } from '@hooks/useCurrency'
 import { useTranslation } from '@hooks/useTranslation'
+import { useUnits } from '@hooks/useUnits'
 import type { FuelLog, ServiceLog, Expense } from '@/types'
 import styles from './HomeScreen.module.css'
 
@@ -38,6 +39,7 @@ export function HomeScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { format: formatMoney, symbol } = useCurrency()
+  const { formatEfficiency, formatDistance } = useUnits()
   const setDrawerOpen = useUIStore((s) => s.setDrawerOpen)
 
   const vehicles = useVehicles()
@@ -215,13 +217,13 @@ export function HomeScreen() {
           <StatCard
             icon={<span aria-hidden="true">⛽</span>}
             iconColor="amber"
-            value={avgEfficiency != null ? `${avgEfficiency.toFixed(1)} km/L` : '—'}
+            value={avgEfficiency != null ? formatEfficiency(avgEfficiency) : '—'}
             label={t('home.avg_mileage')}
           />
           <StatCard
             icon={<span aria-hidden="true">📍</span>}
             iconColor="blue"
-            value={distanceThisMonth > 0 ? `${distanceThisMonth.toLocaleString()} km` : '—'}
+            value={distanceThisMonth > 0 ? formatDistance(distanceThisMonth) : '—'}
             label={t('home.distance')}
           />
           <StatCard

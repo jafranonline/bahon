@@ -4,9 +4,9 @@ import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { Button } from '@components/primitives/Button'
 import { useVehicle, deleteVehicle } from '@db/queries/useVehicles'
-import { useFuelLogs } from '@db/queries/useFuelLogs'
-import { useServiceLogs } from '@db/queries/useServiceLogs'
-import { useExpenses } from '@db/queries/useExpenses'
+import { useFuelLogs, deleteFuelLog } from '@db/queries/useFuelLogs'
+import { useServiceLogs, deleteServiceLog } from '@db/queries/useServiceLogs'
+import { useExpenses, deleteExpense } from '@db/queries/useExpenses'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useVehicles } from '@db/queries/useVehicles'
 import { useCurrency } from '@hooks/useCurrency'
@@ -41,6 +41,7 @@ export function VehicleDetailScreen() {
   const [tab, setTab] = useState<LogTab>('all')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmDeleteLog, setConfirmDeleteLog] = useState<{ kind: LogEntry['kind']; id: string } | null>(null)
 
   const lifetimeFuel = useMemo(() => fuelLogs.reduce((s, l) => s + l.totalCost, 0), [fuelLogs])
   const lifetimeService = useMemo(() => serviceLogs.reduce((s, l) => s + l.cost, 0), [serviceLogs])
@@ -68,6 +69,15 @@ export function VehicleDetailScreen() {
     if (tab === 'all') return allLogs
     return allLogs.filter(e => e.kind === tab)
   }, [allLogs, tab])
+
+  async function handleDeleteLog() {
+    if (!confirmDeleteLog) return
+    const { kind, id: logId } = confirmDeleteLog
+    if (kind === 'fuel') await deleteFuelLog(logId)
+    else if (kind === 'service') await deleteServiceLog(logId)
+    else await deleteExpense(logId)
+    setConfirmDeleteLog(null)
+  }
 
   async function handleDelete() {
     if (!id) return
@@ -161,6 +171,16 @@ export function VehicleDetailScreen() {
           ))}
         </div>
 
+        {confirmDeleteLog && (
+          <div className={styles.confirmCard}>
+            <p className={styles.confirmText}>Delete this log entry? This cannot be undone.</p>
+            <div className={styles.confirmActions}>
+              <Button onClick={() => setConfirmDeleteLog(null)} fullWidth>Cancel</Button>
+              <Button onClick={handleDeleteLog} fullWidth>Yes, delete</Button>
+            </div>
+          </div>
+        )}
+
         {filteredLogs.length === 0 ? (
           <p className={styles.empty}>No {tab === 'all' ? '' : tab + ' '}logs yet.</p>
         ) : (
@@ -176,6 +196,20 @@ export function VehicleDetailScreen() {
                       <span className={styles.logDate}>{l.date}</span>
                     </div>
                     <span className={styles.logAmount}>{format(l.totalCost)}</span>
+                    <div className={styles.logActions}>
+                      <button
+                        type="button"
+                        className={styles.logEditBtn}
+                        onClick={() => navigate('/log/fuel', { state: { editLog: l } })}
+                        aria-label="Edit fuel log"
+                      >✏️</button>
+                      <button
+                        type="button"
+                        className={styles.logDeleteBtn}
+                        onClick={() => l.id && setConfirmDeleteLog({ kind: 'fuel', id: l.id })}
+                        aria-label="Delete fuel log"
+                      >🗑️</button>
+                    </div>
                   </div>
                 )
               }
@@ -189,6 +223,14 @@ export function VehicleDetailScreen() {
                       <span className={styles.logDate}>{l.date}</span>
                     </div>
                     <span className={styles.logAmount}>{format(l.cost)}</span>
+                    <div className={styles.logActions}>
+                      <button
+                        type="button"
+                        className={styles.logDeleteBtn}
+                        onClick={() => l.id && setConfirmDeleteLog({ kind: 'service', id: l.id })}
+                        aria-label="Delete service log"
+                      >🗑️</button>
+                    </div>
                   </div>
                 )
               }
@@ -201,6 +243,14 @@ export function VehicleDetailScreen() {
                     <span className={styles.logDate}>{l.date}</span>
                   </div>
                   <span className={styles.logAmount}>{format(l.amount)}</span>
+                  <div className={styles.logActions}>
+                    <button
+                      type="button"
+                      className={styles.logDeleteBtn}
+                      onClick={() => l.id && setConfirmDeleteLog({ kind: 'expense', id: l.id })}
+                      aria-label="Delete expense log"
+                    >🗑️</button>
+                  </div>
                 </div>
               )
             })}

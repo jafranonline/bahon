@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { SegmentedControl } from '@components/primitives/SegmentedControl'
@@ -8,9 +8,10 @@ import { Toggle } from '@components/primitives/Toggle'
 import { Button } from '@components/primitives/Button'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useSettingsStore } from '@store/settingsStore'
-import { addFuelLog, getLastOdometer } from '@db/queries/useFuelLogs'
+import { addFuelLog, updateFuelLog, getLastOdometer } from '@db/queries/useFuelLogs'
 import { updateVehicle } from '@db/queries/useVehicles'
 import { useCurrency } from '@hooks/useCurrency'
+import type { FuelLog } from '@/types'
 import styles from './LogFuelScreen.module.css'
 
 type EntryMode = 'vol+price' | 'vol+total' | 'total'
@@ -23,10 +24,14 @@ const MODE_OPTIONS: { value: EntryMode; label: string }[] = [
 
 export function LogFuelScreen() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { symbol } = useCurrency()
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const lockedFuelPrice = useSettingsStore((s) => s.lockedFuelPrice)
   const updateSettings = useSettingsStore((s) => s.update)
+
+  const editLog = (location.state as { editLog?: FuelLog } | null)?.editLog ?? null
+  const isEditing = editLog != null
 
   const today = new Date().toISOString().slice(0, 10)
 
@@ -44,7 +49,16 @@ export function LogFuelScreen() {
   const [errors, setErrors] = useState<{ volume?: string; totalCost?: string }>({})
 
   useEffect(() => {
-    if (lockedFuelPrice && lockedFuelPrice > 0) {
+    if (isEditing && editLog) {
+      setDate(editLog.date)
+      setVolumeStr(editLog.volumeLitres > 0 ? String(editLog.volumeLitres) : '')
+      setPricePerLStr(editLog.pricePerLitre > 0 ? String(editLog.pricePerLitre) : '')
+      setTotalCostStr(editLog.totalCost > 0 ? String(editLog.totalCost) : '')
+      setCurrentOdoStr(editLog.odometer > 0 ? String(editLog.odometer) : '')
+      setPrevOdoStr(editLog.previousOdometer != null ? String(editLog.previousOdometer) : '')
+      setStationName(editLog.stationName ?? '')
+      setNotes(editLog.notes ?? '')
+    } else if (lockedFuelPrice && lockedFuelPrice > 0) {
       setPricePerLStr(String(lockedFuelPrice))
       setLockPrice(true)
     }
@@ -52,11 +66,11 @@ export function LogFuelScreen() {
   }, [])
 
   useEffect(() => {
-    if (!activeVehicleId) return
+    if (isEditing || !activeVehicleId) return
     getLastOdometer(activeVehicleId).then((odo) => {
       if (odo > 0) setPrevOdoStr(String(odo))
     })
-  }, [activeVehicleId])
+  }, [activeVehicleId, isEditing])
 
   const volume = parseFloat(volumeStr) || 0
   const pricePerL = parseFloat(pricePerLStr) || 0
@@ -98,18 +112,32 @@ export function LogFuelScreen() {
     if (!activeVehicleId) return
     setSaving(true)
     try {
-      await addFuelLog({
-        vehicleId: activeVehicleId,
-        date,
-        volumeLitres: finalVolume,
-        pricePerLitre: finalPricePerL,
-        totalCost: finalTotal,
-        odometer: currentOdo || 0,
-        previousOdometer: prevOdo > 0 ? prevOdo : undefined,
-        efficiencyKmPerL: efficiencyKmL ?? undefined,
-        stationName: stationName || undefined,
-        notes: notes || undefined,
-      })
+      if (isEditing && editLog?.id) {
+        await updateFuelLog(editLog.id, {
+          date,
+          volumeLitres: finalVolume,
+          pricePerLitre: finalPricePerL,
+          totalCost: finalTotal,
+          odometer: currentOdo || 0,
+          previousOdometer: prevOdo > 0 ? prevOdo : undefined,
+          efficiencyKmPerL: efficiencyKmL ?? undefined,
+          stationName: stationName || undefined,
+          notes: notes || undefined,
+        })
+      } else {
+        await addFuelLog({
+          vehicleId: activeVehicleId,
+          date,
+          volumeLitres: finalVolume,
+          pricePerLitre: finalPricePerL,
+          totalCost: finalTotal,
+          odometer: currentOdo || 0,
+          previousOdometer: prevOdo > 0 ? prevOdo : undefined,
+          efficiencyKmPerL: efficiencyKmL ?? undefined,
+          stationName: stationName || undefined,
+          notes: notes || undefined,
+        })
+      }
       if (currentOdo > 0) {
         await updateVehicle(activeVehicleId, { odometer: currentOdo })
       }
@@ -126,7 +154,7 @@ export function LogFuelScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title="Log Fuel" onBack={() => navigate(-1)} />
+      <TopBar title={isEditing ? 'Edit Fuel Log' : 'Log Fuel'} onBack={() => navigate(-1)} />
       <Screen>
         <SegmentedControl
           options={MODE_OPTIONS}
@@ -258,7 +286,7 @@ export function LogFuelScreen() {
         />
 
         <Button onClick={handleSave} loading={saving} fullWidth>
-          Save Fuel Log
+          {isEditing ? 'Update Fuel Log' : 'Save Fuel Log'}
         </Button>
       </Screen>
     </div>

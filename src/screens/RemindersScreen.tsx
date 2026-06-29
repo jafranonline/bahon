@@ -7,6 +7,7 @@ import { Chip } from '@components/primitives/Chip'
 import { Input } from '@components/primitives/Input'
 import { Button } from '@components/primitives/Button'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useVehicle } from '@db/queries/useVehicles'
 import {
   useReminders,
   addReminder,
@@ -38,24 +39,42 @@ function getDaysUntil(dateStr: string): number {
 
 type Urgency = 'overdue' | 'urgent' | 'future'
 
-function getUrgency(r: Reminder): Urgency {
+const URGENCY_ORDER: Record<Urgency, number> = { overdue: 0, urgent: 1, future: 2 }
+
+function getUrgency(r: Reminder, currentOdo?: number): Urgency {
   const due = getEffectiveDueDate(r)
-  if (!due) return 'future'
-  const days = getDaysUntil(due)
-  if (days < 0) return 'overdue'
-  if (days <= r.daysBeforeAlert) return 'urgent'
-  return 'future'
+  let dateUrgency: Urgency = 'future'
+  if (due) {
+    const days = getDaysUntil(due)
+    if (days < 0) dateUrgency = 'overdue'
+    else if (days <= r.daysBeforeAlert) dateUrgency = 'urgent'
+  }
+
+  let odoUrgency: Urgency = 'future'
+  const effectiveDueOdo = r.nextDueOdometer ?? r.dueOdometer
+  if (effectiveDueOdo != null && currentOdo != null) {
+    const remaining = effectiveDueOdo - currentOdo
+    if (remaining <= 0) odoUrgency = 'overdue'
+    else if (remaining <= (r.kmBeforeAlert ?? 1000)) odoUrgency = 'urgent'
+  }
+
+  return URGENCY_ORDER[dateUrgency] <= URGENCY_ORDER[odoUrgency] ? dateUrgency : odoUrgency
 }
 
 interface ReminderCardProps {
   reminder: Reminder
   onDismiss: () => void
+  currentOdo?: number
 }
 
-function ReminderCard({ reminder, onDismiss }: ReminderCardProps) {
-  const urgency = getUrgency(reminder)
+function ReminderCard({ reminder, onDismiss, currentOdo }: ReminderCardProps) {
+  const urgency = getUrgency(reminder, currentOdo)
   const due = getEffectiveDueDate(reminder)
   const daysUntil = due ? getDaysUntil(due) : null
+  const effectiveDueOdo = reminder.nextDueOdometer ?? reminder.dueOdometer
+  const kmRemaining = effectiveDueOdo != null && currentOdo != null
+    ? effectiveDueOdo - currentOdo
+    : null
 
   return (
     <div className={[styles.card, urgency === 'overdue' ? styles.cardOverdue : urgency === 'urgent' ? styles.cardUrgent : ''].filter(Boolean).join(' ')}>
@@ -66,14 +85,20 @@ function ReminderCard({ reminder, onDismiss }: ReminderCardProps) {
           {urgency === 'urgent' && daysUntil !== null && daysUntil >= 0 && (
             <Badge variant="warning" size="sm">{daysUntil === 0 ? 'Today' : `${daysUntil} days`}</Badge>
           )}
+          {urgency === 'urgent' && daysUntil === null && kmRemaining !== null && (
+            <Badge variant="warning" size="sm">{kmRemaining.toLocaleString()} km left</Badge>
+          )}
+          {urgency === 'overdue' && kmRemaining !== null && kmRemaining <= 0 && daysUntil === null && (
+            <Badge variant="danger" size="sm">{Math.abs(kmRemaining).toLocaleString()} km over</Badge>
+          )}
           {reminder.type === 'repeat' && <Badge variant="accent" size="sm">Repeat</Badge>}
         </div>
       </div>
       {due && (
         <span className={styles.cardDue}>Due: {due}</span>
       )}
-      {reminder.dueOdometer != null && (
-        <span className={styles.cardDue}>At: {reminder.dueOdometer.toLocaleString()} km</span>
+      {(reminder.nextDueOdometer ?? reminder.dueOdometer) != null && (
+        <span className={styles.cardDue}>At: {(reminder.nextDueOdometer ?? reminder.dueOdometer)!.toLocaleString()} km</span>
       )}
       <button
         type="button"
@@ -90,6 +115,8 @@ function ReminderCard({ reminder, onDismiss }: ReminderCardProps) {
 export function RemindersScreen() {
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const reminders = useReminders(activeVehicleId ?? undefined)
+  const vehicle = useVehicle(activeVehicleId ?? '')
+  const currentOdo = vehicle?.odometer
 
   const [type, setType] = useState<ReminderType>('one-time')
   const [title, setTitle] = useState('')
@@ -104,10 +131,9 @@ export function RemindersScreen() {
   const [saving, setSaving] = useState(false)
 
   const sorted = [...reminders].sort((a, b) => {
-    const ua = getUrgency(a)
-    const ub = getUrgency(b)
-    const order = { overdue: 0, urgent: 1, future: 2 }
-    return order[ua] - order[ub]
+    const ua = getUrgency(a, currentOdo)
+    const ub = getUrgency(b, currentOdo)
+    return URGENCY_ORDER[ua] - URGENCY_ORDER[ub]
   })
 
   async function handleSave() {
@@ -161,7 +187,7 @@ export function RemindersScreen() {
   }
 
   async function handleDismiss(id: string) {
-    await dismissReminder(id)
+    await dismissReminder(id, currentOdo ?? 0)
   }
 
   return (
@@ -177,6 +203,7 @@ export function RemindersScreen() {
                 key={r.id}
                 reminder={r}
                 onDismiss={() => handleDismiss(r.id)}
+                currentOdo={currentOdo}
               />
             ))}
           </div>
