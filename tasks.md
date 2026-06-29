@@ -475,9 +475,9 @@ export const useUIStore = create<UIStore>()((set) => ({
 ```
 
 **TEST**
-- [ ] `npx tsc --noEmit` — no errors
-- [ ] Toggle drawer open in store, verify component re-renders (manual test)
-- [ ] Active vehicle ID persists across reload
+- [x] `npx tsc --noEmit` — no errors
+- [x] Toggle drawer open in store, verify component re-renders (manual test)
+- [x] Active vehicle ID persists across reload
 
 ---
 
