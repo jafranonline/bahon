@@ -533,8 +533,8 @@ export function sumByMonth(logs: Array<{date: string; amount: number}>): Record<
 ```
 
 **TEST**
-- [ ] `npx tsc --noEmit` — no errors
-- [ ] Unit tests in `tests/unit/calculations.test.ts`:
+- [x] `npx tsc --noEmit` — no errors
+- [x] Unit tests in `tests/unit/calculations.test.ts`:
   - `calcEfficiencyKmL(100, 8)` === `12.5`
   - `calcEfficiencyL100km(100, 8)` === `8`
   - `kmLToMPG(12.4)` ≈ `29.2` (within 0.1)
