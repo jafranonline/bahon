@@ -1038,11 +1038,11 @@ const routes = [
 5. Validation: nickname required
 
 **TEST**
-- [ ] Select "Motorcycle" card → highlighted, deselects Car
-- [ ] Fill nickname only → can save (all other fields optional)
-- [ ] After saving first vehicle: home shows it in strip, it's selected
-- [ ] Empty nickname: shows error, does not save
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Select "Motorcycle" card → highlighted, deselects Car
+- [x] Fill nickname only → can save (all other fields optional)
+- [x] After saving first vehicle: home shows it in strip, it's selected
+- [x] Empty nickname: shows error, does not save
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
