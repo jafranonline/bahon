@@ -37,10 +37,10 @@ Claude Code should:
 8. Update `package.json` — set `"name": "bahon"`, `"version": "0.1.0"`
 
 **TEST**
-- [ ] `npm run dev` starts without errors
-- [ ] Browser shows "Bahon" text at localhost:4546
-- [ ] No TypeScript errors: `npx tsc --noEmit`
-- [ ] No ESLint errors: `npm run lint`
+- [x] `npm run dev` starts without errors
+- [x] Browser shows "Bahon" text at localhost:4546
+- [x] No TypeScript errors: `npx tsc --noEmit`
+- [x] No ESLint errors: `npm run lint`
 
 ---
 
@@ -63,10 +63,10 @@ Claude Code should:
 3. Verify `package.json` lists all packages with exact installed versions
 
 **TEST**
-- [ ] `npm install` completes with 0 errors
-- [ ] `npm run dev` still works
-- [ ] `node -e "require('./node_modules/dexie')"` exits 0
-- [ ] TypeScript can find all package types: `npx tsc --noEmit`
+- [x] `npm install` completes with 0 errors
+- [x] `npm run dev` still works
+- [x] `node -e "require('./node_modules/dexie')"` exits 0
+- [x] TypeScript can find all package types: `npx tsc --noEmit`
 
 ---
 
