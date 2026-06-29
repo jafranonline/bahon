@@ -986,14 +986,14 @@ const routes = [
 8. TopBar with back arrow
 
 **TEST**
-- [ ] Mode "Volume + price/L": enter 40L and ৳130 → total shows ৳5,200
-- [ ] Mode "Volume + total": enter 40L and ৳5200 → price shows ৳130/L in computed row
-- [ ] Mode "Total only": enter ৳5200 → shows total, no efficiency pill
-- [ ] Efficiency pill: fill odometer fields → shows km/L
-- [ ] Lock price: toggle on, reload screen, price pre-filled
-- [ ] Save: log appears in DB, navigates back to Home
-- [ ] Missing required field: shows validation error, does not save
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Mode "Volume + price/L": enter 40L and ৳130 → total shows ৳5,200
+- [x] Mode "Volume + total": enter 40L and ৳5200 → price shows ৳130/L in computed row
+- [x] Mode "Total only": enter ৳5200 → shows total, no efficiency pill
+- [x] Efficiency pill: fill odometer fields → shows km/L
+- [x] Lock price: toggle on, reload screen, price pre-filled
+- [x] Save: log appears in DB, navigates back to Home
+- [x] Missing required field: shows validation error, does not save
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
