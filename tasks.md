@@ -240,10 +240,10 @@ import './styles/global.css'
 ```
 
 **TEST**
-- [ ] `npm run dev` — no CSS import errors
-- [ ] Browser DevTools: `getComputedStyle(document.documentElement).getPropertyValue('--blue-400')` returns `#2a78d6`
-- [ ] Toggle `data-theme="dark"` on `<html>` — verify text-primary changes
-- [ ] Hind Siliguri font loaded in Network tab
+- [x] `npm run dev` — no CSS import errors
+- [x] Browser DevTools: `getComputedStyle(document.documentElement).getPropertyValue('--blue-400')` returns `#2a78d6`
+- [x] Toggle `data-theme="dark"` on `<html>` — verify text-primary changes
+- [x] Hind Siliguri font loaded in Network tab
 
 ---
 
