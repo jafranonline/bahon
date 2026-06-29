@@ -1066,12 +1066,12 @@ const routes = [
 6. Export button: calls `useExport` to download CSV
 
 **TEST**
-- [ ] Summary tab renders all 4 KPI cards
-- [ ] Charts render (canvas visible, not blank)
-- [ ] Tab switching shows correct content
-- [ ] Export button downloads CSV file
-- [ ] With no data: empty states shown for each section
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Summary tab renders all 4 KPI cards
+- [x] Charts render (canvas visible, not blank)
+- [x] Tab switching shows correct content
+- [x] Export button downloads CSV file
+- [x] With no data: empty states shown for each section
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 

@@ -1,3 +1,244 @@
+import { useState, useMemo } from 'react'
+import { TopBar } from '@components/layout/TopBar'
+import { Screen } from '@components/layout/Screen'
+import { StackedBarChart } from '@components/charts/StackedBarChart'
+import { LineChart } from '@components/charts/LineChart'
+import { useVehicleStore } from '@store/vehicleStore'
+import { useFuelLogs } from '@db/queries/useFuelLogs'
+import { useServiceLogs } from '@db/queries/useServiceLogs'
+import { useExpenses } from '@db/queries/useExpenses'
+import { useCurrency } from '@hooks/useCurrency'
+import { useExport } from '@hooks/useExport'
+import styles from './StatsScreen.module.css'
+
+type Tab = 'summary' | 'fuel' | 'service'
+
+function last6Months(): { label: string; key: string }[] {
+  const result: { label: string; key: string }[] = []
+  const now = new Date()
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const label = d.toLocaleString('default', { month: 'short' })
+    result.push({ label, key })
+  }
+  return result
+}
+
+function monthKey(date: string) {
+  return date.slice(0, 7)
+}
+
 export function StatsScreen() {
-  return <div style={{ padding: 16, color: 'var(--text-primary)' }}>StatsScreen</div>
+  const [tab, setTab] = useState<Tab>('summary')
+  const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
+  const { format, symbol } = useCurrency()
+  const { exportAsCSV } = useExport()
+
+  const fuelLogs = useFuelLogs(activeVehicleId ?? '')
+  const serviceLogs = useServiceLogs(activeVehicleId ?? '')
+  const expenses = useExpenses(activeVehicleId ?? '')
+
+  const months = useMemo(() => last6Months(), [])
+
+  const nowYear = new Date().getFullYear()
+
+  const ytdFuel = useMemo(() =>
+    fuelLogs.filter(l => l.date.startsWith(String(nowYear))).reduce((s, l) => s + l.totalCost, 0),
+    [fuelLogs, nowYear]
+  )
+  const ytdService = useMemo(() =>
+    serviceLogs.filter(l => l.date.startsWith(String(nowYear))).reduce((s, l) => s + l.cost, 0),
+    [serviceLogs, nowYear]
+  )
+  const ytdExpense = useMemo(() =>
+    expenses.filter(l => l.date.startsWith(String(nowYear))).reduce((s, l) => s + l.amount, 0),
+    [expenses, nowYear]
+  )
+  const ytdTotal = ytdFuel + ytdService + ytdExpense
+
+  const efficiencies = useMemo(() =>
+    fuelLogs.filter(l => l.efficiencyKmPerL != null).slice(0, 10).reverse(),
+    [fuelLogs]
+  )
+  const avgEfficiency = useMemo(() => {
+    const valid = fuelLogs.filter(l => l.efficiencyKmPerL != null)
+    if (valid.length === 0) return 0
+    return valid.reduce((s, l) => s + (l.efficiencyKmPerL ?? 0), 0) / valid.length
+  }, [fuelLogs])
+
+  const totalDistance = useMemo(() => {
+    if (fuelLogs.length < 2) return 0
+    const sorted = [...fuelLogs].sort((a, b) => a.odometer - b.odometer)
+    return sorted[sorted.length - 1].odometer - sorted[0].odometer
+  }, [fuelLogs])
+
+  const monthlyFuel = useMemo(() =>
+    months.map(m => fuelLogs.filter(l => monthKey(l.date) === m.key).reduce((s, l) => s + l.totalCost, 0)),
+    [fuelLogs, months]
+  )
+  const monthlyService = useMemo(() =>
+    months.map(m => serviceLogs.filter(l => monthKey(l.date) === m.key).reduce((s, l) => s + l.cost, 0)),
+    [serviceLogs, months]
+  )
+  const monthlyExpense = useMemo(() =>
+    months.map(m => expenses.filter(l => monthKey(l.date) === m.key).reduce((s, l) => s + l.amount, 0)),
+    [expenses, months]
+  )
+
+  const barSeries = [
+    { label: 'Fuel', data: monthlyFuel, color: '#EF9F27' },
+    { label: 'Service', data: monthlyService, color: '#1baf7a' },
+    { label: 'Other', data: monthlyExpense, color: '#2a78d6' },
+  ]
+
+  const effLineLabels = efficiencies.map(l => l.date.slice(5))
+  const effLineData = efficiencies.map(l => parseFloat((l.efficiencyKmPerL ?? 0).toFixed(2)))
+
+  const hasNoData = fuelLogs.length === 0 && serviceLogs.length === 0 && expenses.length === 0
+
+  async function handleExport() {
+    await exportAsCSV('fuel')
+    await exportAsCSV('service')
+    await exportAsCSV('expenses')
+  }
+
+  return (
+    <div className={styles.root}>
+      <TopBar title="Stats" />
+      <div className={styles.tabBar}>
+        {(['summary', 'fuel', 'service'] as Tab[]).map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={[styles.tabBtn, tab === t ? styles.tabBtnActive : ''].filter(Boolean).join(' ')}
+            onClick={() => setTab(t)}
+            aria-selected={tab === t}
+          >
+            {t.charAt(0).toUpperCase() + t.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      <Screen>
+        {tab === 'summary' && (
+          <>
+            {hasNoData ? (
+              <p className={styles.empty}>No data yet. Start by logging a fuel fill-up.</p>
+            ) : (
+              <>
+                <div className={styles.kpiGrid}>
+                  <div className={styles.kpiCard}>
+                    <span className={styles.kpiLabel}>YTD Total</span>
+                    <span className={styles.kpiValue}>{format(ytdTotal)}</span>
+                  </div>
+                  <div className={styles.kpiCard}>
+                    <span className={styles.kpiLabel}>Cost per km</span>
+                    <span className={styles.kpiValue}>
+                      {totalDistance > 0 ? `${symbol}${(ytdTotal / totalDistance).toFixed(2)}` : '—'}
+                    </span>
+                  </div>
+                  <div className={styles.kpiCard}>
+                    <span className={styles.kpiLabel}>Avg mileage</span>
+                    <span className={styles.kpiValue}>
+                      {avgEfficiency > 0 ? `${avgEfficiency.toFixed(1)} km/L` : '—'}
+                    </span>
+                  </div>
+                  <div className={styles.kpiCard}>
+                    <span className={styles.kpiLabel}>YTD Fuel</span>
+                    <span className={styles.kpiValue}>{format(ytdFuel)}</span>
+                  </div>
+                </div>
+
+                <div className={styles.chartCard}>
+                  <p className={styles.chartTitle}>6-month spend</p>
+                  <div className={styles.barLegend}>
+                    {barSeries.map(s => (
+                      <span key={s.label} className={styles.legendItem}>
+                        <span className={styles.legendDot} style={{ background: s.color }} />
+                        {s.label}
+                      </span>
+                    ))}
+                  </div>
+                  <StackedBarChart labels={months.map(m => m.label)} series={barSeries} />
+                </div>
+
+                {efficiencies.length >= 2 && (
+                  <div className={styles.chartCard}>
+                    <p className={styles.chartTitle}>Efficiency trend (last {efficiencies.length} fill-ups)</p>
+                    <LineChart
+                      labels={effLineLabels}
+                      data={effLineData}
+                      yLabel="km/L"
+                      color="#2a78d6"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+
+        {tab === 'fuel' && (
+          <>
+            {fuelLogs.length === 0 ? (
+              <p className={styles.empty}>No fuel logs yet.</p>
+            ) : (
+              <>
+                {efficiencies.length >= 2 && (
+                  <div className={styles.chartCard}>
+                    <p className={styles.chartTitle}>Efficiency trend</p>
+                    <LineChart labels={effLineLabels} data={effLineData} yLabel="km/L" />
+                  </div>
+                )}
+                <div className={styles.logTable}>
+                  <div className={styles.logHeader}>
+                    <span>Date</span>
+                    <span>Litres</span>
+                    <span>Total</span>
+                    <span>km/L</span>
+                  </div>
+                  {fuelLogs.map(log => (
+                    <div key={log.id} className={styles.logRow}>
+                      <span>{log.date.slice(5)}</span>
+                      <span>{log.volumeLitres.toFixed(1)} L</span>
+                      <span>{format(log.totalCost)}</span>
+                      <span>{log.efficiencyKmPerL != null ? log.efficiencyKmPerL.toFixed(1) : '—'}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {tab === 'service' && (
+          <>
+            {serviceLogs.length === 0 ? (
+              <p className={styles.empty}>No service logs yet.</p>
+            ) : (
+              <div className={styles.logTable}>
+                <div className={styles.svcHeader}>
+                  <span>Date</span>
+                  <span>Category</span>
+                  <span>Cost</span>
+                </div>
+                {serviceLogs.map(log => (
+                  <div key={log.id} className={styles.svcRow}>
+                    <span>{log.date.slice(5)}</span>
+                    <span className={styles.categoryCell}>{log.category.replace(/_/g, ' ')}</span>
+                    <span>{format(log.cost)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        <button type="button" className={styles.exportBtn} onClick={handleExport} aria-label="Export data as CSV">
+          Export CSV
+        </button>
+      </Screen>
+    </div>
+  )
 }
