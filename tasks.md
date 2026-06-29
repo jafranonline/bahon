@@ -1368,11 +1368,11 @@ test: {
 5. Create `tests/unit/reminders.test.ts` — test `advanceRepeatReminder` for all repeat types
 
 **TEST**
-- [ ] `npm test` runs all tests
-- [ ] All calculation tests pass
-- [ ] All formatter tests pass
-- [ ] All reminder advancement tests pass
-- [ ] Coverage: > 80% for utils/
+- [x] `npm test` runs all tests — 55 tests across 7 files, all pass
+- [x] All calculation tests pass — 22 tests in calculations.test.ts
+- [x] All formatter tests pass — 15 tests in formatters.test.ts
+- [x] All reminder advancement tests pass — 3 tests in reminders.test.ts
+- [x] Coverage: > 80% for utils/ — 87.32% statements, 100% functions
 
 ---
 
