@@ -1418,8 +1418,8 @@ test: {
    - Dismiss reminder → verify removed
 
 **TEST**
-- [ ] `npx playwright test` — all E2E tests pass
-- [ ] Tests run in headless Chromium
+- [x] `npx playwright test` — all 4 E2E tests pass (addVehicle, logFuel, reminder add, reminder dismiss)
+- [x] Tests run in headless Chromium — confirmed via Playwright chromium project
 
 ---
 
