@@ -1014,12 +1014,12 @@ const routes = [
 3. Both: on save, add to DB, navigate back, show toast (future: for now just navigate)
 
 **TEST**
-- [ ] Service: select "Oil change" chip → highlighted
-- [ ] Service: enter all fields, save → appears in DB
-- [ ] Expense: enter all fields, save → appears in DB
-- [ ] Category chips scroll horizontally when they overflow
-- [ ] Validation: cost required, shows error if missing
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Service: select "Oil change" chip → highlighted
+- [x] Service: enter all fields, save → appears in DB
+- [x] Expense: enter all fields, save → appears in DB
+- [x] Category chips scroll horizontally when they overflow
+- [x] Validation: cost required, shows error if missing
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
