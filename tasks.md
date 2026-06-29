@@ -314,8 +314,8 @@ export const db = new BahonDatabase();
 3. Use `new Date().toISOString()` for timestamps
 
 **TEST**
-- [ ] `npx tsc --noEmit` — no errors
-- [ ] Write a unit test in `tests/unit/vehicles.test.ts`:
+- [x] `npx tsc --noEmit` — no errors
+- [x] Write a unit test in `tests/unit/vehicles.test.ts`:
   - Add a vehicle, verify it appears in `useVehicles`
   - Delete a vehicle, verify it's gone
   - Verify cascading delete removes fuel logs too

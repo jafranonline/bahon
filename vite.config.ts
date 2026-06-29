@@ -17,4 +17,9 @@ export default defineConfig({
       '@i18n': path.resolve(__dirname, './src/i18n'),
     },
   },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./tests/setup.ts'],
+  },
 })
