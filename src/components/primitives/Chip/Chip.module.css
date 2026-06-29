@@ -1,0 +1,40 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-xs);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  font-family: var(--font-body);
+  padding: var(--gap-xs) var(--gap-md);
+  height: 32px;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background-color: var(--surface-1);
+  color: var(--text-secondary);
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.chip:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-shadow);
+}
+
+.chip.selected {
+  background-color: var(--bg-accent);
+  border-color: var(--border-accent);
+  color: var(--text-accent);
+}
+
+.chip.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}

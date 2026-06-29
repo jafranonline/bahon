@@ -765,12 +765,12 @@ Create `src/components/primitives/Input/Input.tsx` and `Input.module.css`:
    - Renders a row of segments, active one highlighted
 
 **TEST**
-- [ ] Toggle: click toggles state, animation smooth
-- [ ] Badge: all 6 variants render with correct contrast
-- [ ] Chip: click selects, click again deselects
-- [ ] SegmentedControl: selecting one option deselects others
-- [ ] All keyboard accessible
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Toggle: click toggles state, animation smooth
+- [x] Badge: all 6 variants render with correct contrast
+- [x] Chip: click selects, click again deselects
+- [x] SegmentedControl: selecting one option deselects others
+- [x] All keyboard accessible
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
