@@ -339,9 +339,9 @@ export const db = new BahonDatabase();
    - `getLastOdometer(vehicleId: string): Promise<number>` — returns last known odometer for the vehicle
 
 **TEST**
-- [ ] Unit test: add 3 fuel logs, verify monthly query returns correct 2 for a given month
-- [ ] Unit test: `getLastOdometer` returns highest odometer value
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Unit test: add 3 fuel logs, verify monthly query returns correct 2 for a given month
+- [x] Unit test: `getLastOdometer` returns highest odometer value
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
