@@ -789,9 +789,9 @@ Create `src/components/primitives/Select/Select.tsx`:
 - Error state
 
 **TEST**
-- [ ] Select renders options correctly
-- [ ] Native keyboard navigation works
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Select renders options correctly
+- [x] Native keyboard navigation works
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
