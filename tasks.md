@@ -177,9 +177,9 @@ mkdir -p .github/workflows
 3. Create `src/types/index.ts` with a comment: `// Global type exports`
 
 **TEST**
-- [ ] All directories exist: `find src -type d | sort`
-- [ ] `npm run dev` still works
-- [ ] No TypeScript errors
+- [x] All directories exist: `find src -type d | sort`
+- [x] `npm run dev` still works
+- [x] No TypeScript errors
 
 ---
 
