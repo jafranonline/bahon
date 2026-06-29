@@ -24,6 +24,7 @@ test.describe('Accessibility', () => {
 
   test('Log Fuel screen has 0 axe violations', async ({ page }) => {
     await page.goto('/log/fuel')
+    await page.waitForSelector('h1') // wait for lazy-loaded screen to render
     const results = await new AxeBuilder({ page })
       .disableRules(['color-contrast'])
       .analyze()
@@ -32,6 +33,7 @@ test.describe('Accessibility', () => {
 
   test('Reminders screen has 0 axe violations', async ({ page }) => {
     await page.goto('/reminders')
+    await page.waitForSelector('h1')
     const results = await new AxeBuilder({ page })
       .disableRules(['color-contrast'])
       .analyze()
@@ -40,6 +42,7 @@ test.describe('Accessibility', () => {
 
   test('Stats screen has 0 axe violations', async ({ page }) => {
     await page.goto('/stats')
+    await page.waitForSelector('h1')
     const results = await new AxeBuilder({ page })
       .disableRules(['color-contrast'])
       .analyze()
