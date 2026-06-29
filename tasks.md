@@ -290,9 +290,9 @@ export const db = new BahonDatabase();
 2. Create `src/db/models.ts` — re-export all DB types (same as types/models.ts, kept here for db-layer imports)
 
 **TEST**
-- [ ] `npx tsc --noEmit` — no errors
-- [ ] Import db in App.tsx, call `db.vehicles.count()`, confirm returns promise — remove after test
-- [ ] DevTools → Application → IndexedDB — confirm "BahonDB" appears after app loads
+- [x] `npx tsc --noEmit` — no errors
+- [x] Import db in App.tsx, call `db.vehicles.count()`, confirm returns promise — remove after test
+- [x] DevTools → Application → IndexedDB — confirm "BahonDB" appears after app loads
 
 ---
 
