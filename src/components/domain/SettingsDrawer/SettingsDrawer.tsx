@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Toggle } from '@components/primitives/Toggle'
 import { useSettingsStore } from '@store/settingsStore'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useUIStore } from '@store/uiStore'
 import { useVehicle } from '@db/queries/useVehicles'
 import { useExport } from '@hooks/useExport'
 import { useTranslation } from '@hooks/useTranslation'
@@ -75,6 +77,8 @@ function OptionList<T extends string>({
 export function SettingsDrawer() {
   const [expanded, setExpanded] = useState<ExpandSection>(null)
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const setDrawerOpen = useUIStore(s => s.setDrawerOpen)
 
   const theme = useSettingsStore(s => s.theme)
   const language = useSettingsStore(s => s.language)
@@ -246,6 +250,13 @@ export function SettingsDrawer() {
 
         {/* Storage info */}
         <Row label="Storage" trailing={<span className={styles.currentVal}>On device</span>} />
+
+        {/* About */}
+        <Row
+          label={t('settings.about')}
+          trailing={<span className={styles.currentVal}>›</span>}
+          onClick={() => { setDrawerOpen(false); navigate('/about') }}
+        />
       </div>
     </div>
   )

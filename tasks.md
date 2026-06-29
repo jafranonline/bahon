@@ -1571,14 +1571,14 @@ Work through every item in this checklist:
 3. All strings must have i18n keys in `en.json` and `bn.json`
 
 **TEST**
-- [ ] `/about` route renders without errors
-- [ ] Back button returns to previous screen
-- [ ] Email link is tappable
-- [ ] Feedback button opens form URL (or shows "Coming soon" if URL is empty)
-- [ ] App version matches `constants.ts`
-- [ ] Privacy note visible
-- [ ] Switch to Bangla → all labels translate
-- [ ] `npx tsc --noEmit` — no errors
+- [x] `/about` route renders without errors
+- [x] Back button returns to previous screen
+- [x] Email link is tappable
+- [x] Feedback button opens form URL (or shows "Coming soon" if URL is empty)
+- [x] App version matches `constants.ts`
+- [x] Privacy note visible
+- [x] Switch to Bangla → all labels translate
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
