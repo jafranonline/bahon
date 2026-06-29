@@ -843,11 +843,11 @@ Create `src/components/primitives/Select/Select.tsx`:
    - Proper `role="img"` and `aria-label`
 
 **TEST**
-- [ ] HeroCard: amount displayed in serif font
-- [ ] HeroCard: delta badge shows correct colour
-- [ ] DonutChart renders in browser
-- [ ] DonutChart canvas has aria-label
-- [ ] `npx tsc --noEmit` — no errors
+- [x] HeroCard: amount displayed in serif font
+- [x] HeroCard: delta badge shows correct colour
+- [x] DonutChart renders in browser
+- [x] DonutChart canvas has aria-label
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
