@@ -1,0 +1,118 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.root::-webkit-scrollbar {
+  display: none;
+}
+
+.header {
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.appName {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.vehicleName {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 2px 0 0;
+}
+
+.section {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.rowWrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  min-height: 48px;
+  gap: var(--gap-sm);
+}
+
+.row:disabled {
+  cursor: default;
+}
+
+.row:not(:disabled):hover {
+  background: var(--surface-2);
+}
+
+.rowLabel {
+  font-size: var(--text-md);
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.rowTrailing {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.currentVal {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.expandContent {
+  padding: 0 12px 8px;
+}
+
+.optionList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  width: 100%;
+  min-height: 44px;
+}
+
+.optionSelected {
+  background: var(--bg-accent);
+  color: var(--text-accent);
+  font-weight: 600;
+}
+
+.check {
+  color: var(--text-accent);
+  font-weight: 700;
+}

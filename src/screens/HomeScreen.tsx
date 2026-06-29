@@ -25,6 +25,7 @@ import { useReminders } from '@db/queries/useReminders'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useUIStore } from '@store/uiStore'
 import { useCurrency } from '@hooks/useCurrency'
+import { useTranslation } from '@hooks/useTranslation'
 import type { FuelLog, ServiceLog, Expense } from '@/types'
 import styles from './HomeScreen.module.css'
 
@@ -35,6 +36,7 @@ type LogEntry =
 
 export function HomeScreen() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { format: formatMoney, symbol } = useCurrency()
   const setDrawerOpen = useUIStore((s) => s.setDrawerOpen)
 
@@ -125,16 +127,14 @@ export function HomeScreen() {
         <Screen>
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon} aria-hidden="true">🚗</span>
-            <p className={styles.emptyTitle}>No vehicles yet</p>
-            <p className={styles.emptySubtitle}>
-              Add your first vehicle to start tracking fuel costs and service records.
-            </p>
+            <p className={styles.emptyTitle}>{t('home.no_vehicles_title')}</p>
+            <p className={styles.emptySubtitle}>{t('home.no_vehicles_subtitle')}</p>
             <button
               className={styles.emptyBtn}
               onClick={() => navigate('/vehicles/add')}
-              aria-label="Add your first vehicle"
+              aria-label={t('home.add_vehicle')}
             >
-              Add Vehicle
+              {t('home.add_vehicle')}
             </button>
           </div>
         </Screen>
@@ -148,9 +148,9 @@ export function HomeScreen() {
   }
 
   const donutData = [
-    { label: 'Fuel', value: fuelTotal, color: 'var(--amber-400)' },
-    { label: 'Service', value: serviceTotal, color: 'var(--teal-400)' },
-    { label: 'Other', value: expenseTotal, color: 'var(--red-400)' },
+    { label: t('home.fuel'), value: fuelTotal, color: 'var(--amber-400)' },
+    { label: t('home.service'), value: serviceTotal, color: 'var(--teal-400)' },
+    { label: t('home.expense'), value: expenseTotal, color: 'var(--red-400)' },
   ].filter((d) => d.value > 0)
 
   return (
@@ -216,25 +216,25 @@ export function HomeScreen() {
             icon={<span aria-hidden="true">⛽</span>}
             iconColor="amber"
             value={avgEfficiency != null ? `${avgEfficiency.toFixed(1)} km/L` : '—'}
-            label="Avg mileage"
+            label={t('home.avg_mileage')}
           />
           <StatCard
             icon={<span aria-hidden="true">📍</span>}
             iconColor="blue"
             value={distanceThisMonth > 0 ? `${distanceThisMonth.toLocaleString()} km` : '—'}
-            label="Distance"
+            label={t('home.distance')}
           />
           <StatCard
             icon={<span aria-hidden="true">🛢</span>}
             iconColor="teal"
             value={totalFuelled > 0 ? `${totalFuelled.toFixed(1)} L` : '—'}
-            label="Fuelled"
+            label={t('home.fuelled')}
           />
           <StatCard
             icon={<span aria-hidden="true">🔔</span>}
             iconColor="red"
             value={String(reminders.length)}
-            label="Due services"
+            label={t('home.due_services')}
             onClick={reminders.length > 0 ? () => navigate('/reminders') : undefined}
           />
         </div>
@@ -242,34 +242,34 @@ export function HomeScreen() {
         <div className={styles.quickAdd}>
           {(
             [
-              { label: 'Fuel', path: '/log/fuel', color: 'var(--amber-400)' },
-              { label: 'Service', path: '/log/service', color: 'var(--teal-400)' },
-              { label: 'Expense', path: '/log/expense', color: 'var(--red-400)' },
-              { label: 'Reminder', path: '/reminders', color: 'var(--blue-400)' },
-            ] as const
-          ).map(({ label, path, color }) => (
+              { key: 'fuel' as const, path: '/log/fuel', color: 'var(--amber-400)' },
+              { key: 'service' as const, path: '/log/service', color: 'var(--teal-400)' },
+              { key: 'expense' as const, path: '/log/expense', color: 'var(--red-400)' },
+              { key: 'reminder' as const, path: '/reminders', color: 'var(--blue-400)' },
+            ]
+          ).map(({ key, path, color }) => (
             <button
-              key={label}
+              key={key}
               className={styles.quickAddBtn}
               onClick={() => navigate(path)}
-              aria-label={`Add ${label}`}
+              aria-label={`Add ${t(`home.${key}`)}`}
               style={{ borderColor: color, color }}
             >
-              + {label}
+              + {t(`home.${key}`)}
             </button>
           ))}
         </div>
 
         {recentLogs.length > 0 && (
           <>
-            <div className={styles.sectionHeader}>Recent</div>
+            <div className={styles.sectionHeader}>{t('home.recent_activity')}</div>
             {recentLogs.map((entry) => {
               if (entry.kind === 'fuel') {
                 return (
                   <LogRow
                     key={entry.log.id}
                     type="fuel"
-                    title="Fuel"
+                    title={t('home.fuel')}
                     subtitle={entry.log.date}
                     amount={entry.log.totalCost}
                     currency={symbol}

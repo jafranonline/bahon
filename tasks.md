@@ -1163,15 +1163,15 @@ const routes = [
 4. Language change: calls `i18n.changeLanguage()`
 
 **TEST**
-- [ ] Dark mode toggle: app switches immediately
-- [ ] Language to Bangla: all labels on screen switch
-- [ ] Language back to English: reverts
-- [ ] Currency to USD: all amounts in app show $
-- [ ] Efficiency to MPG: stats screen shows MPG
-- [ ] Selecting km/L in efficiency: fuel log efficiency pill shows km/L
-- [ ] Export: triggers download
-- [ ] Settings persist after drawer close and reopen
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Dark mode toggle: app switches immediately
+- [x] Language to Bangla: all labels on screen switch
+- [x] Language back to English: reverts
+- [x] Currency to USD: all amounts in app show $
+- [x] Efficiency to MPG: stats screen shows MPG
+- [x] Selecting km/L in efficiency: fuel log efficiency pill shows km/L
+- [x] Export: triggers download
+- [x] Settings persist after drawer close and reopen
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 

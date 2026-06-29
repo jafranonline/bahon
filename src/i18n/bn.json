@@ -247,5 +247,19 @@
     "export": "রপ্তানি",
     "share": "শেয়ার",
     "settings": "সেটিংস"
+  },
+  "home": {
+    "no_vehicles_title": "এখনও কোনো যানবাহন নেই",
+    "no_vehicles_subtitle": "জ্বালানি খরচ ও সার্ভিস রেকর্ড ট্র্যাক করতে প্রথম যানবাহন যোগ করুন।",
+    "add_vehicle": "যানবাহন যোগ করুন",
+    "avg_mileage": "গড় মাইলেজ",
+    "distance": "দূরত্ব",
+    "fuelled": "জ্বালানি",
+    "due_services": "বকেয়া সার্ভিস",
+    "fuel": "জ্বালানি",
+    "service": "সার্ভিস",
+    "expense": "খরচ",
+    "reminder": "রিমাইন্ডার",
+    "recent_activity": "সাম্প্রতিক কার্যক্রম"
   }
 }

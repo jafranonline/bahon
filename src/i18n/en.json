@@ -247,5 +247,19 @@
     "export": "Export",
     "share": "Share",
     "settings": "Settings"
+  },
+  "home": {
+    "no_vehicles_title": "No vehicles yet",
+    "no_vehicles_subtitle": "Add your first vehicle to start tracking fuel costs and service records.",
+    "add_vehicle": "Add Vehicle",
+    "avg_mileage": "Avg mileage",
+    "distance": "Distance",
+    "fuelled": "Fuelled",
+    "due_services": "Due services",
+    "fuel": "Fuel",
+    "service": "Service",
+    "expense": "Expense",
+    "reminder": "Reminder",
+    "recent_activity": "Recent activity"
   }
 }

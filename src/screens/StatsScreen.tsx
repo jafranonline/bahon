@@ -4,6 +4,7 @@ import { Screen } from '@components/layout/Screen'
 import { StackedBarChart } from '@components/charts/StackedBarChart'
 import { LineChart } from '@components/charts/LineChart'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useSettingsStore } from '@store/settingsStore'
 import { useFuelLogs } from '@db/queries/useFuelLogs'
 import { useServiceLogs } from '@db/queries/useServiceLogs'
 import { useExpenses } from '@db/queries/useExpenses'
@@ -32,6 +33,7 @@ function monthKey(date: string) {
 export function StatsScreen() {
   const [tab, setTab] = useState<Tab>('summary')
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
+  const efficiencyUnit = useSettingsStore((s) => s.efficiencyUnit)
   const { format, symbol } = useCurrency()
   const { exportAsCSV } = useExport()
 
@@ -57,15 +59,17 @@ export function StatsScreen() {
   )
   const ytdTotal = ytdFuel + ytdService + ytdExpense
 
+  const effField = efficiencyUnit === 'MPG' ? 'efficiencyMPG' : efficiencyUnit === 'L/100km' ? 'efficiencyL100km' : 'efficiencyKmPerL'
+
   const efficiencies = useMemo(() =>
-    fuelLogs.filter(l => l.efficiencyKmPerL != null).slice(0, 10).reverse(),
-    [fuelLogs]
+    fuelLogs.filter(l => l[effField] != null).slice(0, 10).reverse(),
+    [fuelLogs, effField]
   )
   const avgEfficiency = useMemo(() => {
-    const valid = fuelLogs.filter(l => l.efficiencyKmPerL != null)
+    const valid = fuelLogs.filter(l => l[effField] != null)
     if (valid.length === 0) return 0
-    return valid.reduce((s, l) => s + (l.efficiencyKmPerL ?? 0), 0) / valid.length
-  }, [fuelLogs])
+    return valid.reduce((s, l) => s + (l[effField] ?? 0), 0) / valid.length
+  }, [fuelLogs, effField])
 
   const totalDistance = useMemo(() => {
     if (fuelLogs.length < 2) return 0
@@ -93,7 +97,7 @@ export function StatsScreen() {
   ]
 
   const effLineLabels = efficiencies.map(l => l.date.slice(5))
-  const effLineData = efficiencies.map(l => parseFloat((l.efficiencyKmPerL ?? 0).toFixed(2)))
+  const effLineData = efficiencies.map(l => parseFloat((l[effField] ?? 0).toFixed(2)))
 
   const hasNoData = fuelLogs.length === 0 && serviceLogs.length === 0 && expenses.length === 0
 
@@ -141,7 +145,7 @@ export function StatsScreen() {
                   <div className={styles.kpiCard}>
                     <span className={styles.kpiLabel}>Avg mileage</span>
                     <span className={styles.kpiValue}>
-                      {avgEfficiency > 0 ? `${avgEfficiency.toFixed(1)} km/L` : '—'}
+                      {avgEfficiency > 0 ? `${avgEfficiency.toFixed(1)} ${efficiencyUnit}` : '—'}
                     </span>
                   </div>
                   <div className={styles.kpiCard}>
@@ -169,7 +173,7 @@ export function StatsScreen() {
                     <LineChart
                       labels={effLineLabels}
                       data={effLineData}
-                      yLabel="km/L"
+                      yLabel={efficiencyUnit}
                       color="#2a78d6"
                     />
                   </div>
@@ -196,14 +200,14 @@ export function StatsScreen() {
                     <span>Date</span>
                     <span>Litres</span>
                     <span>Total</span>
-                    <span>km/L</span>
+                    <span>{efficiencyUnit}</span>
                   </div>
                   {fuelLogs.map(log => (
                     <div key={log.id} className={styles.logRow}>
                       <span>{log.date.slice(5)}</span>
                       <span>{log.volumeLitres.toFixed(1)} L</span>
                       <span>{format(log.totalCost)}</span>
-                      <span>{log.efficiencyKmPerL != null ? log.efficiencyKmPerL.toFixed(1) : '—'}</span>
+                      <span>{log[effField] != null ? (log[effField] as number).toFixed(1) : '—'}</span>
                     </div>
                   ))}
                 </div>
