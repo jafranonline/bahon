@@ -959,12 +959,12 @@ const routes = [
 4. Wire `<BottomNav>` to navigate between screens
 
 **TEST**
-- [ ] Home renders with no vehicles: shows empty state prompting to add vehicle
-- [ ] After adding a vehicle: hero card shows 0 costs for current month
-- [ ] After adding fuel log: costs update reactively
-- [ ] Vehicle strip scrolls horizontally if more than 2 vehicles
-- [ ] Tapping a vehicle pill switches active vehicle
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Home renders with no vehicles: shows empty state prompting to add vehicle
+- [x] After adding a vehicle: hero card shows 0 costs for current month
+- [x] After adding fuel log: costs update reactively
+- [x] Vehicle strip scrolls horizontally if more than 2 vehicles
+- [x] Tapping a vehicle pill switches active vehicle
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 

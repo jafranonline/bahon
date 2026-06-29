@@ -30,7 +30,7 @@ export function VehiclePill({ vehicle, selected, onSelect, variant = 'normal' }:
 
   const label = isAdd
     ? 'Add vehicle'
-    : vehicle?.nickname ?? `${vehicle?.make} ${vehicle?.model}`
+    : vehicle?.name ?? `${vehicle?.brand ?? ''} ${vehicle?.model ?? ''}`.trim()
 
   return (
     <button
