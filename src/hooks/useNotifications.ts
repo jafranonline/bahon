@@ -13,7 +13,7 @@ export function useNotifications() {
     const reg = await navigator.serviceWorker.ready
     if (!('showNotification' in reg)) return
 
-    const dueMs = new Date(reminder.nextDueDate).getTime() - Date.now()
+    const dueMs = new Date(reminder.nextDueDate ?? '').getTime() - Date.now()
     if (dueMs <= 0) {
       await reg.showNotification('Bahon Reminder', {
         body: reminder.title,

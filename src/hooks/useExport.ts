@@ -36,19 +36,19 @@ export function useExport() {
 
     switch (entity) {
       case 'vehicles':
-        rows = (await db.vehicles.toArray()) as Record<string, unknown>[]
+        rows = (await db.vehicles.toArray()) as unknown as Record<string, unknown>[]
         break
       case 'fuel':
-        rows = (await db.fuelLogs.toArray()) as Record<string, unknown>[]
+        rows = (await db.fuelLogs.toArray()) as unknown as Record<string, unknown>[]
         break
       case 'service':
-        rows = (await db.serviceLogs.toArray()) as Record<string, unknown>[]
+        rows = (await db.serviceLogs.toArray()) as unknown as Record<string, unknown>[]
         break
       case 'expenses':
-        rows = (await db.expenses.toArray()) as Record<string, unknown>[]
+        rows = (await db.expenses.toArray()) as unknown as Record<string, unknown>[]
         break
       case 'reminders':
-        rows = (await db.reminders.toArray()) as Record<string, unknown>[]
+        rows = (await db.reminders.toArray()) as unknown as Record<string, unknown>[]
         break
     }
 

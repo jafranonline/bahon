@@ -37,6 +37,8 @@ export interface FuelLog {
   odometer: number
   previousOdometer?: number
   efficiencyKmPerL?: number
+  efficiencyL100km?: number
+  efficiencyMPG?: number
   stationName?: string
   fuelType?: string
   notes?: string

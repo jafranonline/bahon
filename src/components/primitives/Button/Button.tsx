@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import styles from './Button.module.css'
 
 interface ButtonProps {
-  variant: 'primary' | 'secondary' | 'ghost' | 'danger'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   icon?: ReactNode
   iconPosition?: 'left' | 'right'
@@ -16,7 +16,7 @@ interface ButtonProps {
 }
 
 export function Button({
-  variant,
+  variant = 'primary',
   size = 'md',
   icon,
   iconPosition = 'left',

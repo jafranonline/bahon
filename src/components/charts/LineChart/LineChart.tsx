@@ -47,7 +47,7 @@ export function LineChart({
     maintainAspectRatio: false,
     plugins: {
       legend: { display: false },
-      tooltip: { callbacks: { label: (ctx: { parsed: { y: number } }) => `${ctx.parsed.y}${yLabel ? ' ' + yLabel : ''}` } },
+      tooltip: { callbacks: { label: (ctx: { parsed: { y: number | null } }) => `${ctx.parsed.y ?? ''}${yLabel ? ' ' + yLabel : ''}` } },
     },
     scales: {
       x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 11 } } },
