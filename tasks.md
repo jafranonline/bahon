@@ -672,11 +672,11 @@ export default i18n;
 5. Create `src/hooks/useTranslation.ts` — re-exports `useTranslation` from react-i18next with type-safe key paths
 
 **TEST**
-- [ ] Switch language to 'bn' in settings → all UI labels update immediately
-- [ ] Switch back to 'en' → reverts
-- [ ] `npx tsc --noEmit` — no errors
-- [ ] No missing translation keys (check browser console for i18next warnings)
-- [ ] `bn.json` has the same number of keys as `en.json`
+- [x] Switch language to 'bn' in settings → all UI labels update immediately
+- [x] Switch back to 'en' → reverts
+- [x] `npx tsc --noEmit` — no errors
+- [x] No missing translation keys (check browser console for i18next warnings)
+- [x] `bn.json` has the same number of keys as `en.json`
 
 ---
 
