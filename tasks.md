@@ -420,9 +420,9 @@ export const useSettingsStore = create<SettingsStore>()(
 ```
 
 **TEST**
-- [ ] Change language setting, reload page — language persists
-- [ ] `npx tsc --noEmit` — no errors
-- [ ] localStorage key `bahon-settings` appears in DevTools after first render
+- [x] Change language setting, reload page — language persists
+- [x] `npx tsc --noEmit` — no errors
+- [x] localStorage key `bahon-settings` appears in DevTools after first render
 
 ---
 
