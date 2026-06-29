@@ -729,13 +729,13 @@ Create `src/components/primitives/Input/Input.tsx` and `Input.module.css`:
 - Focus ring from CSS var `--focus-shadow`
 
 **TEST**
-- [ ] Type "hello" in text input — value updates
-- [ ] Type "130" in number input — numeric keyboard on mobile (manual)
-- [ ] Error prop shows red border and error text
-- [ ] Prefix "৳" appears before input text
-- [ ] Suffix "km" appears after input text
-- [ ] Tab navigation works correctly through form
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Type "hello" in text input — value updates
+- [x] Type "130" in number input — numeric keyboard on mobile (manual — inputMode="decimal" confirmed via DOM)
+- [x] Error prop shows red border and error text
+- [x] Prefix "৳" appears before input text
+- [x] Suffix "km" appears after input text
+- [x] Tab navigation works correctly through form
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
