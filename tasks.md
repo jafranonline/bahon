@@ -138,9 +138,9 @@ export default defineConfig({
 ```
 
 **TEST**
-- [ ] `npx tsc --noEmit` passes
-- [ ] `npm run dev` still works
-- [ ] Create a test file `src/test-import.ts` that imports `import { useState } from 'react'` and delete after confirming no error
+- [x] `npx tsc --noEmit` passes
+- [x] `npm run dev` still works
+- [x] Create a test file `src/test-import.ts` that imports `import { useState } from 'react'` and delete after confirming no error
 
 ---
 
