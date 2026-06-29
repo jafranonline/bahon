@@ -597,8 +597,8 @@ export function formatNumber(n: number, decimals?: number): string
 ```
 
 **TEST**
-- [ ] `npx tsc --noEmit` — no errors
-- [ ] Unit tests:
+- [x] `npx tsc --noEmit` — no errors
+- [x] Unit tests:
   - `formatCurrency(5200, 'BDT')` === `'৳ 5,200'`
   - `formatCurrency(5200.5, 'USD')` === `'$ 5,200.50'`
   - `formatDistance(100, 'mi')` === `'62.1 mi'`
