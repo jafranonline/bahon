@@ -701,12 +701,12 @@ Create `src/components/primitives/Button/Button.tsx` and `Button.module.css`:
 - CSS Module: one class per variant and size, all colours from CSS vars
 
 **TEST**
-- [ ] All 4 variants render with correct colours
-- [ ] Loading state: spinner shows, button non-interactive
-- [ ] Disabled state: correct opacity, cursor not-allowed
-- [ ] Keyboard accessible: Enter and Space trigger onClick
-- [ ] Meets 44px minimum height on all sizes
-- [ ] `npx tsc --noEmit` — no errors
+- [x] All 4 variants render with correct colours
+- [x] Loading state: spinner shows, button non-interactive
+- [x] Disabled state: correct opacity, cursor not-allowed
+- [x] Keyboard accessible: Enter and Space trigger onClick
+- [x] Meets 44px minimum height on all sizes
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
