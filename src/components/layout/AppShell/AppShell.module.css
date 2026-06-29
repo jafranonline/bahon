@@ -1,0 +1,23 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  max-width: 390px;
+  margin: 0 auto;
+  background: var(--surface-1);
+  position: relative;
+  overflow: hidden;
+}
+
+.drawerContent {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawerTitle {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}

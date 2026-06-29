@@ -924,12 +924,12 @@ const routes = [
 ```
 
 **TEST**
-- [ ] Navigate to `/stats` → StatsScreen stub renders
-- [ ] Navigate to `/log/fuel` → LogFuelScreen stub renders
-- [ ] Browser back button works
-- [ ] Drawer opens and closes from AppShell
-- [ ] Theme applies to `<html>` element
-- [ ] `npx tsc --noEmit` — no errors
+- [x] Navigate to `/stats` → StatsScreen stub renders
+- [x] Navigate to `/log/fuel` → LogFuelScreen stub renders
+- [x] Browser back button works
+- [x] Drawer opens and closes from AppShell
+- [x] Theme applies to `<html>` element
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
