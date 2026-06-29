@@ -814,12 +814,12 @@ Create `src/components/primitives/Select/Select.tsx`:
 3. `src/components/composed/VehiclePill/VehiclePill.tsx` — selectable pill with vehicle icon and name. Separate "Add" variant with dashed border and plus icon
 
 **TEST**
-- [ ] StatCard renders all icon colour variants
-- [ ] LogRow fuel/service/expense variants all correct colours
-- [ ] VehiclePill selected state shows blue bg
-- [ ] VehiclePill "Add" variant shows dashed border
-- [ ] All components accessible with ARIA labels
-- [ ] `npx tsc --noEmit` — no errors
+- [x] StatCard renders all icon colour variants
+- [x] LogRow fuel/service/expense variants all correct colours
+- [x] VehiclePill selected state shows blue bg
+- [x] VehiclePill "Add" variant shows dashed border
+- [x] All components accessible with ARIA labels
+- [x] `npx tsc --noEmit` — no errors
 
 ---
 
