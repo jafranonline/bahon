@@ -207,9 +207,9 @@ mkdir -p .github/workflows
 3. Create `src/types/index.ts` — re-export everything from models.ts and enums.ts
 
 **TEST**
-- [ ] `npx tsc --noEmit` — zero errors
-- [ ] All types are importable: add temp import in App.tsx, confirm no error, remove
-- [ ] Types file has no `any` types
+- [x] `npx tsc --noEmit` — zero errors
+- [x] All types are importable: add temp import in App.tsx, confirm no error, remove
+- [x] Types file has no `any` types
 
 ---
 
