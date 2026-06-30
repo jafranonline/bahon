@@ -7,6 +7,7 @@
   },
   "nav": {
     "home": "Home",
+    "dashboard": "Dashboard",
     "stats": "Stats",
     "add": "Add",
     "reminders": "Reminders",
@@ -192,6 +193,8 @@
     "notifications": "Reminder notifications",
     "locked_fuel_price": "Lock fuel price",
     "locked_fuel_price_hint": "Pre-fill this price when logging fuel",
+    "fuel_prices": "Fuel prices",
+    "fuel_prices_hint": "Default price per litre for each fuel type",
     "about": "About Bahon",
     "feedback": "Send feedback",
     "themes": {
@@ -208,7 +211,7 @@
     "title": "About",
     "description": "Bahon is a free, offline-first vehicle log app built for Bangladesh.",
     "built_by": "Built by Jafran",
-    "contact": "jafraaan@gmail.com",
+    "contact": "mail@jafran.online",
     "version": "Version",
     "privacy_note": "All data is stored on your device. Nothing leaves your phone.",
     "open_source": "Open source · No accounts · No ads",

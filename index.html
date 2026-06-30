@@ -2,67 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Inter:wght@400;500&display=optional" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Inter:wght@400;500&display=optional" /></noscript>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1d6ef5" />
+    <meta name="theme-color" content="#6366F1" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Bahon" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>Bahon | বাহন</title>
-    <style>
-      #splash {
-        position: fixed; inset: 0; z-index: 99999;
-        background: linear-gradient(145deg, #1d6ef5 0%, #0c358c 100%);
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        gap: 24px;
-        transition: opacity 0.35s ease;
-      }
-      #splash.hidden { opacity: 0; pointer-events: none; }
-      #splash-logo { animation: splash-spin 1.6s ease-in-out infinite; }
-      @keyframes splash-spin {
-        0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(8deg); }
-      }
-      #splash-title {
-        color: #fff; font-family: system-ui, sans-serif;
-        font-size: 28px; font-weight: 700; letter-spacing: 0.04em;
-        opacity: 0.95; margin: 0;
-      }
-      #splash-sub {
-        color: rgba(255,255,255,0.6); font-family: system-ui, sans-serif;
-        font-size: 14px; font-weight: 400; letter-spacing: 0.08em;
-        margin: -18px 0 0; text-transform: uppercase;
-      }
-      #splash-badge {
-        position: absolute; bottom: 32px;
-        color: rgba(255,255,255,0.38); font-family: system-ui, sans-serif;
-        font-size: 12px; font-weight: 500; letter-spacing: 0.05em;
-      }
-    </style>
   </head>
   <body>
-    <div id="splash" aria-hidden="true">
-      <svg id="splash-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="112" height="112">
-        <rect width="512" height="512" rx="108" fill="rgba(255,255,255,0.12)"/>
-        <path d="M 126,375 A 150,150 0 1,1 386,375" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="26" stroke-linecap="round"/>
-        <path d="M 126,375 A 150,150 0 0,1 368,200" fill="none" stroke="white" stroke-width="26" stroke-linecap="round" opacity="0.92"/>
-        <line x1="139" y1="368" x2="113" y2="383" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
-        <line x1="139" y1="232" x2="113" y2="218" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
-        <line x1="256" y1="165" x2="256" y2="135" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
-        <line x1="373" y1="232" x2="399" y2="218" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
-        <line x1="373" y1="368" x2="399" y2="383" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
-        <line x1="256" y1="300" x2="341" y2="223" stroke="white" stroke-width="13" stroke-linecap="round"/>
-        <circle cx="256" cy="300" r="26" fill="white"/>
-        <circle cx="256" cy="300" r="11" fill="rgba(13,59,160,0.7)"/>
-        <circle cx="368" cy="200" r="15" fill="white" opacity="0.95"/>
-      </svg>
-      <p id="splash-title">বাহন</p>
-      <p id="splash-sub">Your vehicles, tracked</p>
-      <p id="splash-badge">Free · Offline · Private</p>
-    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

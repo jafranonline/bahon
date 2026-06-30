@@ -5,7 +5,7 @@ import type { Vehicle } from '@/types'
 export function useVehicles() {
   return useLiveQuery(() =>
     db.vehicles.orderBy('createdAt').reverse().toArray()
-  ) ?? []
+  )
 }
 
 export function useVehicle(id: string) {

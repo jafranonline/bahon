@@ -2,24 +2,22 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
-import { SegmentedControl } from '@components/primitives/SegmentedControl'
 import { Input } from '@components/primitives/Input'
-import { Toggle } from '@components/primitives/Toggle'
 import { Button } from '@components/primitives/Button'
+import { SegmentedControl } from '@components/primitives/SegmentedControl'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useSettingsStore } from '@store/settingsStore'
 import { addFuelLog, updateFuelLog, getLastOdometer } from '@db/queries/useFuelLogs'
-import { updateVehicle } from '@db/queries/useVehicles'
+import { updateVehicle, useVehicle } from '@db/queries/useVehicles'
 import { useCurrency } from '@hooks/useCurrency'
 import type { FuelLog } from '@/types'
 import styles from './LogFuelScreen.module.css'
 
-type EntryMode = 'vol+price' | 'vol+total' | 'total'
+type CalcMode = 'volume' | 'total'
 
-const MODE_OPTIONS: { value: EntryMode; label: string }[] = [
-  { value: 'vol+price', label: 'Vol + ৳/L' },
-  { value: 'vol+total', label: 'Vol + Total' },
-  { value: 'total', label: 'Total Only' },
+const MODE_OPTIONS: { value: CalcMode; label: string }[] = [
+  { value: 'volume', label: 'Enter Volume' },
+  { value: 'total', label: 'Enter Total' },
 ]
 
 export function LogFuelScreen() {
@@ -27,7 +25,8 @@ export function LogFuelScreen() {
   const location = useLocation()
   const { symbol } = useCurrency()
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
-  const lockedFuelPrice = useSettingsStore((s) => s.lockedFuelPrice)
+  const vehicle = useVehicle(activeVehicleId ?? '')
+  const fuelPrices = useSettingsStore((s) => s.fuelPrices)
   const updateSettings = useSettingsStore((s) => s.update)
 
   const editLog = (location.state as { editLog?: FuelLog } | null)?.editLog ?? null
@@ -35,35 +34,43 @@ export function LogFuelScreen() {
 
   const today = new Date().toISOString().slice(0, 10)
 
-  const [mode, setMode] = useState<EntryMode>('vol+price')
+  const [calcMode, setCalcMode] = useState<CalcMode>('volume')
   const [date, setDate] = useState(today)
-  const [volumeStr, setVolumeStr] = useState('')
-  const [pricePerLStr, setPricePerLStr] = useState('')
-  const [totalCostStr, setTotalCostStr] = useState('')
+  const [rawVolume, setRawVolume] = useState('')
+  const [rawPrice, setRawPrice] = useState('')
+  const [rawTotal, setRawTotal] = useState('')
   const [currentOdoStr, setCurrentOdoStr] = useState('')
   const [prevOdoStr, setPrevOdoStr] = useState('')
   const [stationName, setStationName] = useState('')
   const [notes, setNotes] = useState('')
-  const [lockPrice, setLockPrice] = useState(false)
+  const [showNotes, setShowNotes] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [errors, setErrors] = useState<{ volume?: string; totalCost?: string }>({})
+  const [errors, setErrors] = useState<{ volume?: string; total?: string; price?: string }>({})
 
   useEffect(() => {
     if (isEditing && editLog) {
       setDate(editLog.date)
-      setVolumeStr(editLog.volumeLitres > 0 ? String(editLog.volumeLitres) : '')
-      setPricePerLStr(editLog.pricePerLitre > 0 ? String(editLog.pricePerLitre) : '')
-      setTotalCostStr(editLog.totalCost > 0 ? String(editLog.totalCost) : '')
+      setRawVolume(editLog.volumeLitres > 0 ? String(editLog.volumeLitres) : '')
+      setRawPrice(editLog.pricePerLitre > 0 ? String(editLog.pricePerLitre) : '')
+      setRawTotal(editLog.totalCost > 0 ? String(editLog.totalCost) : '')
       setCurrentOdoStr(editLog.odometer > 0 ? String(editLog.odometer) : '')
       setPrevOdoStr(editLog.previousOdometer != null ? String(editLog.previousOdometer) : '')
       setStationName(editLog.stationName ?? '')
       setNotes(editLog.notes ?? '')
-    } else if (lockedFuelPrice && lockedFuelPrice > 0) {
-      setPricePerLStr(String(lockedFuelPrice))
-      setLockPrice(true)
+      if (editLog.notes) setShowNotes(true)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Pre-fill price/L from last-used or default for this fuel type
+  useEffect(() => {
+    if (isEditing || !vehicle || !fuelPrices) return
+    const saved = fuelPrices[vehicle.fuelType]
+    if (saved && saved > 0) {
+      setRawPrice((prev) => (prev === '' ? String(saved) : prev))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicle?.fuelType])
 
   useEffect(() => {
     if (isEditing || !activeVehicleId) return
@@ -72,79 +79,62 @@ export function LogFuelScreen() {
     })
   }, [activeVehicleId, isEditing])
 
-  const volume = parseFloat(volumeStr) || 0
-  const pricePerL = parseFloat(pricePerLStr) || 0
-  const totalCostInput = parseFloat(totalCostStr) || 0
+  const rp = parseFloat(rawPrice) || 0
+
+  const computedTotal = useMemo(() => {
+    const vol = parseFloat(rawVolume)
+    if (calcMode === 'volume' && vol > 0 && rp > 0) return vol * rp
+    return null
+  }, [calcMode, rawVolume, rp])
+
+  const computedVolume = useMemo(() => {
+    const total = parseFloat(rawTotal)
+    if (calcMode === 'total' && total > 0 && rp > 0) return total / rp
+    return null
+  }, [calcMode, rawTotal, rp])
+
+  const finalV = calcMode === 'volume' ? (parseFloat(rawVolume) || 0) : (computedVolume ?? 0)
+  const finalP = rp
+  const finalT = calcMode === 'total' ? (parseFloat(rawTotal) || 0) : (computedTotal ?? 0)
+
   const currentOdo = parseFloat(currentOdoStr) || 0
   const prevOdo = parseFloat(prevOdoStr) || 0
 
-  const computedTotal = useMemo(() => {
-    if (mode === 'vol+price' && volume > 0 && pricePerL > 0) return volume * pricePerL
-    return null
-  }, [mode, volume, pricePerL])
-
-  const computedPricePerL = useMemo(() => {
-    if (mode === 'vol+total' && volume > 0 && totalCostInput > 0) return totalCostInput / volume
-    return null
-  }, [mode, volume, totalCostInput])
-
   const efficiencyKmL = useMemo(() => {
-    if (mode === 'total') return null
-    if (currentOdo > prevOdo && prevOdo > 0 && volume > 0) {
-      return (currentOdo - prevOdo) / volume
-    }
-    return null
-  }, [mode, currentOdo, prevOdo, volume])
-
-  const finalTotal = mode === 'vol+price' ? (computedTotal ?? 0) : totalCostInput
-  const finalPricePerL = mode === 'vol+price' ? pricePerL : (computedPricePerL ?? 0)
-  const finalVolume = mode === 'total' ? 0 : volume
+    if (finalV <= 0 || currentOdo <= prevOdo || prevOdo <= 0) return null
+    return (currentOdo - prevOdo) / finalV
+  }, [finalV, currentOdo, prevOdo])
 
   async function handleSave() {
-    const newErrors: { volume?: string; totalCost?: string } = {}
-    if (mode !== 'total' && volume <= 0) newErrors.volume = 'Volume is required'
-    if (finalTotal <= 0) newErrors.totalCost = 'Total cost is required'
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
-    }
+    const newErrors: typeof errors = {}
+    if (calcMode === 'volume' && (parseFloat(rawVolume) || 0) <= 0) newErrors.volume = 'Required'
+    if (calcMode === 'total' && (parseFloat(rawTotal) || 0) <= 0) newErrors.total = 'Required'
+    if (finalP <= 0) newErrors.price = 'Required'
+    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
     setErrors({})
     if (!activeVehicleId) return
     setSaving(true)
     try {
+      const payload = {
+        date,
+        volumeLitres: finalV,
+        pricePerLitre: finalP,
+        totalCost: finalT,
+        odometer: currentOdo || 0,
+        previousOdometer: prevOdo > 0 ? prevOdo : undefined,
+        efficiencyKmPerL: efficiencyKmL ?? undefined,
+        stationName: stationName || undefined,
+        notes: notes || undefined,
+      }
       if (isEditing && editLog?.id) {
-        await updateFuelLog(editLog.id, {
-          date,
-          volumeLitres: finalVolume,
-          pricePerLitre: finalPricePerL,
-          totalCost: finalTotal,
-          odometer: currentOdo || 0,
-          previousOdometer: prevOdo > 0 ? prevOdo : undefined,
-          efficiencyKmPerL: efficiencyKmL ?? undefined,
-          stationName: stationName || undefined,
-          notes: notes || undefined,
-        })
+        await updateFuelLog(editLog.id, payload)
       } else {
-        await addFuelLog({
-          vehicleId: activeVehicleId,
-          date,
-          volumeLitres: finalVolume,
-          pricePerLitre: finalPricePerL,
-          totalCost: finalTotal,
-          odometer: currentOdo || 0,
-          previousOdometer: prevOdo > 0 ? prevOdo : undefined,
-          efficiencyKmPerL: efficiencyKmL ?? undefined,
-          stationName: stationName || undefined,
-          notes: notes || undefined,
-        })
+        await addFuelLog({ vehicleId: activeVehicleId, ...payload })
       }
-      if (currentOdo > 0) {
-        await updateVehicle(activeVehicleId, { odometer: currentOdo })
-      }
-      if (lockPrice && finalPricePerL > 0) {
-        updateSettings({ lockedFuelPrice: finalPricePerL })
-      } else if (!lockPrice) {
-        updateSettings({ lockedFuelPrice: undefined })
+      if (currentOdo > 0) await updateVehicle(activeVehicleId, { odometer: currentOdo })
+      // Auto-remember price per litre for this fuel type
+      if (finalP > 0 && vehicle?.fuelType) {
+        updateSettings({ fuelPrices: { ...fuelPrices, [vehicle.fuelType]: finalP } })
       }
       navigate(-1)
     } finally {
@@ -156,13 +146,6 @@ export function LogFuelScreen() {
     <div className={styles.root}>
       <TopBar title={isEditing ? 'Edit Fuel Log' : 'Log Fuel'} onBack={() => navigate(-1)} />
       <Screen>
-        <SegmentedControl
-          options={MODE_OPTIONS}
-          value={mode}
-          onChange={(v) => { setMode(v); setErrors({}) }}
-          aria-label="Fuel entry mode"
-        />
-
         <Input
           type="date"
           label="Date"
@@ -171,88 +154,81 @@ export function LogFuelScreen() {
           id="fuel-date"
         />
 
-        {mode !== 'total' && (
+        <SegmentedControl
+          options={MODE_OPTIONS}
+          value={calcMode}
+          onChange={(v) => { setCalcMode(v as CalcMode); setErrors({}) }}
+          aria-label="Calculation mode"
+        />
+
+        {calcMode === 'volume' ? (
           <Input
-            label="Volume (L)"
-            value={volumeStr}
-            onChange={setVolumeStr}
+            label="Volume"
+            value={rawVolume}
+            onChange={(v) => { setRawVolume(v); setErrors((e) => ({ ...e, volume: undefined })) }}
             inputMode="decimal"
             placeholder="0.00"
             suffix="L"
             error={errors.volume}
+            required
             id="fuel-volume"
           />
-        )}
-
-        {mode === 'vol+price' && (
+        ) : (
           <Input
-            label={`Price per litre (${symbol}/L)`}
-            value={pricePerLStr}
-            onChange={setPricePerLStr}
+            label="Total cost"
+            value={rawTotal}
+            onChange={(v) => { setRawTotal(v); setErrors((e) => ({ ...e, total: undefined })) }}
             inputMode="decimal"
             placeholder="0.00"
             prefix={symbol}
-            id="fuel-price-per-l"
-          />
-        )}
-
-        {(mode === 'vol+total' || mode === 'total') && (
-          <Input
-            label={`Total cost (${symbol})`}
-            value={totalCostStr}
-            onChange={setTotalCostStr}
-            inputMode="decimal"
-            placeholder="0.00"
-            prefix={symbol}
-            error={errors.totalCost}
+            error={errors.total}
+            required
             id="fuel-total"
           />
         )}
 
-        <div className={styles.computedCard}>
-          {mode === 'vol+price' && (
+        <Input
+          label="Price per litre"
+          value={rawPrice}
+          onChange={(v) => { setRawPrice(v); setErrors((e) => ({ ...e, price: undefined })) }}
+          inputMode="decimal"
+          placeholder="0.00"
+          prefix={symbol}
+          suffix="/L"
+          error={errors.price}
+          required
+          id="fuel-price-per-l"
+        />
+
+        {calcMode === 'volume' && computedTotal != null && (
+          <div className={styles.computedCard}>
             <div className={styles.computedRow}>
               <span className={styles.computedLabel}>Total cost</span>
-              <span className={styles.computedValue}>
-                {computedTotal != null
-                  ? `${symbol} ${computedTotal.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-                  : '—'}
-              </span>
+              <span className={styles.computedValue}>{symbol} {computedTotal.toFixed(0)}</span>
             </div>
-          )}
-          {mode === 'vol+total' && (
+          </div>
+        )}
+
+        {calcMode === 'total' && computedVolume != null && (
+          <div className={styles.computedCard}>
             <div className={styles.computedRow}>
-              <span className={styles.computedLabel}>Price per litre</span>
-              <span className={styles.computedValue}>
-                {computedPricePerL != null ? `${symbol} ${computedPricePerL.toFixed(2)}/L` : '—'}
-              </span>
+              <span className={styles.computedLabel}>Volume</span>
+              <span className={styles.computedValue}>{computedVolume.toFixed(2)} L</span>
             </div>
-          )}
-          {mode === 'total' && (
-            <div className={styles.computedRow}>
-              <span className={styles.computedLabel}>Total recorded</span>
-              <span className={styles.computedValue}>
-                {totalCostInput > 0 ? `${symbol} ${totalCostInput.toLocaleString()}` : '—'}
-              </span>
-            </div>
-          )}
-          {efficiencyKmL != null && (
+          </div>
+        )}
+
+        {efficiencyKmL != null && (
+          <div className={styles.computedCard}>
             <div className={styles.computedRow}>
               <span className={styles.computedLabel}>Efficiency</span>
-              <span className={styles.efficiencyPill}>
-                {efficiencyKmL.toFixed(2)} km/L
-              </span>
+              <span className={styles.efficiencyPill}>{efficiencyKmL.toFixed(2)} km/L</span>
             </div>
-          )}
-        </div>
-
-        <div className={styles.lockRow}>
-          <span className={styles.lockLabel}>Lock price for next entries</span>
-          <Toggle checked={lockPrice} onChange={setLockPrice} aria-label="Lock fuel price" />
-        </div>
+          </div>
+        )}
 
         <Input
-          label="Current odometer (km)"
+          label="Current odometer"
           value={currentOdoStr}
           onChange={setCurrentOdoStr}
           inputMode="numeric"
@@ -260,8 +236,9 @@ export function LogFuelScreen() {
           suffix="km"
           id="fuel-current-odo"
         />
+
         <Input
-          label="Previous odometer (km)"
+          label="Previous odometer"
           value={prevOdoStr}
           onChange={setPrevOdoStr}
           inputMode="numeric"
@@ -271,19 +248,27 @@ export function LogFuelScreen() {
         />
 
         <Input
-          label="Station name (optional)"
+          label="Station name"
           value={stationName}
           onChange={setStationName}
           placeholder="e.g. Padma Petrol"
           id="fuel-station"
         />
-        <Input
-          label="Notes (optional)"
-          value={notes}
-          onChange={setNotes}
-          placeholder="Any notes..."
-          id="fuel-notes"
-        />
+
+        {showNotes ? (
+          <Input
+            label="Note"
+            value={notes}
+            onChange={setNotes}
+            placeholder="Any notes..."
+            id="fuel-notes"
+            multiline
+          />
+        ) : (
+          <button type="button" className={styles.addNoteBtn} onClick={() => setShowNotes(true)}>
+            + Add note
+          </button>
+        )}
 
         <Button onClick={handleSave} loading={saving} fullWidth>
           {isEditing ? 'Update Fuel Log' : 'Save Fuel Log'}

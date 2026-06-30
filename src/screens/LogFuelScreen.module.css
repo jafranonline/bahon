@@ -6,6 +6,24 @@
   overflow: hidden;
 }
 
+.addNoteBtn {
+  display: inline;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--text-accent);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.addNoteBtn:active {
+  opacity: 0.6;
+}
+
 .computedCard {
   background: var(--surface-0);
   border-radius: var(--radius-md);

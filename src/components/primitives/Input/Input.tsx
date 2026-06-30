@@ -12,10 +12,13 @@ interface InputProps {
   prefix?: ReactNode
   suffix?: ReactNode
   disabled?: boolean
+  required?: boolean
   inputMode?: 'text' | 'numeric' | 'decimal'
   autoComplete?: string
   id?: string
   'aria-label'?: string
+  multiline?: boolean
+  onFocus?: () => void
 }
 
 export function Input({
@@ -29,10 +32,13 @@ export function Input({
   prefix,
   suffix,
   disabled = false,
+  required = false,
   inputMode,
   autoComplete,
   id,
   'aria-label': ariaLabel,
+  multiline = false,
+  onFocus,
 }: InputProps) {
   const resolvedInputMode =
     inputMode ?? (type === 'number' ? 'decimal' : undefined)
@@ -49,25 +55,41 @@ export function Input({
     <div className={styles.wrapper}>
       {label && (
         <label className={styles.label} htmlFor={id}>
-          {label}
+          {label}{required && <span className={styles.required} aria-hidden="true"> *</span>}
         </label>
       )}
       <div className={rowClass}>
         {prefix && <span className={styles.prefix}>{prefix}</span>}
-        <input
-          id={id}
-          type={type}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          disabled={disabled}
-          inputMode={resolvedInputMode}
-          autoComplete={autoComplete}
-          className={styles.input}
-          aria-label={ariaLabel ?? (label ? undefined : placeholder)}
-          aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
-        />
+        {multiline ? (
+          <textarea
+            id={id}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={`${styles.input} ${styles.textarea}`}
+            aria-label={ariaLabel ?? (label ? undefined : placeholder)}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+            rows={3}
+          />
+        ) : (
+          <input
+            id={id}
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onFocus={onFocus}
+            placeholder={placeholder}
+            disabled={disabled}
+            inputMode={resolvedInputMode}
+            autoComplete={autoComplete}
+            className={styles.input}
+            aria-label={ariaLabel ?? (label ? undefined : placeholder)}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+          />
+        )}
         {suffix && <span className={styles.suffix}>{suffix}</span>}
       </div>
       {hint && !error && (

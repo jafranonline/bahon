@@ -14,10 +14,19 @@ import type {
   DistanceUnit,
   VolumeUnit,
   EfficiencyUnit,
+  FuelType,
 } from '@/types'
 import styles from './SettingsDrawer.module.css'
 
-type ExpandSection = 'language' | 'distance' | 'volume' | 'efficiency' | 'currency' | null
+type ExpandSection = 'language' | 'distance' | 'volume' | 'efficiency' | 'currency' | 'fuelPrices' | null
+
+const FUEL_PRICE_TYPES: { value: FuelType; label: string }[] = [
+  { value: 'octane', label: 'Octane' },
+  { value: 'petrol', label: 'Petrol' },
+  { value: 'diesel', label: 'Diesel' },
+  { value: 'cng', label: 'CNG' },
+  { value: 'hybrid', label: 'Hybrid' },
+]
 
 function Row({
   label,
@@ -86,7 +95,18 @@ export function SettingsDrawer() {
   const distanceUnit = useSettingsStore(s => s.distanceUnit)
   const volumeUnit = useSettingsStore(s => s.volumeUnit)
   const efficiencyUnit = useSettingsStore(s => s.efficiencyUnit)
+  const fuelPrices = useSettingsStore(s => s.fuelPrices) ?? {}
   const update = useSettingsStore(s => s.update)
+
+  function setFuelPrice(fuelType: FuelType, raw: string) {
+    const val = parseFloat(raw)
+    update({
+      fuelPrices: {
+        ...fuelPrices,
+        [fuelType]: isNaN(val) || raw === '' ? undefined : val,
+      },
+    })
+  }
 
   const activeVehicleId = useVehicleStore(s => s.activeVehicleId)
   const vehicle = useVehicle(activeVehicleId ?? '')
@@ -236,6 +256,33 @@ export function SettingsDrawer() {
               value={efficiencyUnit}
               onChange={(v) => { update({ efficiencyUnit: v }); setExpanded(null) }}
             />
+          )}
+        </Row>
+
+        {/* Fuel prices */}
+        <Row
+          label={t('settings.fuel_prices')}
+          trailing={<span className={styles.currentVal}>›</span>}
+          onClick={() => toggleSection('fuelPrices')}
+        >
+          {expanded === 'fuelPrices' && (
+            <div className={styles.fuelPriceList}>
+              {FUEL_PRICE_TYPES.map(({ value, label }) => (
+                <div key={value} className={styles.fuelPriceRow}>
+                  <span className={styles.fuelPriceLabel}>{label}</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    className={styles.fuelPriceInput}
+                    value={fuelPrices[value] ?? ''}
+                    onChange={(e) => setFuelPrice(value, e.target.value)}
+                    placeholder="—"
+                    aria-label={`${label} price per litre`}
+                    min="0"
+                  />
+                </div>
+              ))}
+            </div>
           )}
         </Row>
       </div>

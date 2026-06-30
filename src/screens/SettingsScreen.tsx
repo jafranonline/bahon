@@ -1,15 +1,22 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
-import { Toggle } from '@components/primitives/Toggle'
 import { Select } from '@components/primitives/Select'
+import { SegmentedControl } from '@components/primitives/SegmentedControl'
 import { useSettingsStore } from '@store/settingsStore'
 import { useExport } from '@hooks/useExport'
 import { useTranslation } from '@hooks/useTranslation'
 import { APP_VERSION } from '@utils/constants'
 import i18n from '@i18n/config'
-import type { Language, Currency, DistanceUnit, VolumeUnit, EfficiencyUnit } from '@/types'
+import type { Language, Currency, DistanceUnit, VolumeUnit, EfficiencyUnit, Theme } from '@/types'
 import styles from './SettingsScreen.module.css'
+
+const THEME_OPTIONS: { value: Theme; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: 'System' },
+]
 
 const LANGUAGES: { value: Language; label: string }[] = [
   { value: 'en', label: 'English' },
@@ -22,17 +29,17 @@ const CURRENCIES: { value: Currency; label: string }[] = [
   { value: 'INR', label: 'INR — ₹ Rupee' },
 ]
 
-const DISTANCE_UNITS: { value: DistanceUnit; label: string }[] = [
-  { value: 'km', label: 'Kilometres (km)' },
-  { value: 'mi', label: 'Miles (mi)' },
+const DISTANCE_OPTIONS: { value: DistanceUnit; label: string }[] = [
+  { value: 'km', label: 'km' },
+  { value: 'mi', label: 'mi' },
 ]
 
-const VOLUME_UNITS: { value: VolumeUnit; label: string }[] = [
-  { value: 'L', label: 'Litres (L)' },
-  { value: 'gal', label: 'Gallons (gal)' },
+const VOLUME_OPTIONS: { value: VolumeUnit; label: string }[] = [
+  { value: 'L', label: 'L' },
+  { value: 'gal', label: 'gal' },
 ]
 
-const EFFICIENCY_UNITS: { value: EfficiencyUnit; label: string }[] = [
+const EFFICIENCY_OPTIONS: { value: EfficiencyUnit; label: string }[] = [
   { value: 'km/L', label: 'km/L' },
   { value: 'L/100km', label: 'L/100km' },
   { value: 'MPG', label: 'MPG' },
@@ -41,7 +48,6 @@ const EFFICIENCY_UNITS: { value: EfficiencyUnit; label: string }[] = [
 export function SettingsScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-
   const theme = useSettingsStore((s) => s.theme)
   const language = useSettingsStore((s) => s.language)
   const currency = useSettingsStore((s) => s.currency)
@@ -51,10 +57,6 @@ export function SettingsScreen() {
   const update = useSettingsStore((s) => s.update)
 
   const { exportAsCSV } = useExport()
-
-  function setTheme(dark: boolean) {
-    update({ theme: dark ? 'dark' : 'light' })
-  }
 
   function setLanguage(lang: Language) {
     update({ language: lang })
@@ -74,11 +76,12 @@ export function SettingsScreen() {
 
         <p className={styles.sectionLabel}>Display</p>
         <div className={styles.section}>
-          <div className={styles.row}>
+          <div className={styles.tabRow}>
             <span className={styles.rowLabel}>{t('settings.theme')}</span>
-            <Toggle
-              checked={theme === 'dark'}
-              onChange={setTheme}
+            <SegmentedControl
+              options={THEME_OPTIONS}
+              value={theme}
+              onChange={(v) => update({ theme: v as Theme })}
               aria-label={t('settings.theme')}
             />
           </div>
@@ -112,43 +115,34 @@ export function SettingsScreen() {
             </div>
           </div>
           <div className={styles.divider} />
-          <div className={styles.selectRow}>
+          <div className={styles.tabRow}>
             <span className={styles.rowLabel}>{t('settings.distance_unit')}</span>
-            <div className={styles.selectWrap}>
-              <Select
-                options={DISTANCE_UNITS}
-                value={distanceUnit}
-                onChange={(v) => update({ distanceUnit: v })}
-                placeholder="Distance unit"
-                aria-label={t('settings.distance_unit')}
-              />
-            </div>
+            <SegmentedControl
+              options={DISTANCE_OPTIONS}
+              value={distanceUnit}
+              onChange={(v) => update({ distanceUnit: v as DistanceUnit })}
+              aria-label={t('settings.distance_unit')}
+            />
           </div>
           <div className={styles.divider} />
-          <div className={styles.selectRow}>
+          <div className={styles.tabRow}>
             <span className={styles.rowLabel}>{t('settings.volume_unit')}</span>
-            <div className={styles.selectWrap}>
-              <Select
-                options={VOLUME_UNITS}
-                value={volumeUnit}
-                onChange={(v) => update({ volumeUnit: v })}
-                placeholder="Volume unit"
-                aria-label={t('settings.volume_unit')}
-              />
-            </div>
+            <SegmentedControl
+              options={VOLUME_OPTIONS}
+              value={volumeUnit}
+              onChange={(v) => update({ volumeUnit: v as VolumeUnit })}
+              aria-label={t('settings.volume_unit')}
+            />
           </div>
           <div className={styles.divider} />
-          <div className={styles.selectRow}>
+          <div className={styles.tabRow}>
             <span className={styles.rowLabel}>{t('settings.efficiency_unit')}</span>
-            <div className={styles.selectWrap}>
-              <Select
-                options={EFFICIENCY_UNITS}
-                value={efficiencyUnit}
-                onChange={(v) => update({ efficiencyUnit: v })}
-                placeholder="Efficiency unit"
-                aria-label={t('settings.efficiency_unit')}
-              />
-            </div>
+            <SegmentedControl
+              options={EFFICIENCY_OPTIONS}
+              value={efficiencyUnit}
+              onChange={(v) => update({ efficiencyUnit: v as EfficiencyUnit })}
+              aria-label={t('settings.efficiency_unit')}
+            />
           </div>
         </div>
 

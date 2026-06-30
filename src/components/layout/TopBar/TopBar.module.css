@@ -1,7 +1,7 @@
 .topbar {
   display: flex;
   align-items: center;
-  height: 52px;
+  height: 56px;
   padding: 0 4px;
   background: var(--surface-0);
   border-bottom: 1px solid var(--border);
@@ -14,6 +14,7 @@
   align-items: center;
   gap: 4px;
   min-width: 44px;
+  flex-shrink: 0;
 }
 
 .right {
@@ -29,8 +30,8 @@
 }
 
 .title {
-  font-size: var(--text-md);
-  font-weight: 600;
+  font-size: var(--text-lg);
+  font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;

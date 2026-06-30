@@ -123,11 +123,12 @@ export function LogServiceScreen() {
           placeholder="0.00"
           prefix="৳"
           error={costError}
+          required
           id="svc-cost"
         />
 
         <Input
-          label="Odometer (km, optional)"
+          label="Odometer (km)"
           value={odoStr}
           onChange={setOdoStr}
           inputMode="numeric"

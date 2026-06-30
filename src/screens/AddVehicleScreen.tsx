@@ -37,10 +37,10 @@ export function AddVehicleScreen() {
 
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const setActiveVehicle = useVehicleStore((s) => s.setActiveVehicle)
-  const vehicles = useVehicles()
+  const vehicles = useVehicles() ?? []
 
-  const [vehicleType, setVehicleType] = useState<VehicleType>(editVehicle?.type ?? 'car')
-  const [fuelType, setFuelType] = useState<FuelType>(editVehicle?.fuelType ?? 'petrol')
+  const [vehicleType, setVehicleType] = useState<VehicleType>(editVehicle?.type ?? 'motorcycle')
+  const [fuelType, setFuelType] = useState<FuelType>(editVehicle?.fuelType ?? 'octane')
   const [name, setName] = useState(editVehicle?.name ?? '')
   const [brand, setBrand] = useState(editVehicle?.brand ?? '')
   const [model, setModel] = useState(editVehicle?.model ?? '')
@@ -137,11 +137,12 @@ export function AddVehicleScreen() {
           onChange={(v) => { setName(v); setNameError('') }}
           placeholder="e.g. My Honda"
           error={nameError}
+          required
           id="vehicle-name"
         />
 
         <Input
-          label="Brand (optional)"
+          label="Brand"
           value={brand}
           onChange={setBrand}
           placeholder="e.g. Honda"
@@ -149,7 +150,7 @@ export function AddVehicleScreen() {
         />
 
         <Input
-          label="Model (optional)"
+          label="Model"
           value={model}
           onChange={setModel}
           placeholder="e.g. CB150R"
@@ -157,7 +158,7 @@ export function AddVehicleScreen() {
         />
 
         <Input
-          label="Year (optional)"
+          label="Year"
           value={yearStr}
           onChange={setYearStr}
           inputMode="numeric"
@@ -166,7 +167,7 @@ export function AddVehicleScreen() {
         />
 
         <Input
-          label="Plate number (optional)"
+          label="Plate number"
           value={plateNumber}
           onChange={setPlateNumber}
           placeholder="e.g. Dhaka Metro-Ga 11-1234"
@@ -174,7 +175,7 @@ export function AddVehicleScreen() {
         />
 
         <Input
-          label="Current odometer (optional)"
+          label="Current odometer"
           value={odoStr}
           onChange={setOdoStr}
           inputMode="numeric"

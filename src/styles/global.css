@@ -6,6 +6,22 @@
   padding: 0;
 }
 
+/* Native mobile feel — remove browser tap feedback */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, [role="button"], [role="option"], [role="listitem"] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Prevent text selection on interactive elements */
+button {
+  font-family: inherit;
+}
+
 html {
   height: 100%;
 }

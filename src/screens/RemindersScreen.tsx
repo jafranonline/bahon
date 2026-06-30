@@ -3,7 +3,7 @@ import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useVehicle } from '@db/queries/useVehicles'
-import { useReminders, dismissReminder } from '@db/queries/useReminders'
+import { useReminders, dismissReminder, deleteReminder } from '@db/queries/useReminders'
 import { useUnits } from '@hooks/useUnits'
 import type { Reminder, DistanceUnit } from '@/types'
 import styles from './RemindersScreen.module.css'
@@ -58,12 +58,13 @@ function getUrgency(r: Reminder, currentOdo?: number): Urgency {
 interface ReminderCardProps {
   reminder: Reminder
   onDismiss: () => void
+  onDelete: () => void
   onEdit: () => void
   currentOdo?: number
   distanceUnit: DistanceUnit
 }
 
-function ReminderCard({ reminder, onDismiss, onEdit, currentOdo, distanceUnit }: ReminderCardProps) {
+function ReminderCard({ reminder, onDismiss, onDelete, onEdit, currentOdo, distanceUnit }: ReminderCardProps) {
   const urgency = getUrgency(reminder, currentOdo)
   const due = getEffectiveDueDate(reminder)
   const daysUntil = due ? getDaysUntil(due) : null
@@ -138,6 +139,16 @@ function ReminderCard({ reminder, onDismiss, onEdit, currentOdo, distanceUnit }:
           <div className={styles.cardActions}>
             <button
               type="button"
+              className={styles.deleteBtn}
+              onClick={onDelete}
+              aria-label={`Delete reminder: ${reminder.title}`}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 3.5h10M5.5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M5.5 6v4.5M8.5 6v4.5M3 3.5l.7 7.3a.5.5 0 0 0 .5.45h5.6a.5.5 0 0 0 .5-.45L11 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <button
+              type="button"
               className={styles.editBtn}
               onClick={onEdit}
               aria-label={`Edit reminder: ${reminder.title}`}
@@ -175,6 +186,10 @@ export function RemindersScreen() {
 
   async function handleDismiss(id: string) {
     await dismissReminder(id, currentOdo ?? 0)
+  }
+
+  async function handleDelete(id: string) {
+    await deleteReminder(id)
   }
 
   return (
@@ -222,6 +237,7 @@ export function RemindersScreen() {
                 key={r.id}
                 reminder={r}
                 onDismiss={() => handleDismiss(r.id)}
+                onDelete={() => handleDelete(r.id)}
                 onEdit={() => navigate('/reminders/add', { state: { editReminder: r } })}
                 currentOdo={currentOdo}
                 distanceUnit={distanceUnit}

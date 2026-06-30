@@ -15,6 +15,13 @@ const defaults: Settings = {
   volumeUnit: 'L',
   efficiencyUnit: 'km/L',
   notificationsEnabled: false,
+  fuelPrices: {
+    octane: 145,
+    petrol: 140,
+    diesel: 115,
+    cng: 27,
+    hybrid: 140,
+  },
 }
 
 export const useSettingsStore = create<SettingsStore>()(

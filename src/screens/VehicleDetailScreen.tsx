@@ -36,7 +36,7 @@ export function VehicleDetailScreen() {
 
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const setActiveVehicle = useVehicleStore((s) => s.setActiveVehicle)
-  const vehicles = useVehicles()
+  const vehicles = useVehicles() ?? []
 
   const [tab, setTab] = useState<LogTab>('all')
   const [confirmDelete, setConfirmDelete] = useState(false)

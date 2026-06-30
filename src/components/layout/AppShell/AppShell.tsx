@@ -1,8 +1,5 @@
 import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
-import { Drawer } from '../Drawer'
-import { SettingsDrawer } from '@components/domain/SettingsDrawer/SettingsDrawer'
-import { useUIStore } from '@store/uiStore'
 import { useSettingsStore } from '@store/settingsStore'
 import { useTheme } from '@hooks/useTheme'
 import { useNotifications } from '@hooks/useNotifications'
@@ -22,14 +19,8 @@ export function AppShell() {
   const { requestPermission } = useNotifications()
   void requestPermission()
 
-  const drawerOpen = useUIStore((s) => s.drawerOpen)
-  const setDrawerOpen = useUIStore((s) => s.setDrawerOpen)
-
   return (
     <div className={styles.shell}>
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-        <SettingsDrawer />
-      </Drawer>
       <Outlet />
     </div>
   )

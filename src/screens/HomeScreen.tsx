@@ -32,7 +32,9 @@ export function HomeScreen() {
   const { formatEfficiency, formatDistance } = useUnits()
   const [vehiclePicker, setVehiclePicker] = useState(false)
 
-  const vehicles = useVehicles()
+  const vehiclesResult = useVehicles()
+  const vehicles = vehiclesResult ?? []
+  const vehiclesLoaded = vehiclesResult !== undefined
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const setActiveVehicle = useVehicleStore((s) => s.setActiveVehicle)
 
@@ -183,6 +185,10 @@ export function HomeScreen() {
     </>
   )
 
+  if (!vehiclesLoaded) {
+    return <div className={styles.root} />
+  }
+
   if (vehicles.length === 0) {
     return (
       <div className={styles.root}>
@@ -268,10 +274,10 @@ export function HomeScreen() {
         {/* Quick actions */}
         <div className={styles.actions}>
           {[
-            { label: 'Fuel', path: '/log/fuel', icon: '⛽' },
-            { label: 'Service', path: '/log/service', icon: '🔧' },
-            { label: 'Expense', path: '/log/expense', icon: '💰' },
-          ].map(({ label, path, icon }) => (
+            { label: 'Fuel', path: '/log/fuel', icon: '⛽', iconClass: styles.actionIconFuel },
+            { label: 'Service', path: '/log/service', icon: '🔧', iconClass: styles.actionIconService },
+            { label: 'Expense', path: '/log/expense', icon: '💰', iconClass: styles.actionIconExpense },
+          ].map(({ label, path, icon, iconClass }) => (
             <button
               key={path}
               type="button"
@@ -279,35 +285,37 @@ export function HomeScreen() {
               onClick={() => navigate(path)}
               aria-label={`Log ${label}`}
             >
-              <span className={styles.actionIcon} aria-hidden="true">{icon}</span>
+              <span className={`${styles.actionIconWrap} ${iconClass}`} aria-hidden="true">{icon}</span>
               <span className={styles.actionLabel}>+ {label}</span>
             </button>
           ))}
         </div>
 
         {/* Quick links */}
-        <div className={styles.quickLinks}>
-          {[
-            { label: 'Stats', icon: '📊', path: '/stats' },
-            { label: 'Reminders', icon: '🔔', path: '/reminders', badge: reminders.length > 0 ? reminders.length : undefined },
-            { label: 'Documents', icon: '📄', path: '/documents' },
-            ...(vehicles.length >= 2 ? [{ label: 'Compare', icon: '⚖️', path: '/compare' }] : []),
-            { label: 'Add vehicle', icon: '🚗', path: '/vehicles/add' },
-          ].map(({ label, icon, path, badge }) => (
-            <button
-              key={path}
-              type="button"
-              className={styles.quickLink}
-              onClick={() => navigate(path)}
-              aria-label={label}
-            >
-              <span className={styles.quickLinkIcon} aria-hidden="true">
-                {icon}
-                {badge != null && <span className={styles.quickLinkBadge}>{badge}</span>}
-              </span>
-              <span className={styles.quickLinkLabel}>{label}</span>
-            </button>
-          ))}
+        <div className={styles.quickLinksSection}>
+          <span className={styles.sectionTitle}>Explore</span>
+          <div className={styles.quickLinks}>
+            {[
+              { label: 'Stats', icon: '📊', path: '/stats' },
+              { label: 'Reminders', icon: '🔔', path: '/reminders', badge: reminders.length > 0 ? reminders.length : undefined },
+              { label: 'Documents', icon: '📄', path: '/documents' },
+              ...(vehicles.length >= 2 ? [{ label: 'Compare', icon: '⚖️', path: '/compare' }] : [{ label: 'Add vehicle', icon: '🚘', path: '/vehicles/add' }]),
+            ].map(({ label, icon, path, badge }) => (
+              <button
+                key={path}
+                type="button"
+                className={styles.quickLink}
+                onClick={() => navigate(path)}
+                aria-label={label}
+              >
+                <span className={styles.quickLinkIcon} aria-hidden="true">
+                  {icon}
+                  {badge != null && <span className={styles.quickLinkBadge}>{badge}</span>}
+                </span>
+                <span className={styles.quickLinkLabel}>{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Recent activity */}

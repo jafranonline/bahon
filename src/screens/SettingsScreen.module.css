@@ -72,6 +72,58 @@
   max-width: 180px;
 }
 
+.tabRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: var(--gap-sm);
+  min-height: 52px;
+}
+
+.chevron {
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.fuelPriceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  min-height: 52px;
+  gap: var(--gap-sm);
+}
+
+.fuelPriceInput {
+  width: 90px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-size: var(--text-md);
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.fuelPriceInput::-webkit-outer-spin-button,
+.fuelPriceInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.fuelPriceInput:focus {
+  border-color: var(--border-accent);
+  box-shadow: var(--focus-shadow);
+}
+
 .version {
   text-align: center;
   font-size: var(--text-xs);

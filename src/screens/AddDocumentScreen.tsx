@@ -81,7 +81,7 @@ export function AddDocumentScreen() {
         </div>
 
         <Input
-          label="Title (optional)"
+          label="Title"
           value={title}
           onChange={setTitle}
           placeholder="e.g. Vehicle fitness certificate"

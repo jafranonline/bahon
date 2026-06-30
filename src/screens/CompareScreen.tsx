@@ -82,7 +82,7 @@ export function CompareScreen() {
   const { format: formatMoney } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
 
-  const vehicles = useVehicles()
+  const vehicles = useVehicles() ?? []
   const [aId, setAId] = useState(() => vehicles[0]?.id ?? '')
   const [bId, setBId] = useState(() => vehicles[1]?.id ?? '')
   const [period, setPeriod] = useState<Period>('month')

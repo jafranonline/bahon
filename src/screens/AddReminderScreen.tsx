@@ -215,7 +215,7 @@ export function AddReminderScreen() {
             {repeatUnit !== 'km' && (
               <Input
                 type="date"
-                label="Starting date (optional)"
+                label="Starting date"
                 value={nextDueDate}
                 onChange={setNextDueDate}
                 id="rem-next-date"

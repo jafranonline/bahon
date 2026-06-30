@@ -71,7 +71,7 @@ The About screen (`src/screens/AboutScreen.tsx`, route `/about`) should display:
 
 - App name and tagline
 - A short description of what Bahon is and why it was built
-- Built by: **Jafran** · [jafraaan@gmail.com](mailto:jafraaan@gmail.com)
+- Built by: **Jafran** · [mail@jafran.online](mailto:mail@jafran.online)
 - A link to submit feedback (Google Form)
 - App version (from `package.json`)
 - Open source / privacy note: no data leaves the device

@@ -106,7 +106,7 @@ export interface Settings {
   distanceUnit: DistanceUnit
   volumeUnit: VolumeUnit
   efficiencyUnit: EfficiencyUnit
-  lockedFuelPrice?: number
+  fuelPrices?: Partial<Record<FuelType, number>>
   defaultVehicleId?: string
   notificationsEnabled: boolean
 }

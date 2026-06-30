@@ -110,6 +110,7 @@ export function LogExpenseScreen() {
           placeholder="0.00"
           prefix="৳"
           error={amountError}
+          required
           id="exp-amount"
         />
 

@@ -30,7 +30,7 @@
 }
 
 .section {
-  padding: 8px 0;
+  padding: 4px 0;
   border-bottom: 1px solid var(--border);
 }
 
@@ -82,37 +82,96 @@
 }
 
 .expandContent {
-  padding: 0 12px 8px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
 }
 
 .optionList {
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 
 .option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
-  background: var(--surface-2);
+  padding: 14px 20px;
+  background: none;
   border: none;
-  border-radius: var(--radius-sm);
+  border-bottom: 1px solid var(--border);
   cursor: pointer;
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   color: var(--text-secondary);
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.1s;
+  text-align: left;
+}
+
+.option:last-child {
+  border-bottom: none;
+}
+
+.option:active {
+  background: var(--surface-2);
 }
 
 .optionSelected {
-  background: var(--bg-accent);
   color: var(--text-accent);
   font-weight: 600;
 }
 
 .check {
   color: var(--text-accent);
-  font-weight: 700;
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.fuelPriceList {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0;
+}
+
+.fuelPriceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+  gap: var(--gap-sm);
+}
+
+.fuelPriceRow:last-child {
+  border-bottom: none;
+}
+
+.fuelPriceLabel {
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+}
+
+.fuelPriceInput {
+  width: 90px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: var(--text-md);
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.fuelPriceInput::-webkit-outer-spin-button,
+.fuelPriceInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.fuelPriceInput:focus {
+  border-color: var(--color-accent);
 }

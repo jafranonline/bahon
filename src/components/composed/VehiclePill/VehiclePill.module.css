@@ -2,10 +2,10 @@
   display: inline-flex;
   align-items: center;
   gap: var(--gap-xs);
-  height: 36px;
-  padding: 0 var(--gap-md);
+  height: 44px;
+  padding: 0 var(--gap-lg);
   border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
   font-weight: 500;
   font-family: var(--font-body);
   cursor: pointer;
@@ -42,5 +42,5 @@
 }
 
 .icon {
-  font-size: 14px;
+  font-size: 18px;
 }

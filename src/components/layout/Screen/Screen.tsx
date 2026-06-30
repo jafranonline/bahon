@@ -7,7 +7,7 @@ interface ScreenProps {
   className?: string
 }
 
-export function Screen({ children, padding = '13px 14px', gap = '11px', className }: ScreenProps) {
+export function Screen({ children, padding = '16px', gap = '14px', className }: ScreenProps) {
   return (
     <main
       className={`${styles.screen} ${className ?? ''}`}
