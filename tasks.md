@@ -1838,11 +1838,11 @@ Create `README.md` with:
 4. Section title: "Fuel price trend" with i18n key
 
 **TEST**
-- [ ] Fuel price trend section appears on Stats fuel tab when ≥ 3 logs exist
-- [ ] Line chart plots price per litre correctly over time
-- [ ] Chart hides gracefully when fewer than 3 logs exist
-- [ ] Unit-aware: shows per gallon when volume unit is gallons
-- [ ] TypeScript: `npx tsc --noEmit` — no errors
+- [x] Fuel price trend section appears on Stats fuel tab when ≥ 3 logs exist
+- [x] Line chart plots price per litre correctly over time
+- [x] Chart hides gracefully when fewer than 3 logs exist
+- [x] Unit-aware: shows per gallon when volume unit is gallons
+- [x] TypeScript: `npx tsc --noEmit` — no errors
 
 ---
 

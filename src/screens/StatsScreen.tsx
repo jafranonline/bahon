@@ -150,6 +150,19 @@ export function StatsScreen() {
   const effLineLabels = efficiencies.map(l => l.date.slice(5))
   const effLineData = efficiencies.map(l => parseFloat((l[effField] ?? 0).toFixed(2)))
 
+  const volumeUnit = useSettingsStore((s) => s.volumeUnit)
+  const priceLogs = useMemo(() =>
+    [...fuelLogs].sort((a, b) => a.date.localeCompare(b.date)),
+    [fuelLogs]
+  )
+  const priceLineLabels = priceLogs.map(l => l.date.slice(5))
+  const priceLineData = priceLogs.map(l =>
+    volumeUnit === 'gal'
+      ? parseFloat((l.pricePerLitre * 3.78541).toFixed(2))
+      : parseFloat(l.pricePerLitre.toFixed(2))
+  )
+  const priceYLabel = volumeUnit === 'gal' ? '৳/gal' : '৳/L'
+
   const hasNoData = fuelLogs.length === 0 && serviceLogs.length === 0 && expenses.length === 0
 
   async function handleExport() {
@@ -286,6 +299,12 @@ export function StatsScreen() {
                   <div className={styles.chartCard}>
                     <p className={styles.chartTitle}>Efficiency trend</p>
                     <LineChart labels={effLineLabels} data={effLineData} yLabel="km/L" />
+                  </div>
+                )}
+                {priceLogs.length >= 3 && (
+                  <div className={styles.chartCard}>
+                    <p className={styles.chartTitle}>Fuel price trend</p>
+                    <LineChart labels={priceLineLabels} data={priceLineData} yLabel={priceYLabel} color="#EF9F27" />
                   </div>
                 )}
                 <div className={styles.logTable}>
