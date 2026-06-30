@@ -1709,12 +1709,12 @@ Create `README.md` with:
 3. Add edit buttons to service and expense rows in `VehicleDetailScreen` (same pattern as fuel logs)
 
 **TEST**
-- [ ] Tapping edit on a service log row navigates to `/log/service` with pre-populated fields
-- [ ] Saving a service edit updates the DB and navigates back
-- [ ] Tapping edit on an expense row navigates to `/log/expense` with pre-populated fields
-- [ ] Saving an expense edit updates the DB and navigates back
-- [ ] Edit buttons have accessible `aria-label` attributes
-- [ ] TypeScript: `npx tsc --noEmit` — no errors
+- [x] Tapping edit on a service log row navigates to `/log/service` with pre-populated fields
+- [x] Saving a service edit updates the DB and navigates back
+- [x] Tapping edit on an expense row navigates to `/log/expense` with pre-populated fields
+- [x] Saving an expense edit updates the DB and navigates back
+- [x] Edit buttons have accessible `aria-label` attributes
+- [x] TypeScript: `npx tsc --noEmit` — no errors
 
 ---
 

@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
-import { Chip } from '@components/primitives/Chip'
+import { Select } from '@components/primitives/Select'
 import { Input } from '@components/primitives/Input'
 import { Button } from '@components/primitives/Button'
 import { useVehicleStore } from '@store/vehicleStore'
-import { addServiceLog } from '@db/queries/useServiceLogs'
-import type { ServiceCategory } from '@/types'
+import { addServiceLog, updateServiceLog } from '@db/queries/useServiceLogs'
+import type { ServiceCategory, ServiceLog } from '@/types'
 import styles from './LogServiceScreen.module.css'
 
 const SERVICE_CATEGORIES: { value: ServiceCategory; label: string }[] = [
@@ -35,16 +35,20 @@ const SERVICE_CATEGORIES: { value: ServiceCategory; label: string }[] = [
 
 export function LogServiceScreen() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const editLog = (location.state as { editLog?: ServiceLog } | null)?.editLog ?? null
+  const isEditing = editLog != null
+
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
 
   const today = new Date().toISOString().slice(0, 10)
-  const [date, setDate] = useState(today)
-  const [category, setCategory] = useState<ServiceCategory | null>(null)
-  const [title, setTitle] = useState('')
-  const [costStr, setCostStr] = useState('')
-  const [odoStr, setOdoStr] = useState('')
-  const [shopName, setShopName] = useState('')
-  const [notes, setNotes] = useState('')
+  const [date, setDate] = useState(editLog?.date ?? today)
+  const [category, setCategory] = useState<ServiceCategory | null>(editLog?.category ?? 'oil_change')
+  const [title, setTitle] = useState(editLog?.category === 'other' ? (editLog?.title ?? '') : '')
+  const [costStr, setCostStr] = useState(editLog?.cost ? String(editLog.cost) : '')
+  const [odoStr, setOdoStr] = useState(editLog?.odometer != null ? String(editLog.odometer) : '')
+  const [notes, setNotes] = useState(editLog?.notes ?? '')
+  const [showNotes, setShowNotes] = useState(!!editLog?.notes)
   const [saving, setSaving] = useState(false)
   const [costError, setCostError] = useState('')
 
@@ -58,16 +62,19 @@ export function LogServiceScreen() {
     if (!activeVehicleId) return
     setSaving(true)
     try {
-      await addServiceLog({
-        vehicleId: activeVehicleId,
+      const payload = {
         date,
         category: category ?? 'other',
         title: title || (category ? SERVICE_CATEGORIES.find((c) => c.value === category)?.label ?? '' : ''),
         cost,
         odometer: odoStr ? parseFloat(odoStr) : undefined,
-        shopName: shopName || undefined,
         notes: notes || undefined,
-      })
+      }
+      if (isEditing && editLog.id) {
+        await updateServiceLog(editLog.id, payload)
+      } else {
+        await addServiceLog({ vehicleId: activeVehicleId, ...payload })
+      }
       navigate(-1)
     } finally {
       setSaving(false)
@@ -76,7 +83,7 @@ export function LogServiceScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title="Log Service" onBack={() => navigate(-1)} />
+      <TopBar title={isEditing ? 'Edit Service' : 'Log Service'} onBack={() => navigate(-1)} />
       <Screen>
         <Input
           type="date"
@@ -86,29 +93,27 @@ export function LogServiceScreen() {
           id="svc-date"
         />
 
-        <div>
-          <p className={styles.chipLabel}>Category</p>
-          <div className={styles.chipRow}>
-            {SERVICE_CATEGORIES.map((cat) => (
-              <Chip
-                key={cat.value}
-                selected={category === cat.value}
-                onChange={() => setCategory(category === cat.value ? null : cat.value)}
-                aria-label={cat.label}
-              >
-                {cat.label}
-              </Chip>
-            ))}
-          </div>
-        </div>
-
-        <Input
-          label="Title"
-          value={title}
-          onChange={setTitle}
-          placeholder="e.g. Engine oil change"
-          id="svc-title"
+        <Select
+          label="Category"
+          options={SERVICE_CATEGORIES}
+          value={category ?? ''}
+          onChange={(v) => {
+            setCategory(v as ServiceCategory)
+            if (v !== 'other') setTitle('')
+          }}
+          placeholder="Select category…"
+          id="svc-category"
         />
+
+        {category === 'other' && (
+          <Input
+            label="Title"
+            value={title}
+            onChange={setTitle}
+            placeholder="Describe the service…"
+            id="svc-title"
+          />
+        )}
 
         <Input
           label="Cost (৳)"
@@ -131,24 +136,23 @@ export function LogServiceScreen() {
           id="svc-odo"
         />
 
-        <Input
-          label="Shop name (optional)"
-          value={shopName}
-          onChange={setShopName}
-          placeholder="e.g. City Motors"
-          id="svc-shop"
-        />
-
-        <Input
-          label="Notes (optional)"
-          value={notes}
-          onChange={setNotes}
-          placeholder="Any notes..."
-          id="svc-notes"
-        />
+        {showNotes ? (
+          <Input
+            label="Note"
+            value={notes}
+            onChange={setNotes}
+            placeholder="Any notes..."
+            id="svc-notes"
+            multiline
+          />
+        ) : (
+          <button type="button" className={styles.addNoteBtn} onClick={() => setShowNotes(true)}>
+            + Add note
+          </button>
+        )}
 
         <Button onClick={handleSave} loading={saving} fullWidth>
-          Save Service Log
+          {isEditing ? 'Save Changes' : 'Save Service Log'}
         </Button>
       </Screen>
     </div>

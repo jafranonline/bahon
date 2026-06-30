@@ -238,6 +238,12 @@ export function VehicleDetailScreen() {
                     <div className={styles.logActions}>
                       <button
                         type="button"
+                        className={styles.logEditBtn}
+                        onClick={() => navigate('/log/service', { state: { editLog: l } })}
+                        aria-label="Edit service log"
+                      >✏️</button>
+                      <button
+                        type="button"
                         className={styles.logDeleteBtn}
                         onClick={() => l.id && setConfirmDeleteLog({ kind: 'service', id: l.id })}
                         aria-label="Delete service log"
@@ -256,6 +262,12 @@ export function VehicleDetailScreen() {
                   </div>
                   <span className={styles.logAmount}>{format(l.amount)}</span>
                   <div className={styles.logActions}>
+                    <button
+                      type="button"
+                      className={styles.logEditBtn}
+                      onClick={() => navigate('/log/expense', { state: { editLog: l } })}
+                      aria-label="Edit expense log"
+                    >✏️</button>
                     <button
                       type="button"
                       className={styles.logDeleteBtn}
