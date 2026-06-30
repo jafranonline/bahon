@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { useTranslation } from '@hooks/useTranslation'
+import { useShare } from '@hooks/useShare'
 import { FEEDBACK_FORM_URL, APP_VERSION } from '@utils/constants'
 import styles from './AboutScreen.module.css'
 
@@ -15,6 +16,7 @@ const DEVELOPER = {
 export function AboutScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { share, copied } = useShare()
 
   return (
     <div className={styles.root}>
@@ -78,6 +80,21 @@ export function AboutScreen() {
               </svg>
             </a>
           </div>
+
+          <button
+            type="button"
+            className={styles.shareBtn}
+            onClick={() => void share()}
+            aria-label={t('settings.share_app')}
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <circle cx="14" cy="3" r="1.75" stroke="currentColor" strokeWidth="1.5"/>
+              <circle cx="14" cy="15" r="1.75" stroke="currentColor" strokeWidth="1.5"/>
+              <circle cx="4" cy="9" r="1.75" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M5.5 8.1L12.5 4M5.5 9.9L12.5 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            {copied ? t('common.link_copied') : t('settings.share_app')}
+          </button>
 
           {FEEDBACK_FORM_URL && (
             <a

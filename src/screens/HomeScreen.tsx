@@ -13,6 +13,7 @@ import { useVehicleStore } from '@store/vehicleStore'
 import { useCurrency } from '@hooks/useCurrency'
 import { useTranslation } from '@hooks/useTranslation'
 import { useUnits } from '@hooks/useUnits'
+import { useShare } from '@hooks/useShare'
 import type { FuelLog, ServiceLog, Expense } from '@/types'
 import styles from './HomeScreen.module.css'
 
@@ -28,6 +29,7 @@ const VEHICLE_ICONS: Record<string, string> = {
 export function HomeScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { share } = useShare()
   const { format: formatMoney, symbol } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
   const [vehiclePicker, setVehiclePicker] = useState(false)
@@ -220,7 +222,24 @@ export function HomeScreen() {
   if (vehicles.length === 0) {
     return (
       <div className={styles.root}>
-        <TopBar left={vehicleLeft} onSettings={() => navigate('/settings')} />
+        <TopBar
+          left={vehicleLeft}
+          onSettings={() => navigate('/settings')}
+          actions={
+            <button
+              className={styles.shareIconBtn}
+              onClick={() => void share()}
+              aria-label={t('settings.share_app')}
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <circle cx="15.5" cy="3.5" r="2" stroke="currentColor" strokeWidth="1.6"/>
+                <circle cx="15.5" cy="16.5" r="2" stroke="currentColor" strokeWidth="1.6"/>
+                <circle cx="4.5" cy="10" r="2" stroke="currentColor" strokeWidth="1.6"/>
+                <path d="M6.3 9L13.7 5M6.3 11L13.7 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+            </button>
+          }
+        />
         {pickerModal}
         <Screen paddingBottom="76px">
           <div className={styles.emptyState}>
@@ -239,7 +258,24 @@ export function HomeScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar left={vehicleLeft} onSettings={() => navigate('/settings')} />
+      <TopBar
+        left={vehicleLeft}
+        onSettings={() => navigate('/settings')}
+        actions={
+          <button
+            className={styles.shareIconBtn}
+            onClick={() => void share()}
+            aria-label={t('settings.share_app')}
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <circle cx="15.5" cy="3.5" r="2" stroke="currentColor" strokeWidth="1.6"/>
+              <circle cx="15.5" cy="16.5" r="2" stroke="currentColor" strokeWidth="1.6"/>
+              <circle cx="4.5" cy="10" r="2" stroke="currentColor" strokeWidth="1.6"/>
+              <path d="M6.3 9L13.7 5M6.3 11L13.7 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+            </svg>
+          </button>
+        }
+      />
       {pickerModal}
 
       <Screen padding="16px" paddingBottom="76px" gap="16px">

@@ -140,6 +140,30 @@
   margin: 0 16px;
 }
 
+/* Share button */
+.shareBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  background: var(--surface-0);
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.shareBtn:active {
+  background: var(--surface-1);
+}
+
 /* Feedback button */
 .feedbackBtn {
   display: block;

@@ -6,6 +6,26 @@
   overflow: hidden;
 }
 
+/* ── Share icon button ───────────────────────── */
+.shareIconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.shareIconBtn:active {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
 /* ── Vehicle header pill ─────────────────────── */
 .vehicleHeaderBtn {
   display: flex;
