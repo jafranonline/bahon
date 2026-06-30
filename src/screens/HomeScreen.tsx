@@ -225,17 +225,17 @@ export function HomeScreen() {
 
           <div className={styles.costBreakdown}>
             {fuelTotal > 0 && (
-              <span className={styles.costChip} style={{ color: 'var(--amber-400)' }}>
+              <span className={styles.costChip}>
                 ⛽ {formatMoney(fuelTotal, true)}
               </span>
             )}
             {serviceTotal > 0 && (
-              <span className={styles.costChip} style={{ color: 'var(--teal-400)' }}>
+              <span className={styles.costChip}>
                 🔧 {formatMoney(serviceTotal, true)}
               </span>
             )}
             {expenseTotal > 0 && (
-              <span className={styles.costChip} style={{ color: 'var(--red-400)' }}>
+              <span className={styles.costChip}>
                 💰 {formatMoney(expenseTotal, true)}
               </span>
             )}
@@ -268,17 +268,16 @@ export function HomeScreen() {
         {/* Quick actions */}
         <div className={styles.actions}>
           {[
-            { label: 'Fuel', path: '/log/fuel', icon: '⛽', color: 'var(--amber-400)' },
-            { label: 'Service', path: '/log/service', icon: '🔧', color: 'var(--teal-400)' },
-            { label: 'Expense', path: '/log/expense', icon: '💰', color: 'var(--red-400)' },
-          ].map(({ label, path, icon, color }) => (
+            { label: 'Fuel', path: '/log/fuel', icon: '⛽' },
+            { label: 'Service', path: '/log/service', icon: '🔧' },
+            { label: 'Expense', path: '/log/expense', icon: '💰' },
+          ].map(({ label, path, icon }) => (
             <button
               key={path}
               type="button"
               className={styles.actionBtn}
               onClick={() => navigate(path)}
               aria-label={`Log ${label}`}
-              style={{ '--action-color': color } as React.CSSProperties}
             >
               <span className={styles.actionIcon} aria-hidden="true">{icon}</span>
               <span className={styles.actionLabel}>+ {label}</span>

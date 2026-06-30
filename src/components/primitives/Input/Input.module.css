@@ -22,13 +22,19 @@
   padding: 0 var(--gap-md);
 }
 
+.inputRow:has(textarea) {
+  align-items: flex-start;
+  padding-top: var(--gap-sm);
+  padding-bottom: var(--gap-sm);
+}
+
 .inputRow:focus-within {
   border-color: var(--border-accent);
   box-shadow: var(--focus-shadow);
 }
 
 .inputRow.hasError {
-  border-color: var(--red-400);
+  border-color: var(--danger);
 }
 
 .inputRow.hasError:focus-within {
@@ -68,6 +74,12 @@
   cursor: not-allowed;
 }
 
+.textarea {
+  resize: none;
+  padding: var(--gap-sm) 0;
+  line-height: 1.5;
+}
+
 .hint {
   font-size: var(--text-sm);
   color: var(--text-muted);
@@ -75,5 +87,9 @@
 
 .error {
   font-size: var(--text-sm);
+  color: var(--text-danger);
+}
+
+.required {
   color: var(--text-danger);
 }

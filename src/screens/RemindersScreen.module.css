@@ -50,11 +50,11 @@
 }
 
 .cardOverdue {
-  border-color: var(--red-400);
+  border-color: var(--danger);
 }
 
 .cardUrgent {
-  border-color: var(--amber-400);
+  border-color: var(--warning);
 }
 
 .cardFuture {
@@ -68,15 +68,15 @@
 }
 
 .cardOverdue .cardAccent {
-  background: var(--red-400);
+  background: var(--danger);
 }
 
 .cardUrgent .cardAccent {
-  background: var(--amber-400);
+  background: var(--warning);
 }
 
 .cardFuture .cardAccent {
-  background: var(--blue-400);
+  background: var(--accent);
 }
 
 .cardBody {
@@ -214,7 +214,7 @@
 .dismissBtn:active {
   background: var(--bg-danger);
   color: var(--text-danger);
-  border-color: var(--red-400);
+  border-color: var(--danger);
 }
 
 /* TopBar add button */
@@ -224,7 +224,7 @@
   gap: 5px;
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--blue-400);
+  color: var(--accent);
   background: none;
   border: none;
   cursor: pointer;
@@ -269,7 +269,7 @@
 .emptyAddBtn {
   margin-top: 8px;
   padding: 10px 28px;
-  background: var(--blue-400);
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: var(--radius-pill);

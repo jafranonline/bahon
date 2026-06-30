@@ -36,7 +36,7 @@
 }
 
 .track.checked {
-  background-color: var(--blue-400);
+  background-color: var(--accent);
 }
 
 /* Thumb */

@@ -1951,15 +1951,15 @@ Replace any remaining uses with the semantic tokens above.
    looks cohesive, both action buttons and chips are neutral/indigo
 
 **TEST**
-- [ ] `npx tsc --noEmit` passes with 0 errors
-- [ ] `npm run lint` passes
-- [ ] Home screen light mode: action buttons are neutral (no amber/teal/red borders)
-- [ ] Home screen light mode: cost chips are neutral text (no amber/teal/red text)
-- [ ] Single indigo accent is visible on interactive elements (buttons, links, active states, toggle)
-- [ ] Dark mode: same neutrality — no rainbow, indigo accent visible
-- [ ] Reminders screen: overdue/urgent items still show red/amber (semantic danger/warning)
-- [ ] Settings toggle is indigo when on
-- [ ] No hardcoded hex values added — all colors use CSS custom properties
+- [x] `npx tsc --noEmit` passes with 0 errors
+- [x] `npm run lint` passes
+- [x] Home screen light mode: action buttons are neutral (no amber/teal/red borders)
+- [x] Home screen light mode: cost chips are neutral text (no amber/teal/red text)
+- [x] Single indigo accent is visible on interactive elements (buttons, links, active states, toggle)
+- [x] Dark mode: same neutrality — no rainbow, indigo accent visible
+- [x] Reminders screen: overdue/urgent items still show red/amber (semantic danger/warning)
+- [x] Settings toggle is indigo when on
+- [x] No hardcoded hex values added — all colors use CSS custom properties
 
 ---
 

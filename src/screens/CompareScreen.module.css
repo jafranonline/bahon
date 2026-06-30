@@ -202,23 +202,23 @@
 .barA {
   height: 100%;
   border-radius: var(--radius-pill) 0 0 var(--radius-pill);
-  background: color-mix(in srgb, var(--blue-400) 40%, var(--surface-2));
+  background: color-mix(in srgb, var(--accent) 40%, var(--surface-2));
   transition: width 0.3s ease;
 }
 
 .barB {
   height: 100%;
   border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
-  background: color-mix(in srgb, var(--teal-400) 40%, var(--surface-2));
+  background: color-mix(in srgb, var(--success) 40%, var(--surface-2));
   transition: width 0.3s ease;
 }
 
 .barWinA {
-  background: var(--blue-400);
+  background: var(--accent);
 }
 
 .barWinB {
-  background: var(--teal-400);
+  background: var(--success);
 }
 
 /* Empty state */

@@ -208,12 +208,12 @@ export function CompareScreen() {
         {/* Legend */}
         <div className={styles.legend}>
           <span className={styles.legendA}>
-            <span className={styles.legendDot} style={{ background: 'var(--blue-400)' }} />
+            <span className={styles.legendDot} style={{ background: 'var(--accent)' }} />
             {vA?.name ?? '—'}
           </span>
           <span className={styles.legendB}>
             {vB?.name ?? '—'}
-            <span className={styles.legendDot} style={{ background: 'var(--teal-400)' }} />
+            <span className={styles.legendDot} style={{ background: 'var(--success)' }} />
           </span>
         </div>
 
