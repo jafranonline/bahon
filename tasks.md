@@ -2034,6 +2034,48 @@ Guard: wrap the existing `<AppShell>` route in a `RequireOnboarding` component t
 
 ---
 
+### TASK-055: JSON backup — export and import all data
+
+**PLAN**
+
+Add two rows to the Settings screen under a "Data" section:
+
+- **Export JSON** — dumps all 6 Dexie tables (vehicles, fuelLogs, serviceLogs, expenses, reminders, documents) into a single `bahon-backup-YYYY-MM-DD.json` file. Excludes settings (language/theme are device preferences, not data).
+- **Import JSON** — opens a file picker; on file select, validates the JSON structure, clears all tables, bulk-inserts the new data, then reloads the page so all reactive queries re-run from scratch.
+
+JSON schema:
+```json
+{
+  "version": "1",
+  "exportedAt": "<ISO timestamp>",
+  "vehicles": [...],
+  "fuelLogs": [...],
+  "serviceLogs": [...],
+  "expenses": [...],
+  "reminders": [...],
+  "documents": [...]
+}
+```
+
+Import strategy: full replace (clear + insert). No merge. User picks the file deliberately — that's their confirmation.
+
+**EXECUTE**
+1. Add `exportAsJSON()` and `importFromJSON(file: File)` to `src/hooks/useExport.ts`
+2. Add i18n keys: `settings.export_json`, `settings.export_json_hint`, `settings.import_json`, `settings.import_json_hint`, `settings.import_success`, `settings.import_error`
+3. Add a "Data" section in `SettingsScreen.tsx` with Export and Import rows; Import row uses a hidden `<input type="file" accept=".json">` triggered by a button
+4. After successful import, call `window.location.reload()` so all live queries re-fetch
+
+**TEST**
+- [x] Export button downloads `bahon-backup-YYYY-MM-DD.json`
+- [x] JSON file contains all 6 tables with correct data
+- [x] Import file picker opens on tap
+- [x] Importing a valid export restores all data (reload, data visible in home/stats)
+- [x] Importing an invalid JSON shows an error message
+- [x] `npx tsc --noEmit` passes
+
+
+---
+
 ## Done
 
 When TASK-042 passes all tests, Bahon v1.0.0 is ready for production deployment. TASK-043–052 cover post-launch improvements and the final go-live steps.
