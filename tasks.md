@@ -1794,11 +1794,11 @@ Create `README.md` with:
 5. Add i18n key `stats.cost_per_km` / `stats.cost_per_mi`
 
 **TEST**
-- [ ] Cost per km/mi stat card appears on the Stats summary tab
-- [ ] Value is accurate (matches manual calculation from seed data)
-- [ ] Shows N/A gracefully when distance data is missing
-- [ ] Switches to "cost per mi" label when user's distance unit is miles
-- [ ] TypeScript: `npx tsc --noEmit` — no errors
+- [x] Cost per km/mi stat card appears on the Stats summary tab
+- [x] Value is accurate (matches manual calculation from seed data)
+- [x] Shows N/A gracefully when distance data is missing
+- [x] Switches to "cost per mi" label when user's distance unit is miles
+- [x] TypeScript: `npx tsc --noEmit` — no errors
 
 ---
 

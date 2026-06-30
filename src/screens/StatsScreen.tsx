@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { StackedBarChart } from '@components/charts/StackedBarChart'
@@ -31,9 +32,11 @@ function monthKey(date: string) {
 }
 
 export function StatsScreen() {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('summary')
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const efficiencyUnit = useSettingsStore((s) => s.efficiencyUnit)
+  const distanceUnit = useSettingsStore((s) => s.distanceUnit)
   const { format, symbol } = useCurrency()
   const { exportAsCSV } = useExport()
 
@@ -71,11 +74,14 @@ export function StatsScreen() {
     return valid.reduce((s, l) => s + (l[effField] ?? 0), 0) / valid.length
   }, [fuelLogs, effField])
 
-  const totalDistance = useMemo(() => {
+  const totalDistanceKm = useMemo(() => {
     if (fuelLogs.length < 2) return 0
     const sorted = [...fuelLogs].sort((a, b) => a.odometer - b.odometer)
     return sorted[sorted.length - 1].odometer - sorted[0].odometer
   }, [fuelLogs])
+
+  const totalDistance = distanceUnit === 'mi' ? totalDistanceKm * 0.621371 : totalDistanceKm
+  const costPerDistLabel = distanceUnit === 'mi' ? 'Cost per mi' : 'Cost per km'
 
   const monthlyFuel = useMemo(() =>
     months.map(m => fuelLogs.filter(l => monthKey(l.date) === m.key).reduce((s, l) => s + l.totalCost, 0)),
@@ -109,7 +115,7 @@ export function StatsScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title="Stats" />
+      <TopBar title="Stats" onBack={() => navigate(-1)} />
       <nav aria-label="Stats sections">
       <div className={styles.tabBar} role="tablist" aria-label="Stats tabs">
         {(['summary', 'fuel', 'service'] as Tab[]).map((t) => (
@@ -140,7 +146,7 @@ export function StatsScreen() {
                     <span className={styles.kpiValue}>{format(ytdTotal)}</span>
                   </div>
                   <div className={styles.kpiCard}>
-                    <span className={styles.kpiLabel}>Cost per km</span>
+                    <span className={styles.kpiLabel}>{costPerDistLabel}</span>
                     <span className={styles.kpiValue}>
                       {totalDistance > 0 ? `${symbol}${(ytdTotal / totalDistance).toFixed(2)}` : '—'}
                     </span>
