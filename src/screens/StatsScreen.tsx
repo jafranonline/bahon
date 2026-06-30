@@ -34,6 +34,8 @@ function monthKey(date: string) {
 export function StatsScreen() {
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('summary')
+  const currentYear = new Date().getFullYear()
+  const [selectedYear, setSelectedYear] = useState(currentYear)
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const efficiencyUnit = useSettingsStore((s) => s.efficiencyUnit)
   const distanceUnit = useSettingsStore((s) => s.distanceUnit)
@@ -101,6 +103,49 @@ export function StatsScreen() {
     { label: 'Service', data: monthlyService, color: '#1baf7a' },
     { label: 'Other', data: monthlyExpense, color: '#2a78d6' },
   ]
+
+  const yearMonths = useMemo(() =>
+    Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(selectedYear, i, 1)
+      return {
+        label: d.toLocaleString('default', { month: 'short' }),
+        key: `${selectedYear}-${String(i + 1).padStart(2, '0')}`,
+      }
+    }),
+    [selectedYear]
+  )
+
+  const yearlyFuel = useMemo(() =>
+    yearMonths.map(m => fuelLogs.filter(l => monthKey(l.date) === m.key).reduce((s, l) => s + l.totalCost, 0)),
+    [fuelLogs, yearMonths]
+  )
+  const yearlyService = useMemo(() =>
+    yearMonths.map(m => serviceLogs.filter(l => monthKey(l.date) === m.key).reduce((s, l) => s + l.cost, 0)),
+    [serviceLogs, yearMonths]
+  )
+  const yearlyExpense = useMemo(() =>
+    yearMonths.map(m => expenses.filter(l => monthKey(l.date) === m.key).reduce((s, l) => s + l.amount, 0)),
+    [expenses, yearMonths]
+  )
+
+  const yearlyBarSeries = [
+    { label: 'Fuel', data: yearlyFuel, color: '#EF9F27' },
+    { label: 'Service', data: yearlyService, color: '#1baf7a' },
+    { label: 'Other', data: yearlyExpense, color: '#2a78d6' },
+  ]
+
+  const yearTotalSpend = useMemo(() =>
+    [...yearlyFuel, ...yearlyService, ...yearlyExpense].reduce((s, v) => s + v, 0),
+    [yearlyFuel, yearlyService, yearlyExpense]
+  )
+
+  const yearAvgMonthly = yearTotalSpend / 12
+
+  const minYear = useMemo(() => {
+    const all = [...fuelLogs, ...serviceLogs, ...expenses]
+    if (!all.length) return currentYear
+    return Math.min(...all.map(l => parseInt(l.date.slice(0, 4), 10)))
+  }, [fuelLogs, serviceLogs, expenses, currentYear])
 
   const effLineLabels = efficiencies.map(l => l.date.slice(5))
   const effLineData = efficiencies.map(l => parseFloat((l[effField] ?? 0).toFixed(2)))
@@ -187,6 +232,45 @@ export function StatsScreen() {
                     />
                   </div>
                 )}
+
+                <div className={styles.chartCard}>
+                  <div className={styles.yearNav}>
+                    <button
+                      type="button"
+                      className={styles.yearNavBtn}
+                      onClick={() => setSelectedYear(y => y - 1)}
+                      disabled={selectedYear <= minYear}
+                      aria-label="Previous year"
+                    >←</button>
+                    <span className={styles.yearLabel}>{selectedYear}</span>
+                    <button
+                      type="button"
+                      className={styles.yearNavBtn}
+                      onClick={() => setSelectedYear(y => y + 1)}
+                      disabled={selectedYear >= currentYear}
+                      aria-label="Next year"
+                    >→</button>
+                  </div>
+                  <div className={styles.barLegend} style={{ marginTop: 10 }}>
+                    {yearlyBarSeries.map(s => (
+                      <span key={s.label} className={styles.legendItem}>
+                        <span className={styles.legendDot} style={{ background: s.color }} />
+                        {s.label}
+                      </span>
+                    ))}
+                  </div>
+                  <StackedBarChart labels={yearMonths.map(m => m.label)} series={yearlyBarSeries} />
+                  <div className={styles.yearSummaryRow}>
+                    <div className={styles.yearStat}>
+                      <span className={styles.yearStatLabel}>Total spend</span>
+                      <span className={styles.yearStatValue}>{format(yearTotalSpend)}</span>
+                    </div>
+                    <div className={styles.yearStat}>
+                      <span className={styles.yearStatLabel}>Avg / month</span>
+                      <span className={styles.yearStatValue}>{format(yearAvgMonthly)}</span>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
           </>

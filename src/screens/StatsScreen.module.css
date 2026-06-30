@@ -179,3 +179,63 @@
   color: var(--text-accent);
   border-color: var(--border-accent);
 }
+
+.yearNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.yearNavBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  font-size: 18px;
+  color: var(--text-primary);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.yearNavBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.yearLabel {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.yearSummaryRow {
+  display: flex;
+  gap: var(--gap-sm);
+  margin-top: 10px;
+}
+
+.yearStat {
+  flex: 1;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.yearStatLabel {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.yearStatValue {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text-primary);
+}

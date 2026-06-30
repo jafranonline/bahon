@@ -1816,12 +1816,12 @@ Create `README.md` with:
 5. Add i18n keys for yearly labels
 
 **TEST**
-- [ ] Yearly period shows 12-month stacked bar chart
-- [ ] Year navigation arrows switch between calendar years
-- [ ] Total spend and avg monthly cost display correctly
-- [ ] Chart reflects actual DB data for the selected year and vehicle
-- [ ] Works offline
-- [ ] TypeScript: `npx tsc --noEmit` — no errors
+- [x] Yearly period shows 12-month stacked bar chart
+- [x] Year navigation arrows switch between calendar years
+- [x] Total spend and avg monthly cost display correctly
+- [x] Chart reflects actual DB data for the selected year and vehicle
+- [x] Works offline
+- [x] TypeScript: `npx tsc --noEmit` — no errors
 
 ---
 
