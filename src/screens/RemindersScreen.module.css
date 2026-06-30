@@ -6,35 +6,106 @@
   overflow: hidden;
 }
 
+/* Section header */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 0 2px 2px;
+}
+
+.sectionTitle {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.sectionCount {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Reminder list */
 .list {
   display: flex;
   flex-direction: column;
   gap: var(--gap-sm);
 }
 
+/* Card */
 .card {
-  background: var(--surface-1);
-  border-radius: var(--radius-md);
-  padding: 14px;
-  border: 1px solid var(--border);
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  border-radius: var(--radius-md);
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  overflow: hidden;
 }
 
 .cardOverdue {
   border-color: var(--red-400);
-  background: var(--red-50);
 }
 
 .cardUrgent {
   border-color: var(--amber-400);
-  background: var(--amber-50);
+}
+
+.cardFuture {
+  border-color: var(--border);
+}
+
+.cardAccent {
+  width: 4px;
+  flex-shrink: 0;
+  background: var(--border-strong);
+}
+
+.cardOverdue .cardAccent {
+  background: var(--red-400);
+}
+
+.cardUrgent .cardAccent {
+  background: var(--amber-400);
+}
+
+.cardFuture .cardAccent {
+  background: var(--blue-400);
+}
+
+.cardBody {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--gap-md);
+  padding: 14px 14px 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cardIcon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cardContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .cardTop {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--gap-sm);
 }
@@ -43,79 +114,167 @@
   font-size: var(--text-md);
   font-weight: 600;
   color: var(--text-primary);
+  line-height: 1.3;
   flex: 1;
+  min-width: 0;
 }
 
-.cardBadges {
+.cardMeta {
   display: flex;
-  gap: var(--gap-xs);
+  align-items: center;
+  gap: 5px;
   flex-shrink: 0;
 }
 
-.cardDue {
+.repeatBadge {
+  font-size: var(--text-base);
+  color: var(--text-muted);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.statusBadge {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.statusOverdue {
+  background: var(--bg-danger);
+  color: var(--text-danger);
+}
+
+.statusUrgent {
+  background: var(--bg-warning);
+  color: var(--text-warning);
+}
+
+/* Detail rows */
+.cardDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.detailRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: var(--text-sm);
   color: var(--text-secondary);
+}
+
+.detailRow svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.remaining {
+  color: var(--text-muted);
+}
+
+/* Card action row */
+.cardActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--gap-sm);
+  margin-top: 6px;
+}
+
+.editBtn {
+  padding: 5px 12px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-accent);
+  background: none;
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.editBtn:active {
+  background: var(--bg-accent);
 }
 
 .dismissBtn {
-  align-self: flex-end;
-  margin-top: 4px;
-  padding: 6px 14px;
+  padding: 5px 12px;
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--text-secondary);
-  background: var(--surface-2);
+  color: var(--text-muted);
+  background: none;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   cursor: pointer;
-  min-height: 44px;
+  min-height: 32px;
 }
 
-.dismissBtn:hover {
+.dismissBtn:active {
   background: var(--bg-danger);
   color: var(--text-danger);
   border-color: var(--red-400);
 }
 
-.form {
+/* TopBar add button */
+.addBtn {
   display: flex;
-  flex-direction: column;
-  gap: var(--gap-md);
-  padding-top: var(--gap-lg);
-  border-top: 1px solid var(--border);
+  align-items: center;
+  gap: 5px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--blue-400);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 4px;
+  border-radius: var(--radius-sm);
 }
 
-.formTitle {
+.addBtn:active {
+  opacity: 0.7;
+}
+
+/* Empty state */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0 16px;
+  gap: 6px;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 40px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.emptyText {
   font-size: var(--text-md);
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: 600;
+  color: var(--text-secondary);
   margin: 0;
 }
 
-.fieldLabel {
+.emptyHint {
   font-size: var(--text-sm);
-  color: var(--text-secondary);
-  margin: 0 0 6px;
-}
-
-.chipRow {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: var(--gap-sm);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding-bottom: 4px;
-}
-
-.chipRow::-webkit-scrollbar {
-  display: none;
-}
-
-.empty {
-  font-size: var(--text-md);
   color: var(--text-muted);
-  text-align: center;
-  padding: 20px 0 8px;
+  margin: 0;
+  max-width: 240px;
 }
+
+.emptyAddBtn {
+  margin-top: 8px;
+  padding: 10px 28px;
+  background: var(--blue-400);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-base);
+  font-weight: 600;
+  cursor: pointer;
+}
+

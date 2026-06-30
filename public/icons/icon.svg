@@ -1,4 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="102" fill="#2a78d6"/>
-  <text x="256" y="360" font-family="Georgia, serif" font-size="320" font-weight="bold" fill="white" text-anchor="middle">B</text>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2d7aee"/>
+      <stop offset="100%" stop-color="#0b338a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <rect width="512" height="240" rx="108" fill="rgba(255,255,255,0.07)"/>
+
+  <!-- Speedometer gauge -->
+  <!-- Center: (256, 300), radius: 150 -->
+  <!-- Arc from 8-o'clock (150°) to 4-o'clock (30°), sweeping clockwise 240° -->
+  <!-- 8-o'clock: (126, 375)   4-o'clock: (386, 375) -->
+
+  <!-- Background track -->
+  <path d="M 126,375 A 150,150 0 1,1 386,375"
+        fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- Fill arc: 70% of 240° = 168°, end angle 318° -->
+  <!-- At 318°: cos=0.743, sin=−0.669 → x=368, y=200 -->
+  <path d="M 126,375 A 150,150 0 0,1 368,200"
+        fill="none" stroke="rgba(255,255,255,0.92)" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- 5 tick marks at 0%, 25%, 50%, 75%, 100% of arc -->
+  <!-- 0% = 150°: inner(139,368) outer(113,383) -->
+  <line x1="139" y1="368" x2="113" y2="383" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+  <!-- 25% = 210°: inner(139,232) outer(113,218) -->
+  <line x1="139" y1="232" x2="113" y2="218" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+  <!-- 50% = 270° (top): inner(256,165) outer(256,135) -->
+  <line x1="256" y1="165" x2="256" y2="135" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+  <!-- 75% = 330°: inner(373,232) outer(399,218) -->
+  <line x1="373" y1="232" x2="399" y2="218" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+  <!-- 100% = 30°: inner(373,368) outer(399,383) -->
+  <line x1="373" y1="368" x2="399" y2="383" stroke="white" stroke-width="8" stroke-linecap="round" opacity="0.45"/>
+
+  <!-- Needle (at 318°, radius 115 from center) -->
+  <!-- x=256+115*0.743=341, y=300−115*0.669=223 -->
+  <line x1="256" y1="300" x2="341" y2="223" stroke="white" stroke-width="13" stroke-linecap="round"/>
+
+  <!-- Hub -->
+  <circle cx="256" cy="300" r="26" fill="white"/>
+  <circle cx="256" cy="300" r="11" fill="#1d5fd4"/>
+
+  <!-- Glowing dot at needle tip on the arc -->
+  <circle cx="368" cy="200" r="15" fill="white" opacity="0.95"/>
 </svg>

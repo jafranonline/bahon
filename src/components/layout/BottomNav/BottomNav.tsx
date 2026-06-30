@@ -1,29 +1,30 @@
 import { useTranslation } from '@hooks/useTranslation'
 import styles from './BottomNav.module.css'
 
-type NavTab = 'stats' | 'reminders'
+type NavTab = 'home' | 'reminders'
 
 interface BottomNavProps {
   activeTab?: NavTab
-  onStats: () => void
+  onHome: () => void
   onAdd: () => void
   onReminders: () => void
+  reminderCount?: number
 }
 
-export function BottomNav({ activeTab, onStats, onAdd, onReminders }: BottomNavProps) {
+export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount = 0 }: BottomNavProps) {
   const { t } = useTranslation()
   return (
     <nav className={styles.nav} aria-label="Main navigation">
       <button
-        className={`${styles.navItem} ${activeTab === 'stats' ? styles.active : ''}`}
-        onClick={onStats}
-        aria-label={t('nav.stats')}
-        aria-current={activeTab === 'stats' ? 'page' : undefined}
+        className={`${styles.navItem} ${activeTab === 'home' ? styles.active : ''}`}
+        onClick={onHome}
+        aria-label={t('nav.home')}
+        aria-current={activeTab === 'home' ? 'page' : undefined}
       >
         <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-          <path d="M3 17L8 11L12 14L19 6" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M3 10.5L11 3l8 7.5V19a1 1 0 01-1 1H14v-5h-4v5H4a1 1 0 01-1-1V10.5z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
         </svg>
-        <span className={styles.label}>{t('nav.stats')}</span>
+        <span className={styles.label}>{t('nav.home')}</span>
       </button>
 
       <div className={styles.fabWrapper}>
@@ -41,13 +42,20 @@ export function BottomNav({ activeTab, onStats, onAdd, onReminders }: BottomNavP
       <button
         className={`${styles.navItem} ${activeTab === 'reminders' ? styles.active : ''}`}
         onClick={onReminders}
-        aria-label={t('nav.reminders')}
+        aria-label={reminderCount > 0 ? `${t('nav.reminders')} (${reminderCount})` : t('nav.reminders')}
         aria-current={activeTab === 'reminders' ? 'page' : undefined}
       >
-        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-          <path d="M11 3a6 6 0 016 6v4l1.5 2.5h-15L5 13V9a6 6 0 016-6z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
-          <path d="M9 17.5a2 2 0 004 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-        </svg>
+        <div className={styles.iconWrap}>
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+            <path d="M11 3a6 6 0 016 6v4l1.5 2.5h-15L5 13V9a6 6 0 016-6z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+            <path d="M9 17.5a2 2 0 004 0" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+          </svg>
+          {reminderCount > 0 && (
+            <span className={styles.badge} aria-hidden="true">
+              {reminderCount > 9 ? '9+' : reminderCount}
+            </span>
+          )}
+        </div>
         <span className={styles.label}>{t('nav.reminders')}</span>
       </button>
     </nav>

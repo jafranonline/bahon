@@ -107,7 +107,19 @@ export function VehicleDetailScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={vehicle.name} onBack={() => navigate(-1)} />
+      <TopBar
+        title={vehicle.name}
+        onBack={() => navigate(-1)}
+        actions={
+          <button
+            className={styles.editBtn}
+            onClick={() => navigate('/vehicles/add', { state: { editVehicle: vehicle } })}
+            aria-label="Edit vehicle"
+          >
+            Edit
+          </button>
+        }
+      />
       <Screen>
         {/* Vehicle info card */}
         <div className={styles.infoCard}>

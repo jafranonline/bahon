@@ -41,7 +41,7 @@ export type Language = 'en' | 'bn'
 
 export type Theme = 'light' | 'dark' | 'system'
 
-export type Currency = 'BDT' | 'USD' | 'EUR' | 'INR' | 'GBP' | 'SAR'
+export type Currency = 'BDT' | 'USD' | 'INR' | 'EUR' | 'GBP' | 'SAR'
 
 export type DistanceUnit = 'km' | 'mi'
 

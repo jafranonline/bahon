@@ -220,3 +220,17 @@
   opacity: 1;
   background: var(--surface-2);
 }
+
+.editBtn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+.editBtn:hover {
+  background: var(--surface-2);
+}

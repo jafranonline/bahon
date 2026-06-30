@@ -4,10 +4,10 @@ import { kmToMiles, litresToGallons, kmLToL100km, kmLToMPG } from './calculation
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   BDT: '৳',
   USD: '$',
-  EUR: '€',
   INR: '₹',
+  EUR: '€',
   GBP: '£',
-  SAR: 'ر.س',
+  SAR: '﷼',
 }
 
 export function getCurrencySymbol(currency: Currency): string {

@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { Chip } from '@components/primitives/Chip'
 import { Input } from '@components/primitives/Input'
 import { Button } from '@components/primitives/Button'
 import { useVehicleStore } from '@store/vehicleStore'
-import { addVehicle, useVehicles } from '@db/queries/useVehicles'
-import type { VehicleType, FuelType } from '@/types'
+import { addVehicle, updateVehicle, useVehicles } from '@db/queries/useVehicles'
+import type { Vehicle, VehicleType, FuelType } from '@/types'
 import styles from './AddVehicleScreen.module.css'
 
 type TypeOption = { value: VehicleType; label: string; subtitle: string; icon: string }
@@ -31,18 +31,22 @@ const FUEL_OPTIONS: FuelOption[] = [
 
 export function AddVehicleScreen() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const editVehicle = (location.state as { editVehicle?: Vehicle } | null)?.editVehicle
+  const isEdit = !!editVehicle
+
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const setActiveVehicle = useVehicleStore((s) => s.setActiveVehicle)
   const vehicles = useVehicles()
 
-  const [vehicleType, setVehicleType] = useState<VehicleType>('car')
-  const [fuelType, setFuelType] = useState<FuelType>('petrol')
-  const [name, setName] = useState('')
-  const [brand, setBrand] = useState('')
-  const [model, setModel] = useState('')
-  const [yearStr, setYearStr] = useState('')
-  const [plateNumber, setPlateNumber] = useState('')
-  const [odoStr, setOdoStr] = useState('')
+  const [vehicleType, setVehicleType] = useState<VehicleType>(editVehicle?.type ?? 'car')
+  const [fuelType, setFuelType] = useState<FuelType>(editVehicle?.fuelType ?? 'petrol')
+  const [name, setName] = useState(editVehicle?.name ?? '')
+  const [brand, setBrand] = useState(editVehicle?.brand ?? '')
+  const [model, setModel] = useState(editVehicle?.model ?? '')
+  const [yearStr, setYearStr] = useState(editVehicle?.year ? String(editVehicle.year) : '')
+  const [plateNumber, setPlateNumber] = useState(editVehicle?.plateNumber ?? '')
+  const [odoStr, setOdoStr] = useState(editVehicle?.odometer ? String(editVehicle.odometer) : '')
   const [saving, setSaving] = useState(false)
   const [nameError, setNameError] = useState('')
 
@@ -54,20 +58,34 @@ export function AddVehicleScreen() {
     setNameError('')
     setSaving(true)
     try {
-      const id = await addVehicle({
-        name: name.trim(),
-        brand: brand.trim() || '',
-        model: model.trim() || '',
-        year: yearStr ? parseInt(yearStr, 10) : new Date().getFullYear(),
-        type: vehicleType,
-        fuelType,
-        odometer: odoStr ? parseFloat(odoStr) : 0,
-        plateNumber: plateNumber.trim() || undefined,
-      })
-      if (!activeVehicleId || vehicles.length === 0) {
-        setActiveVehicle(id)
+      if (isEdit && editVehicle.id) {
+        await updateVehicle(editVehicle.id, {
+          name: name.trim(),
+          brand: brand.trim() || '',
+          model: model.trim() || '',
+          year: yearStr ? parseInt(yearStr, 10) : new Date().getFullYear(),
+          type: vehicleType,
+          fuelType,
+          odometer: odoStr ? parseFloat(odoStr) : 0,
+          plateNumber: plateNumber.trim() || undefined,
+        })
+        navigate(-1)
+      } else {
+        const id = await addVehicle({
+          name: name.trim(),
+          brand: brand.trim() || '',
+          model: model.trim() || '',
+          year: yearStr ? parseInt(yearStr, 10) : new Date().getFullYear(),
+          type: vehicleType,
+          fuelType,
+          odometer: odoStr ? parseFloat(odoStr) : 0,
+          plateNumber: plateNumber.trim() || undefined,
+        })
+        if (!activeVehicleId || vehicles.length === 0) {
+          setActiveVehicle(id)
+        }
+        navigate('/')
       }
-      navigate('/')
     } finally {
       setSaving(false)
     }
@@ -75,7 +93,7 @@ export function AddVehicleScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title="Add Vehicle" onBack={() => navigate(-1)} />
+      <TopBar title={isEdit ? 'Edit Vehicle' : 'Add Vehicle'} onBack={() => navigate(-1)} />
       <Screen>
         <div>
           <p className={styles.sectionLabel}>Vehicle type</p>
@@ -166,7 +184,7 @@ export function AddVehicleScreen() {
         />
 
         <Button onClick={handleSave} loading={saving} fullWidth>
-          Add Vehicle
+          {isEdit ? 'Save Changes' : 'Add Vehicle'}
         </Button>
       </Screen>
     </div>

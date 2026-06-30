@@ -1,29 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { BottomNav } from '@components/layout/BottomNav'
 import { Screen } from '@components/layout/Screen'
-import { VehiclePill } from '@components/composed/VehiclePill'
-import { HeroCard } from '@components/composed/HeroCard'
-import { DonutChart } from '@components/charts/DonutChart'
-import { StatCard } from '@components/composed/StatCard'
 import { LogRow } from '@components/composed/LogRow'
 import { useVehicles } from '@db/queries/useVehicles'
-import {
-  useFuelLogs,
-  useMonthlyFuelLogs,
-} from '@db/queries/useFuelLogs'
-import {
-  useServiceLogs,
-  useMonthlyServiceLogs,
-} from '@db/queries/useServiceLogs'
-import {
-  useExpenses,
-  useMonthlyExpenses,
-} from '@db/queries/useExpenses'
+import { useFuelLogs, useMonthlyFuelLogs } from '@db/queries/useFuelLogs'
+import { useServiceLogs, useMonthlyServiceLogs } from '@db/queries/useServiceLogs'
+import { useExpenses, useMonthlyExpenses } from '@db/queries/useExpenses'
 import { useReminders } from '@db/queries/useReminders'
 import { useVehicleStore } from '@store/vehicleStore'
-import { useUIStore } from '@store/uiStore'
 import { useCurrency } from '@hooks/useCurrency'
 import { useTranslation } from '@hooks/useTranslation'
 import { useUnits } from '@hooks/useUnits'
@@ -35,18 +21,23 @@ type LogEntry =
   | { kind: 'service'; log: ServiceLog }
   | { kind: 'expense'; log: Expense }
 
+const VEHICLE_ICONS: Record<string, string> = {
+  car: '🚗', motorcycle: '🏍️', truck: '🚛', bus: '🚌', cng: '🛺', bicycle: '🚲', other: '🚘',
+}
+
 export function HomeScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { format: formatMoney, symbol } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
-  const setDrawerOpen = useUIStore((s) => s.setDrawerOpen)
+  const [vehiclePicker, setVehiclePicker] = useState(false)
 
   const vehicles = useVehicles()
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const setActiveVehicle = useVehicleStore((s) => s.setActiveVehicle)
 
   const vehicleId = activeVehicleId ?? vehicles[0]?.id ?? ''
+  const activeVehicle = vehicles.find((v) => v.id === vehicleId)
 
   const now = new Date()
   const year = now.getFullYear()
@@ -54,23 +45,23 @@ export function HomeScreen() {
   const prevMonth = month === 1 ? 12 : month - 1
   const prevYear = month === 1 ? year - 1 : year
 
-  const fuelLogs = useMonthlyFuelLogs(vehicleId, year, month)
+  const fuelLogs    = useMonthlyFuelLogs(vehicleId, year, month)
   const serviceLogs = useMonthlyServiceLogs(vehicleId, year, month)
-  const expenses = useMonthlyExpenses(vehicleId, year, month)
+  const expenses    = useMonthlyExpenses(vehicleId, year, month)
 
-  const prevFuelLogs = useMonthlyFuelLogs(vehicleId, prevYear, prevMonth)
+  const prevFuelLogs    = useMonthlyFuelLogs(vehicleId, prevYear, prevMonth)
   const prevServiceLogs = useMonthlyServiceLogs(vehicleId, prevYear, prevMonth)
-  const prevExpenses = useMonthlyExpenses(vehicleId, prevYear, prevMonth)
+  const prevExpenses    = useMonthlyExpenses(vehicleId, prevYear, prevMonth)
 
-  const allFuelLogs = useFuelLogs(vehicleId)
+  const allFuelLogs    = useFuelLogs(vehicleId)
   const allServiceLogs = useServiceLogs(vehicleId)
-  const allExpenses = useExpenses(vehicleId)
-  const reminders = useReminders(vehicleId)
+  const allExpenses    = useExpenses(vehicleId)
+  const reminders      = useReminders(vehicleId)
 
-  const fuelTotal = useMemo(() => fuelLogs.reduce((s, l) => s + l.totalCost, 0), [fuelLogs])
+  const fuelTotal    = useMemo(() => fuelLogs.reduce((s, l) => s + l.totalCost, 0), [fuelLogs])
   const serviceTotal = useMemo(() => serviceLogs.reduce((s, l) => s + l.cost, 0), [serviceLogs])
   const expenseTotal = useMemo(() => expenses.reduce((s, l) => s + l.amount, 0), [expenses])
-  const monthTotal = fuelTotal + serviceTotal + expenseTotal
+  const monthTotal   = fuelTotal + serviceTotal + expenseTotal
 
   const prevTotal = useMemo(() => {
     const pf = prevFuelLogs.reduce((s, l) => s + l.totalCost, 0)
@@ -79,13 +70,9 @@ export function HomeScreen() {
     return pf + ps + pe
   }, [prevFuelLogs, prevServiceLogs, prevExpenses])
 
-  const delta = useMemo(() => {
-    if (prevTotal === 0) return undefined
-    const pct = Math.abs(((monthTotal - prevTotal) / prevTotal) * 100).toFixed(0)
-    return {
-      direction: monthTotal <= prevTotal ? ('down' as const) : ('up' as const),
-      label: `${pct}% vs last month`,
-    }
+  const trendPct = useMemo(() => {
+    if (prevTotal === 0) return null
+    return ((monthTotal - prevTotal) / prevTotal) * 100
   }, [monthTotal, prevTotal])
 
   const avgEfficiency = useMemo(() => {
@@ -94,19 +81,10 @@ export function HomeScreen() {
     return valid.reduce((s, l) => s + (l.efficiencyKmPerL ?? 0), 0) / valid.length
   }, [fuelLogs])
 
-  const distanceThisMonth = useMemo(
-    () =>
-      fuelLogs.reduce((s, l) => {
-        if (l.previousOdometer != null && l.odometer > l.previousOdometer) {
-          return s + (l.odometer - l.previousOdometer)
-        }
-        return s
-      }, 0),
-    [fuelLogs]
-  )
-
-  const totalFuelled = useMemo(
-    () => fuelLogs.reduce((s, l) => s + l.volumeLitres, 0),
+  const distanceThisMonth = useMemo(() =>
+    fuelLogs.reduce((s, l) =>
+      l.previousOdometer != null && l.odometer > l.previousOdometer
+        ? s + (l.odometer - l.previousOdometer) : s, 0),
     [fuelLogs]
   )
 
@@ -122,194 +100,242 @@ export function HomeScreen() {
 
   const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' })
 
+  const vehicleLeft = (
+    <button
+      type="button"
+      className={styles.vehicleHeaderBtn}
+      onClick={() => setVehiclePicker(true)}
+      aria-label="Switch vehicle"
+    >
+      <span className={styles.vehicleHeaderIcon} aria-hidden="true">
+        {activeVehicle ? (VEHICLE_ICONS[activeVehicle.type] ?? '🚘') : '🚗'}
+      </span>
+      <span className={styles.vehicleHeaderName}>
+        {activeVehicle?.name ?? t('home.no_vehicles_title')}
+      </span>
+      {vehicles.length > 0 && (
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  )
+
+  const pickerModal = vehiclePicker && (
+    <>
+      <div className={styles.pickerBackdrop} onClick={() => setVehiclePicker(false)} aria-hidden="true" />
+      <div className={styles.pickerOverlay} role="dialog" aria-modal="true" aria-label="Switch vehicle">
+        <div className={styles.pickerHeader}>
+          <span className={styles.pickerTitle}>Your Vehicles</span>
+          <button type="button" className={styles.pickerClose} onClick={() => setVehiclePicker(false)} aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+        <ul className={styles.pickerList}>
+          {vehicles.map((v) => (
+            <li key={v.id} className={styles.pickerRow}>
+              <button
+                type="button"
+                className={`${styles.pickerItem} ${v.id === vehicleId ? styles.pickerItemActive : ''}`}
+                onClick={() => { setActiveVehicle(v.id); setVehiclePicker(false) }}
+              >
+                <span className={styles.pickerItemIcon}>{VEHICLE_ICONS[v.type] ?? '🚘'}</span>
+                <span className={styles.pickerItemName}>{v.name}</span>
+                {v.id === vehicleId && (
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                    <path d="M3 9l5 5 7-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+              <button
+                type="button"
+                className={styles.pickerDetailBtn}
+                onClick={() => { setVehiclePicker(false); navigate(`/vehicles/${v.id}`) }}
+                aria-label={`View details for ${v.name}`}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </li>
+          ))}
+          <li>
+            <button type="button" className={styles.pickerAddItem} onClick={() => { setVehiclePicker(false); navigate('/vehicles/add') }}>
+              <span className={styles.pickerItemIcon}>＋</span>
+              <span className={styles.pickerItemName}>Add vehicle</span>
+            </button>
+          </li>
+          {vehicles.length >= 2 && (
+            <li>
+              <button type="button" className={styles.pickerCompareItem} onClick={() => { setVehiclePicker(false); navigate('/compare') }}>
+                <span className={styles.pickerItemIcon}>⚖️</span>
+                <span className={styles.pickerItemName}>Compare vehicles</span>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </li>
+          )}
+        </ul>
+      </div>
+    </>
+  )
+
   if (vehicles.length === 0) {
     return (
       <div className={styles.root}>
-        <TopBar title="Bahon" onSettings={() => setDrawerOpen(true)} />
+        <TopBar left={vehicleLeft} onSettings={() => navigate('/settings')} />
+        {pickerModal}
         <Screen>
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon} aria-hidden="true">🚗</span>
             <p className={styles.emptyTitle}>{t('home.no_vehicles_title')}</p>
             <p className={styles.emptySubtitle}>{t('home.no_vehicles_subtitle')}</p>
-            <button
-              className={styles.emptyBtn}
-              onClick={() => navigate('/vehicles/add')}
-              aria-label={t('home.add_vehicle')}
-            >
+            <button className={styles.emptyBtn} onClick={() => navigate('/vehicles/add')}>
               {t('home.add_vehicle')}
             </button>
           </div>
         </Screen>
-        <BottomNav
-          onStats={() => navigate('/stats')}
-          onAdd={() => navigate('/vehicles/add')}
-          onReminders={() => navigate('/reminders')}
-        />
+        <BottomNav activeTab="home" onHome={() => navigate('/')} onAdd={() => navigate('/vehicles/add')} onReminders={() => navigate('/reminders')} reminderCount={reminders.length} />
       </div>
     )
   }
 
-  const donutData = [
-    { label: t('home.fuel'), value: fuelTotal, color: 'var(--amber-400)' },
-    { label: t('home.service'), value: serviceTotal, color: 'var(--teal-400)' },
-    { label: t('home.expense'), value: expenseTotal, color: 'var(--red-400)' },
-  ].filter((d) => d.value > 0)
-
   return (
     <div className={styles.root}>
-      <TopBar title="Bahon" subtitle={monthName} onSettings={() => setDrawerOpen(true)} />
+      <TopBar left={vehicleLeft} onSettings={() => navigate('/settings')} />
+      {pickerModal}
 
-      <Screen>
-        <div className={styles.vehicleStrip} role="list" aria-label="Your vehicles">
-          {vehicles.map((v) => (
-            <div key={v.id} role="listitem" className={styles.vehiclePillWrap}>
-              <VehiclePill
-                vehicle={v}
-                selected={vehicleId === v.id}
-                onSelect={() => setActiveVehicle(v.id)}
-              />
-              {vehicleId === v.id && (
-                <button
-                  type="button"
-                  className={styles.vehicleDetailBtn}
-                  onClick={() => navigate(`/vehicles/${v.id}`)}
-                  aria-label={`View details for ${v.name}`}
-                >
-                  ›
-                </button>
+      <Screen padding="16px" gap="16px">
+
+        {/* Monthly summary card */}
+        <div className={styles.summaryCard}>
+          <span className={styles.summaryMonth}>{monthName}</span>
+
+          <div className={styles.summaryMain}>
+            <span className={styles.summaryTotal}>{formatMoney(monthTotal)}</span>
+            {trendPct !== null && (
+              <span className={`${styles.trendBadge} ${trendPct <= 0 ? styles.trendDown : styles.trendUp}`}>
+                {trendPct <= 0 ? '↓' : '↑'} {Math.abs(trendPct).toFixed(0)}% vs last month
+              </span>
+            )}
+          </div>
+
+          <div className={styles.costBreakdown}>
+            {fuelTotal > 0 && (
+              <span className={styles.costChip} style={{ color: 'var(--amber-400)' }}>
+                ⛽ {formatMoney(fuelTotal, true)}
+              </span>
+            )}
+            {serviceTotal > 0 && (
+              <span className={styles.costChip} style={{ color: 'var(--teal-400)' }}>
+                🔧 {formatMoney(serviceTotal, true)}
+              </span>
+            )}
+            {expenseTotal > 0 && (
+              <span className={styles.costChip} style={{ color: 'var(--red-400)' }}>
+                💰 {formatMoney(expenseTotal, true)}
+              </span>
+            )}
+          </div>
+
+          {(avgEfficiency != null || distanceThisMonth > 0) && (
+            <div className={styles.effRow}>
+              {avgEfficiency != null && (
+                <span className={styles.effStat}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M7 2a5 5 0 1 0 0 10A5 5 0 0 0 7 2ZM7 7V4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  {formatEfficiency(avgEfficiency)}
+                </span>
+              )}
+              {avgEfficiency != null && distanceThisMonth > 0 && <span className={styles.effDot}>·</span>}
+              {distanceThisMonth > 0 && (
+                <span className={styles.effStat}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M7 1.5C4.5 1.5 2.5 3.5 2.5 6c0 3.5 4.5 6.5 4.5 6.5S11.5 9.5 11.5 6c0-2.5-2-4.5-4.5-4.5Z" stroke="currentColor" strokeWidth="1.4"/>
+                    <circle cx="7" cy="6" r="1.2" fill="currentColor"/>
+                  </svg>
+                  {formatDistance(distanceThisMonth)}
+                </span>
               )}
             </div>
-          ))}
-          <div role="listitem">
-            <VehiclePill
-              selected={false}
-              onSelect={() => navigate('/vehicles/add')}
-              variant="add"
-            />
-          </div>
+          )}
         </div>
 
-        <HeroCard
-          period={monthName}
-          totalAmount={formatMoney(monthTotal)}
-          delta={delta}
-          fuel={formatMoney(fuelTotal, true)}
-          service={formatMoney(serviceTotal, true)}
-          other={formatMoney(expenseTotal, true)}
-        />
-
-        {donutData.length > 0 && (
-          <div className={styles.donutCard}>
-            <DonutChart data={donutData} size={90} ariaLabel="Monthly expense breakdown" />
-            <div className={styles.donutLegend}>
-              {donutData.map(({ label, value, color }) => (
-                <div key={label} className={styles.legendItem}>
-                  <span className={styles.legendDot} style={{ background: color }} />
-                  <span className={styles.legendLabel}>{label}</span>
-                  <span className={styles.legendValue}>{formatMoney(value, true)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className={styles.statGrid}>
-          <StatCard
-            icon={<span aria-hidden="true">⛽</span>}
-            iconColor="amber"
-            value={avgEfficiency != null ? formatEfficiency(avgEfficiency) : '—'}
-            label={t('home.avg_mileage')}
-          />
-          <StatCard
-            icon={<span aria-hidden="true">📍</span>}
-            iconColor="blue"
-            value={distanceThisMonth > 0 ? formatDistance(distanceThisMonth) : '—'}
-            label={t('home.distance')}
-          />
-          <StatCard
-            icon={<span aria-hidden="true">🛢</span>}
-            iconColor="teal"
-            value={totalFuelled > 0 ? `${totalFuelled.toFixed(1)} L` : '—'}
-            label={t('home.fuelled')}
-          />
-          <StatCard
-            icon={<span aria-hidden="true">🔔</span>}
-            iconColor="red"
-            value={String(reminders.length)}
-            label={t('home.due_services')}
-            onClick={reminders.length > 0 ? () => navigate('/reminders') : undefined}
-          />
-        </div>
-
-        <div className={styles.quickAdd}>
-          {(
-            [
-              { key: 'fuel' as const, path: '/log/fuel', color: 'var(--amber-400)' },
-              { key: 'service' as const, path: '/log/service', color: 'var(--teal-400)' },
-              { key: 'expense' as const, path: '/log/expense', color: 'var(--red-400)' },
-              { key: 'reminder' as const, path: '/reminders', color: 'var(--blue-400)' },
-            ]
-          ).map(({ key, path, color }) => (
+        {/* Quick actions */}
+        <div className={styles.actions}>
+          {[
+            { label: 'Fuel', path: '/log/fuel', icon: '⛽', color: 'var(--amber-400)' },
+            { label: 'Service', path: '/log/service', icon: '🔧', color: 'var(--teal-400)' },
+            { label: 'Expense', path: '/log/expense', icon: '💰', color: 'var(--red-400)' },
+          ].map(({ label, path, icon, color }) => (
             <button
-              key={key}
-              className={styles.quickAddBtn}
+              key={path}
+              type="button"
+              className={styles.actionBtn}
               onClick={() => navigate(path)}
-              aria-label={`Add ${t(`home.${key}`)}`}
-              style={{ borderColor: color, color }}
+              aria-label={`Log ${label}`}
+              style={{ '--action-color': color } as React.CSSProperties}
             >
-              + {t(`home.${key}`)}
+              <span className={styles.actionIcon} aria-hidden="true">{icon}</span>
+              <span className={styles.actionLabel}>+ {label}</span>
             </button>
           ))}
         </div>
 
+        {/* Quick links */}
+        <div className={styles.quickLinks}>
+          {[
+            { label: 'Stats', icon: '📊', path: '/stats' },
+            { label: 'Reminders', icon: '🔔', path: '/reminders', badge: reminders.length > 0 ? reminders.length : undefined },
+            ...(vehicles.length >= 2 ? [{ label: 'Compare', icon: '⚖️', path: '/compare' }] : []),
+            { label: 'Add vehicle', icon: '🚗', path: '/vehicles/add' },
+          ].map(({ label, icon, path, badge }) => (
+            <button
+              key={path}
+              type="button"
+              className={styles.quickLink}
+              onClick={() => navigate(path)}
+              aria-label={label}
+            >
+              <span className={styles.quickLinkIcon} aria-hidden="true">
+                {icon}
+                {badge != null && <span className={styles.quickLinkBadge}>{badge}</span>}
+              </span>
+              <span className={styles.quickLinkLabel}>{label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Recent activity */}
         {recentLogs.length > 0 && (
-          <>
-            <div className={styles.sectionHeader}>{t('home.recent_activity')}</div>
-            {recentLogs.map((entry) => {
-              if (entry.kind === 'fuel') {
-                return (
-                  <LogRow
-                    key={entry.log.id}
-                    type="fuel"
-                    title={t('home.fuel')}
-                    subtitle={entry.log.date}
-                    amount={entry.log.totalCost}
-                    currency={symbol}
-                  />
-                )
-              }
-              if (entry.kind === 'service') {
-                return (
-                  <LogRow
-                    key={entry.log.id}
-                    type="service"
-                    title={entry.log.title}
-                    subtitle={entry.log.date}
-                    amount={entry.log.cost}
-                    currency={symbol}
-                  />
-                )
-              }
-              return (
-                <LogRow
-                  key={entry.log.id}
-                  type="expense"
-                  title={entry.log.title}
-                  subtitle={entry.log.date}
-                  amount={entry.log.amount}
-                  currency={symbol}
-                />
-              )
-            })}
-          </>
+          <div className={styles.recentSection}>
+            <div className={styles.recentHeader}>
+              <span className={styles.recentTitle}>{t('home.recent_activity')}</span>
+              <button type="button" className={styles.seeAllBtn} onClick={() => navigate('/stats')}>
+                See all
+              </button>
+            </div>
+            <div className={styles.recentList}>
+              {recentLogs.map((entry) => {
+                if (entry.kind === 'fuel') {
+                  return <LogRow key={entry.log.id} type="fuel" title={t('home.fuel')} subtitle={entry.log.date} amount={entry.log.totalCost} currency={symbol} />
+                }
+                if (entry.kind === 'service') {
+                  return <LogRow key={entry.log.id} type="service" title={entry.log.title} subtitle={entry.log.date} amount={entry.log.cost} currency={symbol} />
+                }
+                return <LogRow key={entry.log.id} type="expense" title={entry.log.title} subtitle={entry.log.date} amount={entry.log.amount} currency={symbol} />
+              })}
+            </div>
+          </div>
         )}
+
       </Screen>
 
-      <BottomNav
-        onStats={() => navigate('/stats')}
-        onAdd={() => navigate('/log/fuel')}
-        onReminders={() => navigate('/reminders')}
-      />
+      <BottomNav activeTab="home" onHome={() => navigate('/')} onAdd={() => navigate('/log/fuel')} onReminders={() => navigate('/reminders')} reminderCount={reminders.length} />
     </div>
   )
 }

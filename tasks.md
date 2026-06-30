@@ -1608,13 +1608,402 @@ Create `README.md` with:
 
 ---
 
+## Phase 11 — Post-launch: UX improvements and retroactive tasks
+
+> These tasks document features built outside the original task loop (TASK-043–045) and new UX
+> improvements identified during product review (TASK-046–055).
+
+---
+
+### TASK-043: Edit vehicle flow + vehicle detail navigation
+
+**PLAN**
+- `AddVehicleScreen` doubles as an edit screen when `location.state.editVehicle` is passed
+- `VehicleDetailScreen` has an Edit button in the TopBar that navigates to add screen with state
+- HomeScreen vehicle picker has a chevron button per row that navigates to `/vehicles/:id`
+
+**EXECUTE**
+1. Update `AddVehicleScreen` to read `location.state?.editVehicle` → pre-populate all fields, change title to "Edit Vehicle", button to "Save Changes", call `updateVehicle()` on save
+2. Add Edit button to `VehicleDetailScreen` TopBar `actions` prop
+3. Add `pickerDetailBtn` chevron to each vehicle row in `HomeScreen` picker modal
+
+**TEST**
+- [x] Tapping a vehicle in the picker and hitting the chevron navigates to `/vehicles/:id`
+- [x] Vehicle detail screen shows an Edit button in the top bar
+- [x] Tapping Edit navigates to `/vehicles/add` with edit state pre-populated
+- [x] Saving changes updates the vehicle in the DB and returns to detail screen
+- [x] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-044: Reminder redesign — polished cards, separate add screen, edit, BottomNav badge
+
+**PLAN**
+- Replace inline form with a dedicated `/reminders/add` route
+- Redesign reminder cards with left accent strip, urgency colours, Edit + Dismiss buttons
+- Pass `reminderCount` to `BottomNav` to show a red badge when reminders exist
+- Edit reminder: navigate to `/reminders/add` with `location.state.editReminder`
+
+**EXECUTE**
+1. Create `src/screens/AddReminderScreen.tsx` and `AddReminderScreen.module.css`
+   - Segmented control: One-time vs Repeat
+   - One-time: chip toggle between "Due date" and "At odometer"; show current odo hint for odo mode
+   - Repeat: chip strip with Daily/Weekly/Monthly/Yearly/Every {unit}; interval input with unit label
+   - Edit mode via `location.state?.editReminder`; calls `updateReminder` vs `addReminder`
+2. Rewrite `RemindersScreen.tsx` — remove form, show card list with Add button in TopBar
+3. Redesign `RemindersScreen.module.css` — `.card`, `.cardAccent` (4px left strip), urgency border colours
+4. Add `reminderCount?: number` prop to `BottomNav`; render red pill badge over bell icon
+5. Add route `/reminders/add` to `App.tsx`
+
+**TEST**
+- [x] Reminder list shows polished cards with coloured left accent strip
+- [x] Overdue cards have red border; urgent cards amber; future cards default border
+- [x] Each card shows a repeat badge (↻) for repeat reminders
+- [x] Edit button on a card navigates to `/reminders/add` with pre-populated fields
+- [x] Dismiss/Mark done works correctly; repeat reminders advance to next due date
+- [x] BottomNav bell shows red badge with count when reminders > 0; shows "9+" for > 9
+- [x] TopBar Add button navigates to `/reminders/add`
+- [x] Empty state shows CTA button to add first reminder
+- [x] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-045: SettingsScreen full-page settings at `/settings`
+
+**PLAN**
+- A full-screen settings page at `/settings` replacing any drawer-only flow
+- Language, currency, distance unit, volume unit, efficiency unit, theme, locked fuel price
+- Export button (CSV) and About link
+
+**EXECUTE**
+1. Create `src/screens/SettingsScreen.tsx` and `SettingsScreen.module.css`
+2. Add route `/settings` to `App.tsx`
+3. TopBar settings icon in `HomeScreen` navigates to `/settings`
+
+**TEST**
+- [x] `/settings` route renders without errors
+- [x] Language toggle (EN ↔ BN) takes effect immediately
+- [x] Currency, distance unit, volume unit, efficiency unit dropdowns change display values throughout the app
+- [x] Dark/light theme toggle works
+- [x] Export CSV button triggers download
+- [x] About row navigates to `/about`
+- [x] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-046: Edit service logs and expense logs
+
+**PLAN**
+- `VehicleDetailScreen` currently only has edit buttons for fuel logs
+- `LogServiceScreen` and `LogExpenseScreen` need edit mode (similar to `LogFuelScreen`)
+- `VehicleDetailScreen` needs edit buttons for service and expense log rows
+
+**EXECUTE**
+1. Update `LogServiceScreen` to read `location.state?.editLog: ServiceLog`:
+   - Pre-populate all fields (date, title, cost, notes, shopName)
+   - Change title to "Edit Service", button to "Save Changes"
+   - Call `updateServiceLog(id, payload)` instead of `addServiceLog` when editing
+2. Update `LogExpenseScreen` to read `location.state?.editLog: Expense`:
+   - Pre-populate all fields
+   - Call `updateExpense(id, payload)` when editing
+3. Add edit buttons to service and expense rows in `VehicleDetailScreen` (same pattern as fuel logs)
+
+**TEST**
+- [ ] Tapping edit on a service log row navigates to `/log/service` with pre-populated fields
+- [ ] Saving a service edit updates the DB and navigates back
+- [ ] Tapping edit on an expense row navigates to `/log/expense` with pre-populated fields
+- [ ] Saving an expense edit updates the DB and navigates back
+- [ ] Edit buttons have accessible `aria-label` attributes
+- [ ] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-047: Compare vehicles screen — verify and complete
+
+**PLAN**
+- `CompareScreen` (`/compare`) exists but has no task tracking whether it's complete and functional
+- Should show side-by-side stats for two selectable vehicles over a chosen period
+
+**EXECUTE**
+1. Verify `CompareScreen.tsx` renders correctly with ≥ 2 vehicles
+2. Period selector (This month / 3 months / This year / All time)
+3. For each vehicle show: total spend, avg fuel efficiency, fill-ups count, total distance
+4. Accessible with keyboard; no hardcoded strings (i18n keys)
+5. Ensure entry point from HomeScreen picker ("Compare vehicles" button visible when ≥ 2 vehicles)
+
+**TEST**
+- [ ] `/compare` route renders without errors when ≥ 2 vehicles exist
+- [ ] Vehicle selector shows all vehicles; user can pick two to compare
+- [ ] Period chips filter data correctly for each period
+- [ ] Stats update reactively when period or vehicle selection changes
+- [ ] Entry point from HomeScreen picker works (button visible only with ≥ 2 vehicles)
+- [ ] Works with only 1 vehicle (shows message to add another vehicle)
+- [ ] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-048: Document expiry tracker
+
+**PLAN**
+- Bangladesh-specific: track fitness certificate, insurance, registration, and tax token expiry
+- Documents have an expiry date; they generate a reminder when approaching expiry
+- Can be a dedicated "Documents" section or integrated into the Reminders screen under a "Documents" category
+
+**EXECUTE**
+1. Add `documents` table to Dexie schema in `src/db/database.ts`:
+   - Fields: `id`, `vehicleId`, `type` (fitness | insurance | registration | taxToken | other), `title`, `expiryDate`, `notes`
+2. Create DB query hooks: `useDocuments(vehicleId)`, `addDocument`, `updateDocument`, `deleteDocument` in `src/db/queries/useDocuments.ts`
+3. Add TypeScript `Document` type to `src/types/index.ts`
+4. Create `src/screens/DocumentsScreen.tsx` and module CSS:
+   - List of documents grouped by vehicle
+   - Each row shows type icon, title, expiry date, days-until-expiry badge
+   - Color coding: red (expired / < 7 days), amber (≤ 30 days), green (> 30 days)
+5. Create `src/screens/AddDocumentScreen.tsx` for add/edit:
+   - Document type chip picker
+   - Title input
+   - Expiry date input
+   - Notes (optional)
+6. Add route `/documents` and `/documents/add` to `App.tsx`
+7. Add Documents tab or quick link entry point (from HomeScreen quick links or BottomNav)
+8. Add i18n keys for all document types and screen labels
+
+**TEST**
+- [ ] `/documents` route renders without errors
+- [ ] Add document form saves correctly to IndexedDB
+- [ ] Documents grouped or listed per vehicle
+- [ ] Expiry badge colours match urgency tiers (red/amber/green)
+- [ ] Edit document: pre-populate form, save updates record
+- [ ] Delete document removes it from the list
+- [ ] Switching vehicles updates the document list
+- [ ] Works offline
+- [ ] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-049: Cost per km metric on Stats screen
+
+**PLAN**
+- Show "cost per km" (total spend / total distance driven) on the Stats summary tab
+- Useful metric: lower is better; compare across time periods
+
+**EXECUTE**
+1. In `StatsScreen` summary tab, compute `costPerKm = totalSpend / totalDistanceKm` for the selected period
+2. Display as a `StatCard` alongside existing stats (total spend, fill-up count, avg efficiency)
+3. Show N/A when no fuel logs with odometer data exist
+4. Unit-aware display: convert to cost per mile when `distanceUnit === 'mi'`
+5. Add i18n key `stats.cost_per_km` / `stats.cost_per_mi`
+
+**TEST**
+- [ ] Cost per km/mi stat card appears on the Stats summary tab
+- [ ] Value is accurate (matches manual calculation from seed data)
+- [ ] Shows N/A gracefully when distance data is missing
+- [ ] Switches to "cost per mi" label when user's distance unit is miles
+- [ ] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-050: Annual cost summary in Stats
+
+**PLAN**
+- Add a yearly breakdown view to the Stats screen
+- Show total spend per year as a bar chart + breakdown by category (fuel / service / expense)
+
+**EXECUTE**
+1. Add a "Yearly" time period option to the Stats screen period selector (if not already present)
+2. In the Stats fuel/overview tab, add a stacked bar chart showing monthly totals for the selected year
+3. Show year-selector (← 2024 → 2025) to browse historical years
+4. Summary row: total km driven that year, total spend, avg monthly cost
+5. Add i18n keys for yearly labels
+
+**TEST**
+- [ ] Yearly period shows 12-month stacked bar chart
+- [ ] Year navigation arrows switch between calendar years
+- [ ] Total spend and avg monthly cost display correctly
+- [ ] Chart reflects actual DB data for the selected year and vehicle
+- [ ] Works offline
+- [ ] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-051: Fuel price trend chart
+
+**PLAN**
+- Show price per litre/gallon over time as a line chart on the Stats fuel tab
+- Helps users see if they're paying more or less at the pump over time
+
+**EXECUTE**
+1. In `StatsScreen` Fuel tab, add a `LineChart` showing `pricePerLitre` vs `date` for all fuel logs
+2. X-axis: dates of fill-ups; Y-axis: price per litre (converted to per gallon for gal unit)
+3. Show the chart only when ≥ 3 fuel logs exist (otherwise show a hint)
+4. Section title: "Fuel price trend" with i18n key
+
+**TEST**
+- [ ] Fuel price trend section appears on Stats fuel tab when ≥ 3 logs exist
+- [ ] Line chart plots price per litre correctly over time
+- [ ] Chart hides gracefully when fewer than 3 logs exist
+- [ ] Unit-aware: shows per gallon when volume unit is gallons
+- [ ] TypeScript: `npx tsc --noEmit` — no errors
+
+---
+
+### TASK-053: Color system redesign — single Indigo accent, Zinc neutrals
+
+**PLAN**
+
+Current problem: the app uses 4 competing accent colors (amber fuel, teal service, red expense, blue
+interactive) which creates visual noise. Modern apps (Linear, Stripe, Notion) use one accent + a
+neutral ramp + semantic-only status colors.
+
+Target system:
+- Neutrals: Zinc ramp (warm-neutral gray, no blue tint)
+- Single accent: Indigo-500 `#6366F1` (light) / Indigo-400 `#818CF8` (dark)
+- Status colors kept but used ONLY for actual status: danger=overdue/error, success=saved toast,
+  warning=upcoming reminder. NOT for categories.
+- Category distinction on home: icons only (emoji), no colored borders/backgrounds on action buttons
+
+**Token changes in `src/styles/tokens.css`:**
+
+Light mode:
+```
+--surface-0: #FFFFFF
+--surface-1: #FAFAFA
+--surface-2: #F4F4F5
+--text-primary: #09090B
+--text-secondary: #52525B
+--text-muted: #A1A1AA
+--border: #E4E4E7
+--border-strong: #D4D4D8
+
+--accent:        #6366F1   (Indigo-500)
+--accent-bg:     #EEF2FF   (Indigo-50)
+--accent-dark:   #4338CA   (Indigo-700)
+--text-accent:   #4338CA
+--border-accent: #6366F1
+
+--success:       #16A34A   (Green-600)
+--success-bg:    #F0FDF4
+--danger:        #DC2626   (Red-600)
+--danger-bg:     #FEF2F2
+--warning:       #D97706   (Amber-600)
+--warning-bg:    #FFFBEB
+```
+
+Dark mode:
+```
+--surface-0: #09090B
+--surface-1: #111113
+--surface-2: #18181B
+--text-primary: #FAFAFA
+--text-secondary: #A1A1AA
+--text-muted:     #52525B
+--border:         #27272A
+--border-strong:  #3F3F46
+
+--accent:        #818CF8   (Indigo-400)
+--accent-bg:     #1E1B4B   (Indigo-950)
+--accent-dark:   #A5B4FC
+--text-accent:   #A5B4FC
+--border-accent: #818CF8
+
+--success:       #4ADE80
+--success-bg:    #052E16
+--danger:        #F87171
+--danger-bg:     #450A0A
+--warning:       #FCD34D
+--warning-bg:    #451A03
+```
+
+Remove: old `--blue-400`, `--blue-600`, `--blue-50`, `--amber-400`, `--amber-600`,
+`--amber-50`, `--teal-400`, `--teal-600`, `--teal-50`, `--red-400`, `--red-600`, `--red-50`.
+Replace any remaining uses with the semantic tokens above.
+
+**Component changes:**
+
+1. `HomeScreen.tsx` + `HomeScreen.module.css` — action buttons (Fuel/Service/Expense):
+   - Remove `--action-color` CSS variable per button
+   - All three buttons: neutral style — `border: 1px solid var(--border)`, `background: var(--surface-1)`
+   - Icon emoji stays for category recognition; label in `--text-secondary`
+   - On hover/active: `background: var(--surface-2)`
+
+2. `HomeScreen.tsx` — cost chips in summary card:
+   - Remove `style={{ color: 'var(--amber-400)' }}` etc. from all chips
+   - Chips use `--text-secondary` text; emoji provides category cue
+
+3. `LogRow` component — amount text color:
+   - Currently uses category color. Change to `--text-primary` for all amounts.
+   - Icon background pill retains a very subtle neutral tint (not colored)
+
+4. All other files using `var(--blue-400)`, `var(--amber-400)`, `var(--teal-400)`, `var(--red-400)`
+   directly — replace with appropriate semantic token (`--accent`, `--success`, `--danger`,
+   `--warning`) based on context.
+
+**EXECUTE**
+1. Rewrite `src/styles/tokens.css` with the new Zinc + Indigo system (remove old palette vars,
+   add new ones as specified in PLAN)
+2. Update `HomeScreen.module.css` — remove `.actionBtn` color variable, make buttons neutral
+3. Update `HomeScreen.tsx` — remove `style={{ '--action-color': color }}` from action buttons;
+   remove inline `style={{ color: ... }}` from cost chips
+4. Search for all remaining direct uses of old color vars (`--blue-400`, `--amber-400`,
+   `--teal-400`, `--red-400`) across all `.tsx` and `.module.css` files; replace each with the
+   correct semantic token
+5. Run `npx tsc --noEmit` — fix any type errors
+6. Open http://localhost:4546 in Brave, take a screenshot, verify: no rainbow colors, everything
+   looks cohesive, both action buttons and chips are neutral/indigo
+
+**TEST**
+- [ ] `npx tsc --noEmit` passes with 0 errors
+- [ ] `npm run lint` passes
+- [ ] Home screen light mode: action buttons are neutral (no amber/teal/red borders)
+- [ ] Home screen light mode: cost chips are neutral text (no amber/teal/red text)
+- [ ] Single indigo accent is visible on interactive elements (buttons, links, active states, toggle)
+- [ ] Dark mode: same neutrality — no rainbow, indigo accent visible
+- [ ] Reminders screen: overdue/urgent items still show red/amber (semantic danger/warning)
+- [ ] Settings toggle is indigo when on
+- [ ] No hardcoded hex values added — all colors use CSS custom properties
+
+---
+
+### TASK-052: PWA production go-live and Cloudflare Pages deployment
+
+**PLAN**
+- TASK-033 (PWA manifest), TASK-034 (service worker), and TASK-035 (GitHub Actions workflow) are
+  already implemented and marked done
+- This task covers the one-time steps to actually go live: add CF secrets to GitHub, push to the
+  remote repository, verify the live URL, and run a final Lighthouse audit against production
+
+**EXECUTE**
+1. Add GitHub repository secrets `CF_API_TOKEN` and `CF_ACCOUNT_ID` in repo Settings → Secrets
+2. Push current `main` branch to the GitHub remote
+3. Confirm GitHub Actions `deploy.yml` workflow runs and passes all steps
+4. Note the Cloudflare Pages live URL from the CF dashboard
+5. Run Lighthouse against the live URL (Chrome DevTools → Lighthouse tab):
+   - Performance ≥ 90
+   - Accessibility ≥ 90
+   - Best Practices ≥ 90
+   - PWA: passes "Installable" check
+6. Test the install prompt on Android Chrome (add to home screen)
+7. Test offline mode on the live URL: turn off network, reload, confirm app still loads
+
+**TEST**
+- [ ] GitHub Actions deploy workflow passes on push to main
+- [ ] Live Cloudflare Pages URL loads the app
+- [ ] Lighthouse Performance ≥ 90 on live URL
+- [ ] Lighthouse Accessibility ≥ 90 on live URL
+- [ ] Lighthouse PWA: Installable check passes
+- [ ] App works offline after first visit (service worker caches assets)
+- [ ] Install prompt appears on Android Chrome
+
+---
+
 ## Done
 
-When TASK-042 passes all tests, Bahon v1.0.0 is ready for production deployment.
+When TASK-042 passes all tests, Bahon v1.0.0 is ready for production deployment. TASK-043–052 cover post-launch improvements and the final go-live steps.
 
-**Total tasks:** 43 (TASK-001 → TASK-042, plus TASK-041b)  
-**Estimated hours (solo):** 80–120 hours  
-**With Claude Code loops:** 20–40 hours  
+**Total tasks:** 53 (TASK-001 → TASK-052, plus TASK-041b)  
+**Completed (v1.0.0 core):** TASK-001 → TASK-044 (all [x])  
+**Remaining:** TASK-045 → TASK-052  
+**Estimated hours (solo):** 80–120 hours core + 30–50 hours post-launch  
+**With Claude Code loops:** 20–40 hours core + 10–20 hours post-launch  
 
 ---
 
