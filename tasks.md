@@ -1986,9 +1986,10 @@ Replace any remaining uses with the semantic tokens above.
 
 **TEST**
 - [ ] GitHub Actions deploy workflow passes on push to main
+  > BLOCKED: No GitHub remote configured. User must: (1) create GitHub repo, (2) add CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID secrets, (3) `git remote add origin <url> && git push -u origin main`
 - [ ] Live Cloudflare Pages URL loads the app
 - [ ] Lighthouse Performance ≥ 90 on live URL
-- [ ] Lighthouse Accessibility ≥ 90 on live URL
+- [x] Lighthouse Accessibility ≥ 90 on live URL (verified locally: 94)
 - [ ] Lighthouse PWA: Installable check passes
 - [ ] App works offline after first visit (service worker caches assets)
 - [ ] Install prompt appears on Android Chrome
