@@ -90,6 +90,34 @@ export function HomeScreen() {
     [fuelLogs]
   )
 
+  const currentOdo = activeVehicle?.odometer
+
+  function getReminderUrgency(r: { daysBeforeAlert: number; kmBeforeAlert?: number; dueDate?: string; nextDueDate?: string; dueOdometer?: number; nextDueOdometer?: number; type: string }): 'overdue' | 'urgent' | 'future' {
+    const due = r.type === 'repeat' ? (r.nextDueDate ?? r.dueDate) : r.dueDate
+    let dateUrgency: 'overdue' | 'urgent' | 'future' = 'future'
+    if (due) {
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      const days = Math.floor((new Date(due).getTime() - today.getTime()) / 86400000)
+      if (days < 0) dateUrgency = 'overdue'
+      else if (days <= r.daysBeforeAlert) dateUrgency = 'urgent'
+    }
+    const effectiveDueOdo = r.nextDueOdometer ?? r.dueOdometer
+    let odoUrgency: 'overdue' | 'urgent' | 'future' = 'future'
+    if (effectiveDueOdo != null && currentOdo != null) {
+      const remaining = effectiveDueOdo - currentOdo
+      if (remaining <= 0) odoUrgency = 'overdue'
+      else if (remaining <= (r.kmBeforeAlert ?? 1000)) odoUrgency = 'urgent'
+    }
+    const order = { overdue: 0, urgent: 1, future: 2 }
+    return order[dateUrgency] <= order[odoUrgency] ? dateUrgency : odoUrgency
+  }
+
+  const nearReminderCount = useMemo(() =>
+    reminders.filter((r) => getReminderUrgency(r) !== 'future').length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [reminders, currentOdo]
+  )
+
   const recentLogs = useMemo((): LogEntry[] => {
     const merged: LogEntry[] = [
       ...allFuelLogs.map((log) => ({ kind: 'fuel' as const, log })),
@@ -128,7 +156,7 @@ export function HomeScreen() {
       <div className={styles.pickerBackdrop} onClick={() => setVehiclePicker(false)} aria-hidden="true" />
       <div className={styles.pickerOverlay} role="dialog" aria-modal="true" aria-label="Switch vehicle">
         <div className={styles.pickerHeader}>
-          <span className={styles.pickerTitle}>Your Vehicles</span>
+          <span className={styles.pickerTitle}>{t('home.your_vehicles')}</span>
           <button type="button" className={styles.pickerClose} onClick={() => setVehiclePicker(false)} aria-label="Close">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
@@ -166,14 +194,14 @@ export function HomeScreen() {
           <li>
             <button type="button" className={styles.pickerAddItem} onClick={() => { setVehiclePicker(false); navigate('/vehicles/add') }}>
               <span className={styles.pickerItemIcon}>＋</span>
-              <span className={styles.pickerItemName}>Add vehicle</span>
+              <span className={styles.pickerItemName}>{t('home.add_vehicle')}</span>
             </button>
           </li>
           {vehicles.length >= 2 && (
             <li>
               <button type="button" className={styles.pickerCompareItem} onClick={() => { setVehiclePicker(false); navigate('/compare') }}>
                 <span className={styles.pickerItemIcon}>⚖️</span>
-                <span className={styles.pickerItemName}>Compare vehicles</span>
+                <span className={styles.pickerItemName}>{t('home.compare_vehicles')}</span>
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -194,7 +222,7 @@ export function HomeScreen() {
       <div className={styles.root}>
         <TopBar left={vehicleLeft} onSettings={() => navigate('/settings')} />
         {pickerModal}
-        <Screen>
+        <Screen paddingBottom="76px">
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon} aria-hidden="true">🚗</span>
             <p className={styles.emptyTitle}>{t('home.no_vehicles_title')}</p>
@@ -204,7 +232,7 @@ export function HomeScreen() {
             </button>
           </div>
         </Screen>
-        <BottomNav activeTab="home" onHome={() => navigate('/')} onAdd={() => navigate('/vehicles/add')} onReminders={() => navigate('/reminders')} reminderCount={reminders.length} />
+        <BottomNav activeTab="home" onHome={() => navigate('/')} onAdd={() => navigate('/vehicles/add')} onReminders={() => navigate('/reminders')} reminderCount={nearReminderCount} />
       </div>
     )
   }
@@ -214,7 +242,7 @@ export function HomeScreen() {
       <TopBar left={vehicleLeft} onSettings={() => navigate('/settings')} />
       {pickerModal}
 
-      <Screen padding="16px" gap="16px">
+      <Screen padding="16px" paddingBottom="76px" gap="16px">
 
         {/* Monthly summary card */}
         <div className={styles.summaryCard}>
@@ -224,7 +252,7 @@ export function HomeScreen() {
             <span className={styles.summaryTotal}>{formatMoney(monthTotal)}</span>
             {trendPct !== null && (
               <span className={`${styles.trendBadge} ${trendPct <= 0 ? styles.trendDown : styles.trendUp}`}>
-                {trendPct <= 0 ? '↓' : '↑'} {Math.abs(trendPct).toFixed(0)}% vs last month
+                {trendPct <= 0 ? '↓' : '↑'} {Math.abs(trendPct).toFixed(0)}% {t('home.vs_last_month')}
               </span>
             )}
           </div>
@@ -273,33 +301,35 @@ export function HomeScreen() {
 
         {/* Quick actions */}
         <div className={styles.actions}>
-          {[
-            { label: 'Fuel', path: '/log/fuel', icon: '⛽', iconClass: styles.actionIconFuel },
-            { label: 'Service', path: '/log/service', icon: '🔧', iconClass: styles.actionIconService },
-            { label: 'Expense', path: '/log/expense', icon: '💰', iconClass: styles.actionIconExpense },
-          ].map(({ label, path, icon, iconClass }) => (
+          {([
+            { key: 'fuel' as const, path: '/log/fuel', icon: '⛽', iconClass: styles.actionIconFuel },
+            { key: 'service' as const, path: '/log/service', icon: '🔧', iconClass: styles.actionIconService },
+            { key: 'expense' as const, path: '/log/expense', icon: '💰', iconClass: styles.actionIconExpense },
+          ] as const).map(({ key, path, icon, iconClass }) => (
             <button
               key={path}
               type="button"
               className={styles.actionBtn}
               onClick={() => navigate(path)}
-              aria-label={`Log ${label}`}
+              aria-label={t(`home.${key}`)}
             >
               <span className={`${styles.actionIconWrap} ${iconClass}`} aria-hidden="true">{icon}</span>
-              <span className={styles.actionLabel}>+ {label}</span>
+              <span className={styles.actionLabel}>+ {t(`home.${key}`)}</span>
             </button>
           ))}
         </div>
 
         {/* Quick links */}
         <div className={styles.quickLinksSection}>
-          <span className={styles.sectionTitle}>Explore</span>
+          <span className={styles.sectionTitle}>{t('home.explore')}</span>
           <div className={styles.quickLinks}>
             {[
-              { label: 'Stats', icon: '📊', path: '/stats' },
-              { label: 'Reminders', icon: '🔔', path: '/reminders', badge: reminders.length > 0 ? reminders.length : undefined },
-              { label: 'Documents', icon: '📄', path: '/documents' },
-              ...(vehicles.length >= 2 ? [{ label: 'Compare', icon: '⚖️', path: '/compare' }] : [{ label: 'Add vehicle', icon: '🚘', path: '/vehicles/add' }]),
+              { label: t('home.stats'), icon: '📊', path: '/stats' },
+              { label: t('home.reminder'), icon: '🔔', path: '/reminders', badge: nearReminderCount > 0 ? nearReminderCount : undefined },
+              { label: t('home.documents'), icon: '📄', path: '/documents' },
+              ...(vehicles.length >= 2
+                ? [{ label: t('home.compare'), icon: '⚖️', path: '/compare' }]
+                : [{ label: t('home.add_vehicle'), icon: '🚘', path: '/vehicles/add' }]),
             ].map(({ label, icon, path, badge }) => (
               <button
                 key={path}
@@ -324,7 +354,7 @@ export function HomeScreen() {
             <div className={styles.recentHeader}>
               <span className={styles.recentTitle}>{t('home.recent_activity')}</span>
               <button type="button" className={styles.seeAllBtn} onClick={() => navigate('/stats')}>
-                See all
+                {t('home.see_all')}
               </button>
             </div>
             <div className={styles.recentList}>
@@ -343,7 +373,7 @@ export function HomeScreen() {
 
       </Screen>
 
-      <BottomNav activeTab="home" onHome={() => navigate('/')} onAdd={() => navigate('/log/fuel')} onReminders={() => navigate('/reminders')} reminderCount={reminders.length} />
+      <BottomNav activeTab="home" onHome={() => navigate('/')} onAdd={() => navigate('/log/fuel')} onReminders={() => navigate('/reminders')} reminderCount={nearReminderCount} />
     </div>
   )
 }

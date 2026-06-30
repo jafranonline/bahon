@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { Select } from '@components/primitives/Select'
@@ -10,36 +11,37 @@ import { addServiceLog, updateServiceLog } from '@db/queries/useServiceLogs'
 import type { ServiceCategory, ServiceLog } from '@/types'
 import styles from './LogServiceScreen.module.css'
 
-const SERVICE_CATEGORIES: { value: ServiceCategory; label: string }[] = [
-  { value: 'oil_change', label: 'Oil change' },
-  { value: 'oil_filter', label: 'Oil filter' },
-  { value: 'air_filter', label: 'Air filter' },
-  { value: 'fuel_filter', label: 'Fuel filter' },
-  { value: 'spark_plug', label: 'Spark plug' },
-  { value: 'brake_pad', label: 'Brake pad' },
-  { value: 'brake_disc', label: 'Brake disc' },
-  { value: 'tire_rotation', label: 'Tire rotation' },
-  { value: 'tire_replacement', label: 'Tire replacement' },
-  { value: 'wheel_alignment', label: 'Wheel alignment' },
-  { value: 'wheel_balancing', label: 'Wheel balancing' },
-  { value: 'battery', label: 'Battery' },
-  { value: 'coolant', label: 'Coolant' },
-  { value: 'transmission', label: 'Transmission' },
-  { value: 'ac_service', label: 'AC service' },
-  { value: 'chain_service', label: 'Chain service' },
-  { value: 'wash', label: 'Wash' },
-  { value: 'inspection', label: 'Inspection' },
-  { value: 'registration', label: 'Registration' },
-  { value: 'other', label: 'Other' },
-]
-
 export function LogServiceScreen() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const editLog = (location.state as { editLog?: ServiceLog } | null)?.editLog ?? null
   const isEditing = editLog != null
 
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
+
+  const SERVICE_CATEGORIES: { value: ServiceCategory; label: string }[] = [
+    { value: 'oil_change', label: t('service.categories.oil_change') },
+    { value: 'oil_filter', label: t('service.categories.oil_filter') },
+    { value: 'air_filter', label: t('service.categories.air_filter') },
+    { value: 'fuel_filter', label: t('service.categories.fuel_filter') },
+    { value: 'spark_plug', label: t('service.categories.spark_plug') },
+    { value: 'brake_pad', label: t('service.categories.brake_pad') },
+    { value: 'brake_disc', label: t('service.categories.brake_disc') },
+    { value: 'tire_rotation', label: t('service.categories.tire_rotation') },
+    { value: 'tire_replacement', label: t('service.categories.tire_replacement') },
+    { value: 'wheel_alignment', label: t('service.categories.wheel_alignment') },
+    { value: 'wheel_balancing', label: t('service.categories.wheel_balancing') },
+    { value: 'battery', label: t('service.categories.battery') },
+    { value: 'coolant', label: t('service.categories.coolant') },
+    { value: 'transmission', label: t('service.categories.transmission') },
+    { value: 'ac_service', label: t('service.categories.ac_service') },
+    { value: 'chain_service', label: t('service.categories.chain_service') },
+    { value: 'wash', label: t('service.categories.wash') },
+    { value: 'inspection', label: t('service.categories.inspection') },
+    { value: 'registration', label: t('service.categories.registration') },
+    { value: 'other', label: t('service.categories.other') },
+  ]
 
   const today = new Date().toISOString().slice(0, 10)
   const [date, setDate] = useState(editLog?.date ?? today)
@@ -55,7 +57,7 @@ export function LogServiceScreen() {
   async function handleSave() {
     const cost = parseFloat(costStr) || 0
     if (cost <= 0) {
-      setCostError('Cost is required')
+      setCostError(t('common.required'))
       return
     }
     setCostError('')
@@ -83,40 +85,40 @@ export function LogServiceScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={isEditing ? 'Edit Service' : 'Log Service'} onBack={() => navigate(-1)} />
+      <TopBar title={isEditing ? t('service.edit') : t('service.log')} onBack={() => navigate(-1)} />
       <Screen>
         <Input
           type="date"
-          label="Date"
+          label={t('service.date')}
           value={date}
           onChange={setDate}
           id="svc-date"
         />
 
         <Select
-          label="Category"
+          label={t('service.category')}
           options={SERVICE_CATEGORIES}
           value={category ?? ''}
           onChange={(v) => {
             setCategory(v as ServiceCategory)
             if (v !== 'other') setTitle('')
           }}
-          placeholder="Select category…"
+          placeholder={t('common.select')}
           id="svc-category"
         />
 
         {category === 'other' && (
           <Input
-            label="Title"
+            label={t('service.title')}
             value={title}
             onChange={setTitle}
-            placeholder="Describe the service…"
+            placeholder={t('service.describe_placeholder')}
             id="svc-title"
           />
         )}
 
         <Input
-          label="Cost (৳)"
+          label={t('service.cost')}
           value={costStr}
           onChange={(v) => { setCostStr(v); setCostError('') }}
           inputMode="decimal"
@@ -128,7 +130,7 @@ export function LogServiceScreen() {
         />
 
         <Input
-          label="Odometer (km)"
+          label={t('service.odometer')}
           value={odoStr}
           onChange={setOdoStr}
           inputMode="numeric"
@@ -139,21 +141,21 @@ export function LogServiceScreen() {
 
         {showNotes ? (
           <Input
-            label="Note"
+            label={t('common.note')}
             value={notes}
             onChange={setNotes}
-            placeholder="Any notes..."
+            placeholder={t('common.note_placeholder')}
             id="svc-notes"
             multiline
           />
         ) : (
           <button type="button" className={styles.addNoteBtn} onClick={() => setShowNotes(true)}>
-            + Add note
+            {t('common.add_note')}
           </button>
         )}
 
         <Button onClick={handleSave} loading={saving} fullWidth>
-          {isEditing ? 'Save Changes' : 'Save Service Log'}
+          {isEditing ? t('common.save_changes') : t('service.save')}
         </Button>
       </Screen>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { Select } from '@components/primitives/Select'
@@ -10,25 +11,26 @@ import { addExpense, updateExpense } from '@db/queries/useExpenses'
 import type { ExpenseCategory, Expense } from '@/types'
 import styles from './LogExpenseScreen.module.css'
 
-const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: 'tax_token', label: 'Tax token' },
-  { value: 'insurance', label: 'Insurance' },
-  { value: 'parking', label: 'Parking' },
-  { value: 'toll', label: 'Toll' },
-  { value: 'fuel_tax', label: 'Fuel tax' },
-  { value: 'fine', label: 'Fine' },
-  { value: 'wash', label: 'Wash' },
-  { value: 'accessories', label: 'Accessories' },
-  { value: 'other', label: 'Other' },
-]
-
 export function LogExpenseScreen() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const editLog = (location.state as { editLog?: Expense } | null)?.editLog ?? null
   const isEditing = editLog != null
 
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
+
+  const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
+    { value: 'tax_token', label: t('expense.categories.tax_token') },
+    { value: 'insurance', label: t('expense.categories.insurance') },
+    { value: 'parking', label: t('expense.categories.parking') },
+    { value: 'toll', label: t('expense.categories.toll') },
+    { value: 'fuel_tax', label: t('expense.categories.fuel_tax') },
+    { value: 'fine', label: t('expense.categories.fine') },
+    { value: 'wash', label: t('expense.categories.wash') },
+    { value: 'accessories', label: t('expense.categories.accessories') },
+    { value: 'other', label: t('expense.categories.other') },
+  ]
 
   const today = new Date().toISOString().slice(0, 10)
   const [date, setDate] = useState(editLog?.date ?? today)
@@ -43,7 +45,7 @@ export function LogExpenseScreen() {
   async function handleSave() {
     const amount = parseFloat(amountStr) || 0
     if (amount <= 0) {
-      setAmountError('Amount is required')
+      setAmountError(t('common.required'))
       return
     }
     setAmountError('')
@@ -70,40 +72,40 @@ export function LogExpenseScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={isEditing ? 'Edit Expense' : 'Log Expense'} onBack={() => navigate(-1)} />
+      <TopBar title={isEditing ? t('expense.edit') : t('expense.log')} onBack={() => navigate(-1)} />
       <Screen>
         <Input
           type="date"
-          label="Date"
+          label={t('expense.date')}
           value={date}
           onChange={setDate}
           id="exp-date"
         />
 
         <Select
-          label="Category"
+          label={t('expense.category')}
           options={EXPENSE_CATEGORIES}
           value={category ?? ''}
           onChange={(v) => {
             setCategory(v as ExpenseCategory)
             if (v !== 'other') setTitle('')
           }}
-          placeholder="Select category…"
+          placeholder={t('common.select')}
           id="exp-category"
         />
 
         {category === 'other' && (
           <Input
-            label="Title"
+            label={t('expense.title')}
             value={title}
             onChange={setTitle}
-            placeholder="Describe the expense…"
+            placeholder={t('expense.describe_placeholder')}
             id="exp-title"
           />
         )}
 
         <Input
-          label="Amount (৳)"
+          label={t('expense.amount')}
           value={amountStr}
           onChange={(v) => { setAmountStr(v); setAmountError('') }}
           inputMode="decimal"
@@ -116,21 +118,21 @@ export function LogExpenseScreen() {
 
         {showNotes ? (
           <Input
-            label="Note"
+            label={t('common.note')}
             value={notes}
             onChange={setNotes}
-            placeholder="Any notes..."
+            placeholder={t('common.note_placeholder')}
             id="exp-notes"
             multiline
           />
         ) : (
           <button type="button" className={styles.addNoteBtn} onClick={() => setShowNotes(true)}>
-            + Add note
+            {t('common.add_note')}
           </button>
         )}
 
         <Button onClick={handleSave} loading={saving} fullWidth>
-          {isEditing ? 'Save Changes' : 'Save Expense'}
+          {isEditing ? t('common.save_changes') : t('expense.save')}
         </Button>
       </Screen>
     </div>

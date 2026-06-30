@@ -5,7 +5,6 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   min-height: 0;
-
   /* hide scrollbar cross-browser */
   scrollbar-width: none;
 }

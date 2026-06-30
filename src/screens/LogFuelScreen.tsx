@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { Input } from '@components/primitives/Input'
@@ -15,12 +16,8 @@ import styles from './LogFuelScreen.module.css'
 
 type CalcMode = 'volume' | 'total'
 
-const MODE_OPTIONS: { value: CalcMode; label: string }[] = [
-  { value: 'volume', label: 'Enter Volume' },
-  { value: 'total', label: 'Enter Total' },
-]
-
 export function LogFuelScreen() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { symbol } = useCurrency()
@@ -47,6 +44,11 @@ export function LogFuelScreen() {
   const [saving, setSaving] = useState(false)
   const [errors, setErrors] = useState<{ volume?: string; total?: string; price?: string }>({})
 
+  const modeOptions: { value: CalcMode; label: string }[] = useMemo(() => [
+    { value: 'volume', label: t('fuel.enter_volume') },
+    { value: 'total', label: t('fuel.enter_total') },
+  ], [t])
+
   useEffect(() => {
     if (isEditing && editLog) {
       setDate(editLog.date)
@@ -62,7 +64,6 @@ export function LogFuelScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Pre-fill price/L from last-used or default for this fuel type
   useEffect(() => {
     if (isEditing || !vehicle || !fuelPrices) return
     const saved = fuelPrices[vehicle.fuelType]
@@ -107,9 +108,9 @@ export function LogFuelScreen() {
 
   async function handleSave() {
     const newErrors: typeof errors = {}
-    if (calcMode === 'volume' && (parseFloat(rawVolume) || 0) <= 0) newErrors.volume = 'Required'
-    if (calcMode === 'total' && (parseFloat(rawTotal) || 0) <= 0) newErrors.total = 'Required'
-    if (finalP <= 0) newErrors.price = 'Required'
+    if (calcMode === 'volume' && (parseFloat(rawVolume) || 0) <= 0) newErrors.volume = t('common.required')
+    if (calcMode === 'total' && (parseFloat(rawTotal) || 0) <= 0) newErrors.total = t('common.required')
+    if (finalP <= 0) newErrors.price = t('common.required')
     if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
     setErrors({})
     if (!activeVehicleId) return
@@ -132,7 +133,6 @@ export function LogFuelScreen() {
         await addFuelLog({ vehicleId: activeVehicleId, ...payload })
       }
       if (currentOdo > 0) await updateVehicle(activeVehicleId, { odometer: currentOdo })
-      // Auto-remember price per litre for this fuel type
       if (finalP > 0 && vehicle?.fuelType) {
         updateSettings({ fuelPrices: { ...fuelPrices, [vehicle.fuelType]: finalP } })
       }
@@ -144,26 +144,26 @@ export function LogFuelScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={isEditing ? 'Edit Fuel Log' : 'Log Fuel'} onBack={() => navigate(-1)} />
+      <TopBar title={isEditing ? t('fuel.edit') : t('fuel.log')} onBack={() => navigate(-1)} />
       <Screen>
         <Input
           type="date"
-          label="Date"
+          label={t('fuel.date')}
           value={date}
           onChange={setDate}
           id="fuel-date"
         />
 
         <SegmentedControl
-          options={MODE_OPTIONS}
+          options={modeOptions}
           value={calcMode}
           onChange={(v) => { setCalcMode(v as CalcMode); setErrors({}) }}
-          aria-label="Calculation mode"
+          aria-label={t('fuel.log')}
         />
 
         {calcMode === 'volume' ? (
           <Input
-            label="Volume"
+            label={t('fuel.volume')}
             value={rawVolume}
             onChange={(v) => { setRawVolume(v); setErrors((e) => ({ ...e, volume: undefined })) }}
             inputMode="decimal"
@@ -175,7 +175,7 @@ export function LogFuelScreen() {
           />
         ) : (
           <Input
-            label="Total cost"
+            label={t('fuel.total_cost')}
             value={rawTotal}
             onChange={(v) => { setRawTotal(v); setErrors((e) => ({ ...e, total: undefined })) }}
             inputMode="decimal"
@@ -188,7 +188,7 @@ export function LogFuelScreen() {
         )}
 
         <Input
-          label="Price per litre"
+          label={t('fuel.price_per_l')}
           value={rawPrice}
           onChange={(v) => { setRawPrice(v); setErrors((e) => ({ ...e, price: undefined })) }}
           inputMode="decimal"
@@ -203,7 +203,7 @@ export function LogFuelScreen() {
         {calcMode === 'volume' && computedTotal != null && (
           <div className={styles.computedCard}>
             <div className={styles.computedRow}>
-              <span className={styles.computedLabel}>Total cost</span>
+              <span className={styles.computedLabel}>{t('fuel.total_cost')}</span>
               <span className={styles.computedValue}>{symbol} {computedTotal.toFixed(0)}</span>
             </div>
           </div>
@@ -212,7 +212,7 @@ export function LogFuelScreen() {
         {calcMode === 'total' && computedVolume != null && (
           <div className={styles.computedCard}>
             <div className={styles.computedRow}>
-              <span className={styles.computedLabel}>Volume</span>
+              <span className={styles.computedLabel}>{t('fuel.volume')}</span>
               <span className={styles.computedValue}>{computedVolume.toFixed(2)} L</span>
             </div>
           </div>
@@ -221,14 +221,14 @@ export function LogFuelScreen() {
         {efficiencyKmL != null && (
           <div className={styles.computedCard}>
             <div className={styles.computedRow}>
-              <span className={styles.computedLabel}>Efficiency</span>
+              <span className={styles.computedLabel}>{t('fuel.efficiency')}</span>
               <span className={styles.efficiencyPill}>{efficiencyKmL.toFixed(2)} km/L</span>
             </div>
           </div>
         )}
 
         <Input
-          label="Current odometer"
+          label={t('vehicle.current_odometer')}
           value={currentOdoStr}
           onChange={setCurrentOdoStr}
           inputMode="numeric"
@@ -238,7 +238,7 @@ export function LogFuelScreen() {
         />
 
         <Input
-          label="Previous odometer"
+          label={t('fuel.previous_odometer')}
           value={prevOdoStr}
           onChange={setPrevOdoStr}
           inputMode="numeric"
@@ -248,30 +248,30 @@ export function LogFuelScreen() {
         />
 
         <Input
-          label="Station name"
+          label={t('fuel.station_name')}
           value={stationName}
           onChange={setStationName}
-          placeholder="e.g. Padma Petrol"
+          placeholder={t('fuel.station_placeholder')}
           id="fuel-station"
         />
 
         {showNotes ? (
           <Input
-            label="Note"
+            label={t('common.note')}
             value={notes}
             onChange={setNotes}
-            placeholder="Any notes..."
+            placeholder={t('common.note_placeholder')}
             id="fuel-notes"
             multiline
           />
         ) : (
           <button type="button" className={styles.addNoteBtn} onClick={() => setShowNotes(true)}>
-            + Add note
+            {t('common.add_note')}
           </button>
         )}
 
         <Button onClick={handleSave} loading={saving} fullWidth>
-          {isEditing ? 'Update Fuel Log' : 'Save Fuel Log'}
+          {isEditing ? t('fuel.update') : t('fuel.save')}
         </Button>
       </Screen>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { SegmentedControl } from '@components/primitives/SegmentedControl'
@@ -25,6 +26,7 @@ function displayDist(km: number, unit: DistanceUnit): string {
 }
 
 export function AddReminderScreen() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const editReminder = (location.state as { editReminder?: Reminder } | null)?.editReminder
@@ -36,11 +38,11 @@ export function AddReminderScreen() {
   const { distanceUnit } = useUnits()
 
   const repeatUnits: { value: ReminderRepeatUnit; label: string }[] = [
-    { value: 'daily', label: 'Daily' },
-    { value: 'weekly', label: 'Weekly' },
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'yearly', label: 'Yearly' },
-    { value: 'km', label: `Every ${distanceUnit}` },
+    { value: 'daily', label: t('reminder.units.daily') },
+    { value: 'weekly', label: t('reminder.units.weekly') },
+    { value: 'monthly', label: t('reminder.units.monthly') },
+    { value: 'yearly', label: t('reminder.units.yearly') },
+    { value: 'km', label: t('reminder.every_dist', { unit: distanceUnit }) },
   ]
 
   const [type, setType] = useState<ReminderType>(editReminder?.type ?? 'one-time')
@@ -58,7 +60,7 @@ export function AddReminderScreen() {
 
   async function handleSave() {
     if (!title.trim()) {
-      setTitleError('Title is required')
+      setTitleError(t('reminder.title_required'))
       return
     }
     if (!activeVehicleId) return
@@ -81,7 +83,6 @@ export function AddReminderScreen() {
           await addReminder({ vehicleId: activeVehicleId, ...fields, daysBeforeAlert: 3, kmBeforeAlert: 1000, isActive: true })
         }
       } else {
-        // repeatValue stored in km; in edit mode the value is already km so skip toKm
         const repeatValueKm = isEdit
           ? parseFloat(repeatValueStr) || 1
           : repeatUnit === 'km'
@@ -110,23 +111,23 @@ export function AddReminderScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={isEdit ? 'Edit Reminder' : 'New Reminder'} onBack={() => navigate(-1)} />
+      <TopBar title={isEdit ? t('reminder.edit') : t('reminder.new')} onBack={() => navigate(-1)} />
       <Screen>
         <SegmentedControl
           options={[
-            { value: 'one-time', label: 'One-time' },
-            { value: 'repeat', label: 'Repeat' },
+            { value: 'one-time', label: t('reminder.one_time') },
+            { value: 'repeat', label: t('reminder.repeat') },
           ]}
           value={type}
           onChange={(v) => setType(v as ReminderType)}
-          aria-label="Reminder type"
+          aria-label={t('reminder.add')}
         />
 
         <Input
-          label="Title"
+          label={t('reminder.name')}
           value={title}
           onChange={(v) => { setTitle(v); setTitleError('') }}
-          placeholder="e.g. Oil change due"
+          placeholder={t('reminder.name_placeholder')}
           error={titleError}
           id="rem-title"
         />
@@ -134,21 +135,21 @@ export function AddReminderScreen() {
         {type === 'one-time' && (
           <>
             <div>
-              <p className={styles.fieldLabel}>Trigger by</p>
+              <p className={styles.fieldLabel}>{t('reminder.trigger_by')}</p>
               <div className={styles.chipRow}>
                 <Chip
                   selected={triggerMode === 'date'}
                   onChange={() => setTriggerMode('date')}
-                  aria-label="Trigger by date"
+                  aria-label={t('reminder.due_date_chip')}
                 >
-                  Due date
+                  {t('reminder.due_date_chip')}
                 </Chip>
                 <Chip
                   selected={triggerMode === 'odometer'}
                   onChange={() => setTriggerMode('odometer')}
-                  aria-label="Trigger by odometer"
+                  aria-label={t('reminder.at_odometer')}
                 >
-                  At odometer
+                  {t('reminder.at_odometer')}
                 </Chip>
               </div>
             </div>
@@ -156,7 +157,7 @@ export function AddReminderScreen() {
             {triggerMode === 'date' && (
               <Input
                 type="date"
-                label="Due date"
+                label={t('reminder.due_date')}
                 value={dueDate}
                 onChange={setDueDate}
                 id="rem-due-date"
@@ -166,7 +167,7 @@ export function AddReminderScreen() {
             {triggerMode === 'odometer' && (
               <div>
                 <Input
-                  label="Target odometer"
+                  label={t('reminder.target_odometer')}
                   value={dueOdoStr}
                   onChange={setDueOdoStr}
                   inputMode="numeric"
@@ -176,7 +177,7 @@ export function AddReminderScreen() {
                 />
                 {currentOdo != null && (
                   <p className={styles.odoHint}>
-                    Current: {displayDist(currentOdo, distanceUnit)}
+                    {t('reminder.current_prefix')}{displayDist(currentOdo, distanceUnit)}
                   </p>
                 )}
               </div>
@@ -187,7 +188,7 @@ export function AddReminderScreen() {
         {type === 'repeat' && (
           <>
             <div>
-              <p className={styles.fieldLabel}>Repeat every</p>
+              <p className={styles.fieldLabel}>{t('reminder.repeat_every')}</p>
               <div className={styles.chipRow}>
                 {repeatUnits.map(u => (
                   <Chip
@@ -203,7 +204,7 @@ export function AddReminderScreen() {
             </div>
 
             <Input
-              label={repeatUnit === 'km' ? `Interval (${distanceUnit})` : 'Interval'}
+              label={t('reminder.interval')}
               value={repeatValueStr}
               onChange={setRepeatValueStr}
               inputMode="numeric"
@@ -215,7 +216,7 @@ export function AddReminderScreen() {
             {repeatUnit !== 'km' && (
               <Input
                 type="date"
-                label="Starting date"
+                label={t('reminder.starting_date')}
                 value={nextDueDate}
                 onChange={setNextDueDate}
                 id="rem-next-date"
@@ -225,7 +226,7 @@ export function AddReminderScreen() {
         )}
 
         <Button onClick={handleSave} loading={saving} fullWidth>
-          {isEdit ? 'Save Changes' : 'Save Reminder'}
+          {isEdit ? t('common.save_changes') : t('reminder.save')}
         </Button>
       </Screen>
     </div>

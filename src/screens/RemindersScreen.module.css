@@ -153,21 +153,21 @@
 /* Detail rows */
 .cardDetails {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.detailRow {
-  display: flex;
+.detailChip {
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   font-size: var(--text-sm);
+  font-weight: 500;
   color: var(--text-secondary);
-}
-
-.detailRow svg {
-  flex-shrink: 0;
-  color: var(--text-muted);
+  background: var(--surface-1);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
 }
 
 .remaining {
@@ -200,6 +200,45 @@
 .deleteBtn:active {
   background: var(--bg-danger);
   border-color: var(--danger);
+}
+
+.deleteConfirmText {
+  font-size: var(--text-sm);
+  color: var(--text-danger);
+  font-weight: 600;
+  margin-right: auto;
+}
+
+.cancelDeleteBtn {
+  padding: 5px 12px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.cancelDeleteBtn:active {
+  background: var(--surface-1);
+}
+
+.confirmDeleteBtn {
+  padding: 5px 12px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #fff;
+  background: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.confirmDeleteBtn:active {
+  opacity: 0.8;
 }
 
 .editBtn {
