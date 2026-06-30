@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
@@ -55,7 +56,8 @@ export function SettingsScreen() {
   const efficiencyUnit = useSettingsStore((s) => s.efficiencyUnit)
   const update = useSettingsStore((s) => s.update)
 
-  const { exportAsCSV } = useExport()
+  const { exportAsCSV, exportAsJSON, importFromJSON } = useExport()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   function setLanguage(lang: Language) {
     update({ language: lang })
@@ -66,6 +68,19 @@ export function SettingsScreen() {
     await exportAsCSV('fuel')
     await exportAsCSV('service')
     await exportAsCSV('expenses')
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    try {
+      await importFromJSON(file)
+      alert(t('settings.import_success'))
+      window.location.reload()
+    } catch {
+      alert(t('settings.import_error'))
+    }
   }
 
   return (
@@ -158,6 +173,38 @@ export function SettingsScreen() {
               <path d="M3 14h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
             </svg>
           </button>
+          <div className={styles.divider} />
+          <button
+            type="button"
+            className={styles.row}
+            onClick={() => void exportAsJSON()}
+          >
+            <span className={styles.rowLabel}>{t('settings.export_json')}</span>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M9 3v9M5 8l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 14h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
+          </button>
+          <div className={styles.divider} />
+          <button
+            type="button"
+            className={styles.row}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <span className={styles.rowLabel}>{t('settings.import_json')}</span>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+              <path d="M9 15V6M5 10l4-4 4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 14h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            aria-label={t('settings.import_json')}
+            style={{ display: 'none' }}
+            onChange={(e) => void handleImportFile(e)}
+          />
         </div>
 
         <p className={styles.sectionLabel}>App</p>
