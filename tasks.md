@@ -1732,13 +1732,13 @@ Create `README.md` with:
 5. Ensure entry point from HomeScreen picker ("Compare vehicles" button visible when ≥ 2 vehicles)
 
 **TEST**
-- [ ] `/compare` route renders without errors when ≥ 2 vehicles exist
-- [ ] Vehicle selector shows all vehicles; user can pick two to compare
-- [ ] Period chips filter data correctly for each period
-- [ ] Stats update reactively when period or vehicle selection changes
-- [ ] Entry point from HomeScreen picker works (button visible only with ≥ 2 vehicles)
-- [ ] Works with only 1 vehicle (shows message to add another vehicle)
-- [ ] TypeScript: `npx tsc --noEmit` — no errors
+- [x] `/compare` route renders without errors when ≥ 2 vehicles exist
+- [x] Vehicle selector shows all vehicles; user can pick two to compare
+- [x] Period chips filter data correctly for each period
+- [x] Stats update reactively when period or vehicle selection changes
+- [x] Entry point from HomeScreen picker works (button visible only with ≥ 2 vehicles)
+- [x] Works with only 1 vehicle (shows message to add another vehicle)
+- [x] TypeScript: `npx tsc --noEmit` — no errors
 
 ---
 
