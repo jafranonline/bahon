@@ -109,4 +109,5 @@ export interface Settings {
   fuelPrices?: Partial<Record<FuelType, number>>
   defaultVehicleId?: string
   notificationsEnabled: boolean
+  onboardingComplete?: boolean
 }

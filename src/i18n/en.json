@@ -251,6 +251,15 @@
     "share": "Share",
     "settings": "Settings"
   },
+  "onboarding": {
+    "step_language_title": "Choose your language",
+    "step_language_sub": "You can change this any time in Settings.",
+    "continue": "Continue",
+    "step_vehicle_title": "Add your first vehicle",
+    "step_vehicle_sub": "You can add more vehicles later.",
+    "get_started": "Get Started",
+    "step_of": "{{step}} of {{total}}"
+  },
   "home": {
     "no_vehicles_title": "No vehicles yet",
     "no_vehicles_subtitle": "Add your first vehicle to start tracking fuel costs and service records.",
@@ -263,6 +272,14 @@
     "service": "Service",
     "expense": "Expense",
     "reminder": "Reminder",
-    "recent_activity": "Recent activity"
+    "recent_activity": "Recent activity",
+    "explore": "Explore",
+    "see_all": "See all",
+    "stats": "Stats",
+    "documents": "Documents",
+    "compare": "Compare",
+    "compare_vehicles": "Compare vehicles",
+    "your_vehicles": "Your Vehicles",
+    "vs_last_month": "vs last month"
   }
 }

@@ -1,0 +1,171 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: var(--surface-0);
+  overflow: hidden;
+}
+
+/* ── Header with step dots ───────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px 0;
+  flex-shrink: 0;
+}
+
+.dots {
+  display: flex;
+  gap: 8px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+  background: var(--border-strong);
+  transition: background 0.2s, width 0.2s;
+}
+
+.dotActive {
+  background: var(--accent);
+  width: 24px;
+}
+
+.dotDone {
+  background: var(--accent);
+  opacity: 0.35;
+}
+
+/* ── Content area ────────────────────────────── */
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24px 24px;
+  gap: 28px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Hero section ────────────────────────────── */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding-top: 28px;
+}
+
+.heroIcon {
+  font-size: 52px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.sub {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 260px;
+}
+
+/* ── Language cards ──────────────────────────── */
+.langGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.langCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px 12px;
+  background: var(--surface-1);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.langCardSelected {
+  background: var(--bg-accent);
+  border-color: var(--border-accent);
+}
+
+.langFlag  { font-size: 32px; line-height: 1; }
+.langNative { font-size: var(--text-lg); font-weight: 700; color: var(--text-primary); }
+.langEnglish { font-size: var(--text-xs); color: var(--text-secondary); }
+
+.langCheck {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── Vehicle form ────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fieldLabel {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0 0 8px;
+}
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.typeCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  background: var(--surface-1);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.typeCardSelected {
+  background: var(--bg-accent);
+  border-color: var(--border-accent);
+}
+
+.typeIcon  { font-size: 28px; line-height: 1; }
+.typeLabel { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); }
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Sticky footer ───────────────────────────── */
+.footer {
+  margin-top: auto;
+  padding-top: 8px;
+}

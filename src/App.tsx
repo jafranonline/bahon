@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
+import { useSettingsStore } from '@store/settingsStore'
 
 const HomeScreen = lazy(() => import('./screens/HomeScreen').then(m => ({ default: m.HomeScreen })))
 const StatsScreen = lazy(() => import('./screens/StatsScreen').then(m => ({ default: m.StatsScreen })))
@@ -16,6 +17,13 @@ const SettingsScreen = lazy(() => import('./screens/SettingsScreen').then(m => (
 const CompareScreen = lazy(() => import('./screens/CompareScreen').then(m => ({ default: m.CompareScreen })))
 const DocumentsScreen = lazy(() => import('./screens/DocumentsScreen').then(m => ({ default: m.DocumentsScreen })))
 const AddDocumentScreen = lazy(() => import('./screens/AddDocumentScreen').then(m => ({ default: m.AddDocumentScreen })))
+const OnboardingScreen = lazy(() => import('./screens/OnboardingScreen').then(m => ({ default: m.OnboardingScreen })))
+
+function RequireOnboarding({ children }: { children: React.ReactNode }) {
+  const onboardingComplete = useSettingsStore((s) => s.onboardingComplete)
+  if (!onboardingComplete) return <Navigate to="/onboarding" replace />
+  return <>{children}</>
+}
 
 export default function App() {
   useEffect(() => {
@@ -31,7 +39,8 @@ export default function App() {
     <BrowserRouter>
       <Suspense>
         <Routes>
-          <Route element={<AppShell />}>
+          <Route path="/onboarding" element={<OnboardingScreen />} />
+          <Route element={<RequireOnboarding><AppShell /></RequireOnboarding>}>
             <Route path="/" element={<HomeScreen />} />
             <Route path="/stats" element={<StatsScreen />} />
             <Route path="/log/fuel" element={<LogFuelScreen />} />

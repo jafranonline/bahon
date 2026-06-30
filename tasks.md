@@ -1995,6 +1995,45 @@ Replace any remaining uses with the semantic tokens above.
 
 ---
 
+### TASK-054: First-launch onboarding — language selection then add vehicle
+
+**PLAN**
+
+Show a two-step wizard on first launch only. After completion, the flag is persisted and the user goes straight to home on every subsequent launch.
+
+Step 1 — Language: two large cards (English / বাংলা). Selecting one calls `i18n.changeLanguage` immediately so the user sees the UI flip language in real time. "Continue" advances to step 2.
+
+Step 2 — Add vehicle: vehicle type grid + name input + fuel type chips (same controls as `AddVehicleScreen`). Saving creates the vehicle, sets `onboardingComplete: true` in settingsStore, and navigates to `/`.
+
+Guard: wrap the existing `<AppShell>` route in a `RequireOnboarding` component that redirects to `/onboarding` when the flag is unset. Since settingsStore is synchronous (localStorage), there is no flash.
+
+**EXECUTE**
+
+1. Add `onboardingComplete?: boolean` to `Settings` interface in `src/types/models.ts`
+2. Add `onboardingComplete: false` to defaults in `src/store/settingsStore.ts`
+3. Add `onboarding` keys to `src/i18n/en.json` and `src/i18n/bn.json`
+4. Create `src/screens/OnboardingScreen.tsx` (two-step wizard, no TopBar)
+5. Create `src/screens/OnboardingScreen.module.css`
+6. Update `src/App.tsx`:
+   - Lazy-import `OnboardingScreen`
+   - Add `RequireOnboarding` guard component (redirects if `!onboardingComplete`)
+   - Wrap the existing AppShell `<Route element={...}>` with the guard
+   - Add `/onboarding` route outside the guard
+
+**TEST**
+
+- [x] Fresh visit (no localStorage) shows onboarding step 1 — language selection
+- [x] Selecting বাংলা immediately renders the UI in Bangla
+- [x] Selecting English switches back
+- [x] "Continue" advances to step 2
+- [x] Step 2 shows vehicle type grid, name input, fuel type chips
+- [x] Saving with a valid name navigates to home and shows the vehicle
+- [x] Refreshing after onboarding goes directly to home (no onboarding)
+- [x] `npx tsc --noEmit` passes
+- [x] `npm run lint` passes (warnings OK, errors not)
+
+---
+
 ## Done
 
 When TASK-042 passes all tests, Bahon v1.0.0 is ready for production deployment. TASK-043–052 cover post-launch improvements and the final go-live steps.

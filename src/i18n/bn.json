@@ -250,6 +250,15 @@
     "share": "শেয়ার",
     "settings": "সেটিংস"
   },
+  "onboarding": {
+    "step_language_title": "ভাষা বেছে নিন",
+    "step_language_sub": "পরে সেটিংসে যেকোনো সময় পরিবর্তন করা যাবে।",
+    "continue": "পরবর্তী",
+    "step_vehicle_title": "প্রথম যানবাহন যোগ করুন",
+    "step_vehicle_sub": "পরে আরও যানবাহন যোগ করা যাবে।",
+    "get_started": "শুরু করুন",
+    "step_of": "{{step}} / {{total}}"
+  },
   "home": {
     "no_vehicles_title": "এখনও কোনো যানবাহন নেই",
     "no_vehicles_subtitle": "জ্বালানি খরচ ও সার্ভিস রেকর্ড ট্র্যাক করতে প্রথম যানবাহন যোগ করুন।",
@@ -262,6 +271,14 @@
     "service": "সার্ভিস",
     "expense": "খরচ",
     "reminder": "রিমাইন্ডার",
-    "recent_activity": "সাম্প্রতিক কার্যক্রম"
+    "recent_activity": "সাম্প্রতিক কার্যক্রম",
+    "explore": "অন্বেষণ",
+    "see_all": "সব দেখুন",
+    "stats": "পরিসংখ্যান",
+    "documents": "নথি",
+    "compare": "তুলনা",
+    "compare_vehicles": "যানবাহন তুলনা",
+    "your_vehicles": "আপনার যানবাহন",
+    "vs_last_month": "গত মাসের তুলনায়"
   }
 }
