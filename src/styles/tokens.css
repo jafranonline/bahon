@@ -42,22 +42,22 @@
   --font-display: 'Hind Siliguri', sans-serif;
   --font-body:    'Inter', system-ui, sans-serif;
 
-  --text-xs:   12px;
-  --text-sm:   13px;
-  --text-base: 14px;
-  --text-md:   15px;
-  --text-lg:   17px;
-  --text-xl:   19px;
-  --text-2xl:  23px;
-  --text-hero: 38px;
+  --text-xs:   13px;
+  --text-sm:   14px;
+  --text-base: 15px;
+  --text-md:   16px;
+  --text-lg:   18px;
+  --text-xl:   21px;
+  --text-2xl:  26px;
+  --text-hero: 40px;
 
   /* ── Spacing ─────────────────────────────────── */
   --gap-xs:  4px;
   --gap-sm:  8px;
-  --gap-md:  12px;
-  --gap-lg:  16px;
-  --gap-xl:  20px;
-  --gap-2xl: 24px;
+  --gap-md:  14px;
+  --gap-lg:  18px;
+  --gap-xl:  22px;
+  --gap-2xl: 28px;
 
   /* ── Radii ───────────────────────────────────── */
   --radius-sm:     8px;

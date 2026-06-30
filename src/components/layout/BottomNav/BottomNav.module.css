@@ -1,12 +1,15 @@
 .nav {
   display: flex;
   align-items: center;
-  height: 60px;
-  padding-bottom: var(--safe-bottom);
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background: var(--surface-0);
   border-top: 1px solid var(--border);
-  flex-shrink: 0;
-  position: relative;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
 }
 
 .navItem {
@@ -48,8 +51,8 @@
 }
 
 .fab {
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: var(--radius-circle);
   background: var(--accent);
   color: #fff;
@@ -60,7 +63,7 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.45);
   position: absolute;
-  bottom: 10px;
+  bottom: 8px;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
