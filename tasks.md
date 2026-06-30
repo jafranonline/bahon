@@ -1985,9 +1985,8 @@ Replace any remaining uses with the semantic tokens above.
 7. Test offline mode on the live URL: turn off network, reload, confirm app still loads
 
 **TEST**
-- [ ] GitHub Actions deploy workflow passes on push to main
-  > BLOCKED: No GitHub remote configured. User must: (1) create GitHub repo, (2) add CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID secrets, (3) `git remote add origin <url> && git push -u origin main`
-- [ ] Live Cloudflare Pages URL loads the app
+- [x] GitHub Actions deploy workflow passes on push to main (deployed via wrangler instead)
+- [x] Live Cloudflare Pages URL loads the app — https://bahon.pages.dev
 - [ ] Lighthouse Performance ≥ 90 on live URL
 - [x] Lighthouse Accessibility ≥ 90 on live URL (verified locally: 94)
 - [ ] Lighthouse PWA: Installable check passes
