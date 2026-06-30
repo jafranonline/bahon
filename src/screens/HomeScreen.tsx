@@ -291,6 +291,7 @@ export function HomeScreen() {
           {[
             { label: 'Stats', icon: '📊', path: '/stats' },
             { label: 'Reminders', icon: '🔔', path: '/reminders', badge: reminders.length > 0 ? reminders.length : undefined },
+            { label: 'Documents', icon: '📄', path: '/documents' },
             ...(vehicles.length >= 2 ? [{ label: 'Compare', icon: '⚖️', path: '/compare' }] : []),
             { label: 'Add vehicle', icon: '🚗', path: '/vehicles/add' },
           ].map(({ label, icon, path, badge }) => (

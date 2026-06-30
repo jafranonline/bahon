@@ -10,6 +10,7 @@ import type {
   DistanceUnit,
   VolumeUnit,
   EfficiencyUnit,
+  DocumentType,
 } from './enums'
 
 export interface Vehicle {
@@ -85,6 +86,16 @@ export interface Reminder {
   kmBeforeAlert: number
   isActive: boolean
   lastTriggeredAt?: string
+  createdAt: string
+}
+
+export interface VehicleDocument {
+  id: string
+  vehicleId: string
+  type: DocumentType
+  title: string
+  expiryDate: string
+  notes?: string
   createdAt: string
 }
 

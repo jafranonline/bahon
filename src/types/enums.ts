@@ -48,3 +48,5 @@ export type DistanceUnit = 'km' | 'mi'
 export type VolumeUnit = 'L' | 'gal'
 
 export type EfficiencyUnit = 'km/L' | 'L/100km' | 'MPG'
+
+export type DocumentType = 'fitness' | 'insurance' | 'registration' | 'tax_token' | 'other'

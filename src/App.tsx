@@ -14,6 +14,8 @@ const AddReminderScreen = lazy(() => import('./screens/AddReminderScreen').then(
 const AboutScreen = lazy(() => import('./screens/AboutScreen').then(m => ({ default: m.AboutScreen })))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })))
 const CompareScreen = lazy(() => import('./screens/CompareScreen').then(m => ({ default: m.CompareScreen })))
+const DocumentsScreen = lazy(() => import('./screens/DocumentsScreen').then(m => ({ default: m.DocumentsScreen })))
+const AddDocumentScreen = lazy(() => import('./screens/AddDocumentScreen').then(m => ({ default: m.AddDocumentScreen })))
 
 export default function App() {
   useEffect(() => {
@@ -42,6 +44,8 @@ export default function App() {
             <Route path="/about" element={<AboutScreen />} />
             <Route path="/settings" element={<SettingsScreen />} />
             <Route path="/compare" element={<CompareScreen />} />
+            <Route path="/documents" element={<DocumentsScreen />} />
+            <Route path="/documents/add" element={<AddDocumentScreen />} />
           </Route>
         </Routes>
       </Suspense>

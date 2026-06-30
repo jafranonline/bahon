@@ -1768,15 +1768,15 @@ Create `README.md` with:
 8. Add i18n keys for all document types and screen labels
 
 **TEST**
-- [ ] `/documents` route renders without errors
-- [ ] Add document form saves correctly to IndexedDB
-- [ ] Documents grouped or listed per vehicle
-- [ ] Expiry badge colours match urgency tiers (red/amber/green)
-- [ ] Edit document: pre-populate form, save updates record
-- [ ] Delete document removes it from the list
-- [ ] Switching vehicles updates the document list
-- [ ] Works offline
-- [ ] TypeScript: `npx tsc --noEmit` — no errors
+- [x] `/documents` route renders without errors
+- [x] Add document form saves correctly to IndexedDB
+- [x] Documents grouped or listed per vehicle
+- [x] Expiry badge colours match urgency tiers (red/amber/green)
+- [x] Edit document: pre-populate form, save updates record
+- [x] Delete document removes it from the list
+- [x] Switching vehicles updates the document list
+- [x] Works offline
+- [x] TypeScript: `npx tsc --noEmit` — no errors
 
 ---
 

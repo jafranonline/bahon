@@ -1,0 +1,63 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.typeChip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.typeChip:active {
+  opacity: 0.7;
+}
+
+.typeChipActive {
+  border-color: var(--accent-primary);
+  background: var(--bg-accent-subtle);
+  color: var(--text-accent);
+}
+
+.typeIcon {
+  font-size: 22px;
+}
+
+.addNoteBtn {
+  display: inline;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--text-accent);
+  cursor: pointer;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.addNoteBtn:active {
+  opacity: 0.6;
+}
