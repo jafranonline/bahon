@@ -398,7 +398,9 @@
     "forgot_intro": "Enter your account email and we'll send you a link to reset your password.",
     "forgot_submit": "Send reset link",
     "forgot_sent": "If an account exists for {{email}}, a password reset link is on its way. Check your inbox.",
-    "back_to_login": "Back to login"
+    "back_to_login": "Back to login",
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   },
   "account": {
     "title": "Account",

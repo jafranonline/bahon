@@ -25,6 +25,30 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false)
   const [forgot, setForgot] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  const passwordToggle = (
+    <button
+      type="button"
+      className={styles.eyeBtn}
+      onClick={() => setShowPassword((v) => !v)}
+      aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
+      aria-pressed={showPassword}
+      tabIndex={-1}
+    >
+      {showPassword ? (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <path d="M9.4 5.2A9.5 9.5 0 0112 5c5 0 9 4 10 7a12 12 0 01-2.2 3.2M6.2 6.2A12 12 0 002 12c1 3 5 7 10 7a9.6 9.6 0 003.7-.7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+          <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.7" />
+        </svg>
+      )}
+    </button>
+  )
 
   const errorText = (code: string): string => {
     const map: Record<string, string> = {
@@ -153,13 +177,14 @@ export function AuthScreen() {
             autoComplete="email"
           />
           <Input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             label={t('auth.password')}
             value={password}
             onChange={setPassword}
             placeholder="••••••••"
             hint={mode === 'register' ? t('auth.password_hint') : undefined}
             autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+            suffix={passwordToggle}
           />
           {error && <p className={styles.error} role="alert">{error}</p>}
           <Button onClick={submit} loading={busy} fullWidth>

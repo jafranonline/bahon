@@ -7,6 +7,25 @@
   min-height: 0;
   /* hide scrollbar cross-browser */
   scrollbar-width: none;
+  /* Gentle fade/rise on mount so route changes feel responsive, not "stuck". */
+  animation: screenFadeIn 0.22s ease-out;
+}
+
+@keyframes screenFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
 }
 
 .screen::-webkit-scrollbar {

@@ -1,0 +1,30 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100dvh;
+  max-width: 390px;
+  margin: 0 auto;
+  background: var(--surface-1);
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: loadingSpin 0.7s linear infinite;
+}
+
+@keyframes loadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 1.4s;
+  }
+}

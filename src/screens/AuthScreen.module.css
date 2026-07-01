@@ -51,6 +51,28 @@
   margin: 0;
 }
 
+.eyeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.eyeBtn:hover {
+  color: var(--text-secondary);
+}
+
+.eyeBtn:focus-visible {
+  outline: none;
+  color: var(--text-accent);
+}
+
 .forgotLink {
   align-self: center;
   background: none;

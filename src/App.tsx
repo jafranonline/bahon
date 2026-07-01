@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
+import { LoadingScreen } from './components/layout/LoadingScreen/LoadingScreen'
 import { useSettingsStore } from '@store/settingsStore'
 import { useAuthStore } from '@store/authStore'
 
@@ -47,7 +48,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Suspense>
+      <Suspense fallback={<LoadingScreen />}>
         <Routes>
           <Route path="/onboarding" element={<OnboardingScreen />} />
           {/* Email link targets — reachable without onboarding (e.g. fresh device). */}
