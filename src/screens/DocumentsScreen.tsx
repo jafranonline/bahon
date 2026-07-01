@@ -5,6 +5,7 @@ import { Screen } from '@components/layout/Screen'
 import { BottomNav } from '@components/layout/BottomNav'
 import { Button } from '@components/primitives/Button'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useUIStore } from '@store/uiStore'
 import { useReminderCount } from '@hooks/useReminderCount'
 import { useDocuments, deleteDocument } from '@db/queries/useDocuments'
 import type { VehicleDocument, DocumentType } from '@/types'
@@ -53,6 +54,7 @@ function ExpiryBadge({ expiryDate }: { expiryDate: string }) {
 
 export function DocumentsScreen() {
   const navigate = useNavigate()
+  const openMenu = useUIStore((s) => s.setDrawerOpen)
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const docs = useDocuments(activeVehicleId ?? '')
   const reminderCount = useReminderCount()
@@ -66,7 +68,7 @@ export function DocumentsScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title="Documents" onBack={() => navigate(-1)} />
+      <TopBar title="Documents" onMenu={() => openMenu(true)} />
       <Screen paddingBottom="76px">
         {confirmDelete && (
           <div className={styles.confirmCard}>

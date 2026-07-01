@@ -11,6 +11,7 @@ import { useAuthStore } from '@store/authStore'
 import { useUIStore } from '@store/uiStore'
 import { syncNow } from '@/sync/syncEngine'
 import { InstallBanner } from '../InstallBanner/InstallBanner'
+import { NavDrawer } from '../../domain/NavDrawer/NavDrawer'
 import { AgentSheet } from '../../domain/AgentSheet/AgentSheet'
 import i18n from '@i18n/config'
 import styles from './AppShell.module.css'
@@ -96,6 +97,7 @@ export function AppShell() {
     <div className={styles.shell}>
       <Outlet />
       <InstallBanner />
+      <NavDrawer />
       <AgentSheet
         open={agentOpen}
         onClose={() => setAgentOpen(false)}

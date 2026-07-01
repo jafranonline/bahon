@@ -10,6 +10,7 @@ import { useServiceLogs, useMonthlyServiceLogs } from '@db/queries/useServiceLog
 import { useExpenses, useMonthlyExpenses } from '@db/queries/useExpenses'
 import { useReminders } from '@db/queries/useReminders'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useUIStore } from '@store/uiStore'
 import { useCurrency } from '@hooks/useCurrency'
 import { useTranslation } from '@hooks/useTranslation'
 import { useUnits } from '@hooks/useUnits'
@@ -30,6 +31,7 @@ export function HomeScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { share } = useShare()
+  const openMenu = useUIStore((s) => s.setDrawerOpen)
   const { format: formatMoney, symbol } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
   const [vehiclePicker, setVehiclePicker] = useState(false)
@@ -223,6 +225,7 @@ export function HomeScreen() {
     return (
       <div className={styles.root}>
         <TopBar
+          onMenu={() => openMenu(true)}
           left={vehicleLeft}
           onSettings={() => navigate('/settings')}
           actions={
@@ -259,6 +262,7 @@ export function HomeScreen() {
   return (
     <div className={styles.root}>
       <TopBar
+        onMenu={() => openMenu(true)}
         left={vehicleLeft}
         onSettings={() => navigate('/settings')}
         actions={

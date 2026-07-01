@@ -5,6 +5,7 @@ import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { BottomNav } from '@components/layout/BottomNav'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useUIStore } from '@store/uiStore'
 import { useVehicle } from '@db/queries/useVehicles'
 import { useReminders, dismissReminder, deleteReminder } from '@db/queries/useReminders'
 import { useUnits } from '@hooks/useUnits'
@@ -169,6 +170,7 @@ function ReminderCard({ reminder, onDismiss, onDelete, onEdit, confirmingDelete,
 export function RemindersScreen() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const openMenu = useUIStore((s) => s.setDrawerOpen)
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const reminders = useReminders(activeVehicleId ?? undefined)
   const vehicle = useVehicle(activeVehicleId ?? '')
@@ -201,7 +203,7 @@ export function RemindersScreen() {
     <div className={styles.root}>
       <TopBar
         title={t('reminder.title')}
-        onBack={() => navigate(-1)}
+        onMenu={() => openMenu(true)}
         actions={
           <button
             className={styles.addBtn}

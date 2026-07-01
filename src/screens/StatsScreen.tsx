@@ -6,6 +6,7 @@ import { BottomNav } from '@components/layout/BottomNav'
 import { StackedBarChart } from '@components/charts/StackedBarChart'
 import { LineChart } from '@components/charts/LineChart'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useUIStore } from '@store/uiStore'
 import { useSettingsStore } from '@store/settingsStore'
 import { useFuelLogs } from '@db/queries/useFuelLogs'
 import { useServiceLogs } from '@db/queries/useServiceLogs'
@@ -35,6 +36,7 @@ function monthKey(date: string) {
 
 export function StatsScreen() {
   const navigate = useNavigate()
+  const openMenu = useUIStore((s) => s.setDrawerOpen)
   const [tab, setTab] = useState<Tab>('summary')
   const currentYear = new Date().getFullYear()
   const [selectedYear, setSelectedYear] = useState(currentYear)
@@ -176,7 +178,7 @@ export function StatsScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title="Stats" onBack={() => navigate(-1)} />
+      <TopBar title="Stats" onMenu={() => openMenu(true)} />
       <nav aria-label="Stats sections">
       <div className={styles.tabBar} role="tablist" aria-label="Stats tabs">
         {(['summary', 'fuel', 'service'] as Tab[]).map((t) => (

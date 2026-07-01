@@ -4,15 +4,27 @@ interface TopBarProps {
   title?: string
   subtitle?: string
   onBack?: () => void
+  onMenu?: () => void
   onSettings?: () => void
   actions?: React.ReactNode
   left?: React.ReactNode
 }
 
-export function TopBar({ title, subtitle, onBack, onSettings, actions, left }: TopBarProps) {
+export function TopBar({ title, subtitle, onBack, onMenu, onSettings, actions, left }: TopBarProps) {
   return (
     <header className={styles.topbar}>
       <div className={styles.left}>
+        {onMenu && (
+          <button
+            className={styles.iconBtn}
+            onClick={onMenu}
+            aria-label="Open menu"
+          >
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+              <path d="M3 6h16M3 11h16M3 16h16" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
         {onBack ? (
           <button
             className={styles.iconBtn}

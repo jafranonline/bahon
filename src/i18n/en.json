@@ -11,7 +11,10 @@
     "stats": "Stats",
     "add": "Add",
     "reminders": "Reminders",
-    "vehicles": "Vehicles"
+    "vehicles": "Vehicles",
+    "menu": "Menu",
+    "documents": "Documents",
+    "compare": "Compare"
   },
   "vehicle": {
     "add": "Add vehicle",

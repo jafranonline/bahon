@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { BottomNav } from '@components/layout/BottomNav'
+import { useUIStore } from '@store/uiStore'
 import { useVehicles } from '@db/queries/useVehicles'
 import { useFuelLogs } from '@db/queries/useFuelLogs'
 import { useServiceLogs } from '@db/queries/useServiceLogs'
@@ -81,6 +82,7 @@ function MetricRow({ label, aValue, bValue, formatValue, lowerIsBetter = true }:
 
 export function CompareScreen() {
   const navigate = useNavigate()
+  const openMenu = useUIStore((s) => s.setDrawerOpen)
   const { format: formatMoney } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
   const reminderCount = useReminderCount()
@@ -149,7 +151,7 @@ export function CompareScreen() {
   if (vehicles.length < 2) {
     return (
       <div className={styles.root}>
-        <TopBar title="Compare" onBack={() => navigate(-1)} />
+        <TopBar title="Compare" onMenu={() => openMenu(true)} />
         <Screen paddingBottom="76px">
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>🚗</span>
@@ -168,7 +170,7 @@ export function CompareScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title="Compare" onBack={() => navigate(-1)} />
+      <TopBar title="Compare" onMenu={() => openMenu(true)} />
       <Screen padding="16px" paddingBottom="76px" gap="16px">
 
         {/* Vehicle selectors */}
