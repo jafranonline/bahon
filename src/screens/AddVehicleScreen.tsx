@@ -14,8 +14,8 @@ type TypeOption = { value: VehicleType; label: string; subtitle: string; icon: s
 type FuelOption = { value: FuelType; label: string }
 
 const TYPE_OPTIONS: TypeOption[] = [
-  { value: 'car', label: 'Car / SUV', subtitle: 'Sedan, hatchback, SUV', icon: '🚗' },
   { value: 'motorcycle', label: 'Motorcycle', subtitle: 'Bike, scooter', icon: '🏍️' },
+  { value: 'car', label: 'Car / SUV', subtitle: 'Sedan, hatchback, SUV', icon: '🚗' },
   { value: 'truck', label: 'Truck', subtitle: 'Pickup, cargo truck', icon: '🚛' },
   { value: 'bus', label: 'Bus / Other', subtitle: 'Bus, minivan, other', icon: '🚌' },
 ]
