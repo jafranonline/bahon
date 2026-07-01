@@ -315,7 +315,10 @@
     "step_vehicle_title": "Add your first vehicle",
     "step_vehicle_sub": "You can add more vehicles later.",
     "get_started": "Get Started",
-    "step_of": "{{step}} of {{total}}"
+    "step_of": "{{step}} of {{total}}",
+    "step_account_title": "Sign in to sync",
+    "step_account_sub": "Log in to back up your data and sync it across devices. You can skip this and do it later.",
+    "skip": "Skip for now"
   },
   "home": {
     "no_vehicles_title": "No vehicles yet",

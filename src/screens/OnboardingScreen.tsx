@@ -5,7 +5,9 @@ import { Input } from '@components/primitives/Input'
 import { Button } from '@components/primitives/Button'
 import { useSettingsStore } from '@store/settingsStore'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useAuthStore } from '@store/authStore'
 import { addVehicle } from '@db/queries/useVehicles'
+import { syncNow } from '@/sync/syncEngine'
 import { useTranslation } from '@hooks/useTranslation'
 import i18n from '@i18n/config'
 import type { Language, VehicleType, FuelType } from '@/types'
@@ -35,14 +37,29 @@ const LANG_OPTIONS: { value: Language; native: string; english: string; flag: st
   { value: 'bn', native: 'বাংলা',   english: 'Bangla',  flag: '🇧🇩' },
 ]
 
+type Step = 'language' | 'account' | 'vehicle'
+type AuthMode = 'login' | 'register'
+
 export function OnboardingScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const updateSettings = useSettingsStore((s) => s.update)
   const currentLang = useSettingsStore((s) => s.language)
   const setActiveVehicle = useVehicleStore((s) => s.setActiveVehicle)
+  const login = useAuthStore((s) => s.login)
+  const register = useAuthStore((s) => s.register)
 
-  const [step, setStep] = useState<1 | 2>(1)
+  const [step, setStep] = useState<Step>('language')
+
+  // Account step
+  const [authMode, setAuthMode] = useState<AuthMode>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [authBusy, setAuthBusy] = useState(false)
+
+  // Vehicle step
   const [vehicleType, setVehicleType] = useState<VehicleType>('motorcycle')
   const [fuelType, setFuelType] = useState<FuelType>('octane')
   const [name, setName] = useState('')
@@ -54,7 +71,43 @@ export function OnboardingScreen() {
     void i18n.changeLanguage(lang)
   }
 
-  async function handleGetStarted() {
+  function finish() {
+    updateSettings({ onboardingComplete: true })
+    navigate('/', { replace: true })
+  }
+
+  const authErrorText = (code: string): string => {
+    const map: Record<string, string> = {
+      invalid_email: t('auth.err_invalid_email'),
+      weak_password: t('auth.err_weak_password'),
+      email_taken: t('auth.err_email_taken'),
+      invalid_credentials: t('auth.err_invalid_credentials'),
+    }
+    return map[code] ?? t('auth.err_generic')
+  }
+
+  async function handleAuth() {
+    setAuthError(null)
+    if (!email.trim() || !password) {
+      setAuthError(t('auth.err_required'))
+      return
+    }
+    setAuthBusy(true)
+    try {
+      if (authMode === 'register') await register(email.trim(), password)
+      else await login(email.trim(), password)
+      // Logged in → pull their cloud data and finish; never ask to add a vehicle.
+      updateSettings({ onboardingComplete: true })
+      void syncNow()
+      navigate('/', { replace: true })
+    } catch (e) {
+      setAuthError(authErrorText(e instanceof Error ? e.message : 'auth.err_generic'))
+    } finally {
+      setAuthBusy(false)
+    }
+  }
+
+  async function handleAddVehicle() {
     if (!name.trim()) {
       setNameError(t('common.required'))
       return
@@ -72,23 +125,28 @@ export function OnboardingScreen() {
         odometer: 0,
       })
       setActiveVehicle(id)
-      updateSettings({ onboardingComplete: true })
-      navigate('/', { replace: true })
+      finish()
     } finally {
       setSaving(false)
     }
   }
 
+  const stepIndex = step === 'language' ? 0 : step === 'account' ? 1 : 2
+
   return (
     <div className={styles.root}>
       <div className={styles.header}>
         <div className={styles.dots}>
-          <span className={`${styles.dot} ${step === 1 ? styles.dotActive : styles.dotDone}`} />
-          <span className={`${styles.dot} ${step === 2 ? styles.dotActive : ''}`} />
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className={`${styles.dot} ${i === stepIndex ? styles.dotActive : i < stepIndex ? styles.dotDone : ''}`}
+            />
+          ))}
         </div>
       </div>
 
-      {step === 1 && (
+      {step === 'language' && (
         <div className={styles.content}>
           <div className={styles.hero}>
             <span className={styles.heroIcon}>🌐</span>
@@ -116,14 +174,95 @@ export function OnboardingScreen() {
           </div>
 
           <div className={styles.footer}>
-            <Button onClick={() => setStep(2)} fullWidth>
+            <Button onClick={() => setStep('account')} fullWidth>
               {t('onboarding.continue')}
             </Button>
           </div>
         </div>
       )}
 
-      {step === 2 && (
+      {step === 'account' && (
+        <div className={styles.content}>
+          <div className={styles.hero}>
+            <span className={styles.heroIcon}>🔐</span>
+            <h1 className={styles.title}>{t('onboarding.step_account_title')}</h1>
+            <p className={styles.sub}>{t('onboarding.step_account_sub')}</p>
+          </div>
+
+          <div className={styles.form}>
+            <div className={styles.tabs} role="tablist">
+              <button
+                role="tab"
+                aria-selected={authMode === 'login'}
+                className={`${styles.tab} ${authMode === 'login' ? styles.tabActive : ''}`}
+                onClick={() => { setAuthMode('login'); setAuthError(null) }}
+              >
+                {t('auth.login')}
+              </button>
+              <button
+                role="tab"
+                aria-selected={authMode === 'register'}
+                className={`${styles.tab} ${authMode === 'register' ? styles.tabActive : ''}`}
+                onClick={() => { setAuthMode('register'); setAuthError(null) }}
+              >
+                {t('auth.register')}
+              </button>
+            </div>
+
+            <Input
+              type="email"
+              label={t('auth.email')}
+              value={email}
+              onChange={setEmail}
+              placeholder="you@example.com"
+              autoComplete="email"
+            />
+            <Input
+              type={showPassword ? 'text' : 'password'}
+              label={t('auth.password')}
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              hint={authMode === 'register' ? t('auth.password_hint') : undefined}
+              autoComplete={authMode === 'register' ? 'new-password' : 'current-password'}
+              suffix={
+                <button
+                  type="button"
+                  className={styles.eyeBtn}
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
+                  aria-pressed={showPassword}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M3 3l18 18M10.6 10.6a2 2 0 002.8 2.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                      <path d="M9.4 5.2A9.5 9.5 0 0112 5c5 0 9 4 10 7a12 12 0 01-2.2 3.2M6.2 6.2A12 12 0 002 12c1 3 5 7 10 7a9.6 9.6 0 003.7-.7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+                      <circle cx="12" cy="12" r="2.6" stroke="currentColor" strokeWidth="1.7" />
+                    </svg>
+                  )}
+                </button>
+              }
+            />
+            {authError && <p className={styles.authError} role="alert">{authError}</p>}
+            <Button onClick={handleAuth} loading={authBusy} fullWidth>
+              {authMode === 'register' ? t('auth.create_account') : t('auth.sign_in')}
+            </Button>
+          </div>
+
+          <div className={styles.footer}>
+            <button type="button" className={styles.skipLink} onClick={() => setStep('vehicle')}>
+              {t('onboarding.skip')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === 'vehicle' && (
         <div className={styles.content}>
           <div className={styles.hero}>
             <span className={styles.heroIcon}>🚘</span>
@@ -177,9 +316,12 @@ export function OnboardingScreen() {
           </div>
 
           <div className={styles.footer}>
-            <Button onClick={handleGetStarted} loading={saving} fullWidth>
+            <Button onClick={handleAddVehicle} loading={saving} fullWidth>
               {t('onboarding.get_started')}
             </Button>
+            <button type="button" className={styles.skipLink} onClick={finish}>
+              {t('onboarding.skip')}
+            </button>
           </div>
         </div>
       )}
