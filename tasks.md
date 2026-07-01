@@ -2546,14 +2546,16 @@ Implement the schema-agnostic snapshot sync. Backend stores an opaque blob in R2
 5. Mount `/api/sync` behind `requireAuth` + `requirePro`
 
 **TEST**
-- [ ] `GET /api/sync` for a fresh Pro user → `{ version: 0, snapshot: null }`
-- [ ] `POST /api/sync` with `baseVersion: 0` → 200 `{ version: 1 }`, blob present in R2
-- [ ] `GET /api/sync` after push → returns the stored snapshot and `version: 1`
-- [ ] `POST /api/sync` with stale `baseVersion: 0` after version is 1 → 409 `{ serverVersion: 1 }`
-- [ ] `POST /api/sync` with `baseVersion: 1` (current) → 200 `{ version: 2 }`
-- [ ] A `free` user calling any `/api/sync` route → 403 `pro_required`
-- [ ] Oversized snapshot (> 5 MB) → 413
-- [ ] `GET /api/sync/status` returns version + updatedAt without the blob
+- [x] `GET /api/sync` for a fresh Pro user → `{ version: 0, snapshot: null }` (verified)
+- [x] `POST /api/sync` with `baseVersion: 0` → 200 `{ version: 1 }`, blob present in R2 (verified — GET returns the stored blob)
+- [x] `GET /api/sync` after push → returns the stored snapshot and `version: 1` (verified)
+- [x] `POST /api/sync` with stale `baseVersion: 0` after version is 1 → 409 `{ serverVersion: 1 }` (verified)
+- [x] `POST /api/sync` with `baseVersion: 1` (current) → 200 `{ version: 2 }` (verified)
+- [x] A `free` user calling any `/api/sync` route → 403 `pro_required` (verified)
+- [x] Oversized snapshot (> 5 MB) → 413 (verified)
+- [x] `GET /api/sync/status` returns version + updatedAt without the blob (verified)
+
+> **TASK-062 DONE (2026-07-01):** `src/sync/routes.ts` — `/api/sync` GET/POST + `/api/sync/status`, all behind `requireAuth`+`requirePro`. Snapshot stored as opaque JSON at R2 key `users/{userId}/data.json`; `data_version`/`data_updated_at` authoritative in D1 (`setUserDataVersion` helper). Optimistic concurrency (409 on stale baseVersion), 5 MB cap (413). Backend never parses app data. Deployed. All 8 tests verified via local `wrangler dev` (miniflare R2).
 
 ---
 

@@ -64,6 +64,18 @@ export async function createUser(db: D1Database, u: NewUser): Promise<void> {
     .run()
 }
 
+export async function setUserDataVersion(
+  db: D1Database,
+  userId: string,
+  version: number,
+  updatedAt: string,
+): Promise<void> {
+  await db
+    .prepare('UPDATE users SET data_version = ?, data_updated_at = ?, updated_at = ? WHERE id = ?')
+    .bind(version, updatedAt, new Date().toISOString(), userId)
+    .run()
+}
+
 export async function getSubscription(
   db: D1Database,
   userId: string,
