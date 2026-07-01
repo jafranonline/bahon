@@ -5,6 +5,7 @@ import type { Env } from '../types'
 import { hashPassword, verifyPassword, sha256, randomToken } from './crypto'
 import { signAccessToken } from './jwt'
 import { requireAuth, type AuthVars } from '../middleware/requireAuth'
+import { entitlements } from '../subscription'
 import {
   getUserByEmail,
   getUserById,
@@ -148,5 +149,5 @@ authRoutes.get('/me', requireAuth, async (c) => {
   const user = await getUserById(c.env.DB, userId)
   if (!user) return c.json({ error: 'not_found' }, 404)
   const subscription = await getSubscription(c.env.DB, userId)
-  return c.json({ user: publicUser(user), subscription })
+  return c.json({ user: publicUser(user), subscription, entitlements: entitlements(subscription) })
 })

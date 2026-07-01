@@ -2516,12 +2516,14 @@ Add `requirePro` middleware and a clean way for the frontend to know the user's 
 4. (No gated routes wired yet — that happens in TASK-063; this task is the reusable mechanism + tests)
 
 **TEST**
-- [ ] `requirePro` allows a user whose subscription is `tier=pro, status=active, expires_at` in future
-- [ ] `requirePro` blocks a `free` user → 403 `pro_required`
-- [ ] `requirePro` blocks a `pro` user whose `expires_at` is in the past → 403
-- [ ] `requirePro` blocks `status=cancelled` even if tier=pro → 403
-- [ ] `GET /api/auth/me` returns correct `entitlements.pro` for free vs pro users
-- [ ] `expires_at = null` (lifetime pro) is treated as active
+- [x] `requirePro` allows a user whose subscription is `tier=pro, status=active, expires_at` in future (verified → 200)
+- [x] `requirePro` blocks a `free` user → 403 `pro_required` (verified)
+- [x] `requirePro` blocks a `pro` user whose `expires_at` is in the past → 403 (verified)
+- [x] `requirePro` blocks `status=cancelled` even if tier=pro → 403 (verified)
+- [x] `GET /api/auth/me` returns correct `entitlements.pro` for free vs pro users (verified: free→false, pro→true, live)
+- [x] `expires_at = null` (lifetime pro) is treated as active (verified → 200)
+
+> **TASK-061 DONE (2026-07-01):** `src/subscription.ts` (`isProActive` + `entitlements`, single source of truth). `src/middleware/requirePro.ts` (runs after requireAuth; 403 `pro_required` when not active-Pro; sets `subscription`). `/api/auth/me` now returns an `entitlements` block. All 6 states verified locally by toggling the subscription row in D1 against a temporary probe route (removed before commit); live `/me` entitlements confirmed. Middleware is ready but not yet wired to any route — TASK-063 gates the AI endpoints with it.
 
 ---
 
