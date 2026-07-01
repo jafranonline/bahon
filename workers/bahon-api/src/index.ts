@@ -28,6 +28,7 @@ app.use(
     origin: [
       'https://bahon.jafran.online',
       'https://admin.bahon.jafran.online',
+      'https://bahon-admin.pages.dev',
       'http://localhost:4546',
       'http://localhost:4547',
     ],
