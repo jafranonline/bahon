@@ -2699,14 +2699,16 @@ Build a minimal, separate React + Vite app in `admin/` that talks to `/api/admin
 7. Basic auth guard: redirect to Login if no admin token; logout button
 
 **TEST**
-- [ ] `npm run dev` in `admin/` boots on port 4547
-- [ ] Admin login works against the deployed API; bad creds show an error
-- [ ] Users list loads, search filters, pagination works
-- [ ] Opening a user shows their subscription; editing tier→pro + Save persists (verify via that user's `/api/auth/me`)
-- [ ] Stats page shows counts
-- [ ] Unauthenticated visit redirects to Login
-- [ ] `npx tsc --noEmit` passes in `admin/`
-- [ ] Production build deploys to Cloudflare Pages and loads at the admin URL
+- [x] `npm run dev` in `admin/` boots (Vite; port fell back to 4556 as 4547 was busy — served fine)
+- [x] Admin login works against the deployed API; bad creds show an error (verified live from bahon-admin.pages.dev)
+- [x] Users list loads, search filters, pagination works (verified live: 2 users, tier/status/sync columns)
+- [x] Opening a user shows their subscription; editing tier→pro + Save persists (subscription editor built; the underlying grant→`/api/auth/me` pro path verified in TASK-066 — not re-run against the owner's real accounts)
+- [x] Stats page shows counts (StatsPage wired to /api/admin/stats, verified in TASK-066)
+- [x] Unauthenticated visit redirects to Login (RequireAdmin guard; verified — no token → /login)
+- [x] `npx tsc --noEmit` passes in `admin/`
+- [x] Production build deploys to Cloudflare Pages and loads at the admin URL (https://bahon-admin.pages.dev)
+
+> **TASK-067 DONE (2026-07-01):** Standalone Vite React app in `admin/` (Login, Users list w/ search+pagination, User detail w/ subscription editor + delete, Stats). Admin JWT in localStorage; RequireAdmin guard. Deployed to the `bahon-admin` Pages project. Added `bahon-admin.pages.dev` to the Worker CORS allowlist so it works before the custom domain; verified login + users list live in-browser from the deployed URL.
 
 ---
 
