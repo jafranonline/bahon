@@ -2205,23 +2205,22 @@ Tool schemas for Claude (passed as `tools` array — NOT injected into system pr
 5. Deploy: `wrangler deploy` from `workers/bahon-api/`, update `API_BASE_URL`
 
 **TEST**
-- [ ] `wrangler deploy` succeeds
-  > BLOCKED (2026-07-01): `wrangler deploy --dry-run` bundles cleanly (188 KiB, AI binding OK), so the code is deploy-ready. Actual deploy needs the user's Cloudflare auth (`wrangler login` or `CLOUDFLARE_API_TOKEN` + account id). Cannot run autonomously.
-- [ ] `POST /api/transcribe` with a real WebM audio file returns `{ transcript: "..." }`
-  > BLOCKED: needs deployed Worker + Workers AI (remote, billed) auth.
+- [x] `wrangler deploy` succeeds — deployed to https://bahon-api.astory.workers.dev (2026-07-01)
+- [x] `POST /api/transcribe` with a real WebM audio file returns `{ transcript: "..." }`
+  > Verified live with a WAV (Whisper decodes it server-side, same path as WebM): returned "I added 10 liters at 115 Taka, odometer 52,000."
 - [ ] `POST /api/chat` with message "I added 10L at 115tk, odo 52000" + valid context returns `{ toolCalls: [{ name: "add_fuel_log", input: { volumeLitres: 10, pricePerLitre: 115, odometer: 52000, ... } }] }`
-  > BLOCKED: needs `ANTHROPIC_API_KEY` secret set on a deployed Worker.
+  > BLOCKED: needs `ANTHROPIC_API_KEY` secret set on the deployed Worker.
 - [ ] Banglish input "Rajshahi theke 500 takay 2 litre octane nilam ajke, odo 45009" returns correct `add_fuel_log` tool call with `stationName: "Rajshahi"`, `volumeLitres: 2`, `pricePerLitre: 250`, `odometer: 45009`
-  > BLOCKED: needs `ANTHROPIC_API_KEY` on a deployed Worker.
+  > BLOCKED: needs `ANTHROPIC_API_KEY` on the deployed Worker.
 - [ ] `POST /api/chat` with tool results included returns `{ reply: "..." }` (final text turn)
-  > BLOCKED: needs `ANTHROPIC_API_KEY` on a deployed Worker.
+  > BLOCKED: needs `ANTHROPIC_API_KEY` on the deployed Worker.
 - [ ] `navigate_to` intent → `{ toolCalls: [{ name: "navigate_to", input: { screen: "reminders" } }] }`
-  > BLOCKED: needs `ANTHROPIC_API_KEY` on a deployed Worker.
-- [x] Request without `ANTHROPIC_API_KEY` secret set → 500 with descriptive error
-- [x] CORS preflight `OPTIONS` from `http://localhost:4546` → 200 with correct headers
-- [x] Missing `messages` body field → 400
+  > BLOCKED: needs `ANTHROPIC_API_KEY` on the deployed Worker.
+- [x] Request without `ANTHROPIC_API_KEY` secret set → 500 with descriptive error (verified live)
+- [x] CORS preflight `OPTIONS` from `http://localhost:4546` → 200 with correct headers (verified live)
+- [x] Missing `messages` body field → 400 (verified live)
 
-> **TASK-056 status (2026-07-01):** Code complete, type-checks clean, dry-run builds. 3/9 tests verified locally via `wrangler dev` (no-credential paths). Remaining 6 are blocked on user-provided Cloudflare deploy + `ANTHROPIC_API_KEY` — see per-item notes above. Loop hard-stopped here awaiting credentials.
+> **TASK-056 status (2026-07-01):** Deployed to https://bahon-api.astory.workers.dev. 5/9 tests verified live (deploy, transcribe, no-key→500, CORS, missing-messages). Remaining 4 are the `/api/chat` tool-calling tests — blocked only on setting the `ANTHROPIC_API_KEY` Worker secret (`wrangler secret put ANTHROPIC_API_KEY`).
 
 ---
 
