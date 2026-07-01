@@ -127,6 +127,67 @@ export async function upsertSubscription(
     .run()
 }
 
+export interface AdminUserListItem {
+  id: string
+  email: string
+  display_name: string | null
+  created_at: string
+  data_version: number
+  data_updated_at: string | null
+  tier: string | null
+  status: string | null
+  expires_at: string | null
+}
+
+export async function listUsers(
+  db: D1Database,
+  query: string,
+  limit: number,
+  offset: number,
+): Promise<AdminUserListItem[]> {
+  const like = `%${query.toLowerCase()}%`
+  const res = await db
+    .prepare(
+      `SELECT u.id, u.email, u.display_name, u.created_at, u.data_version, u.data_updated_at,
+              s.tier, s.status, s.expires_at
+       FROM users u LEFT JOIN subscriptions s ON s.user_id = u.id
+       WHERE u.email LIKE ?
+       ORDER BY u.created_at DESC
+       LIMIT ? OFFSET ?`,
+    )
+    .bind(like, limit, offset)
+    .all<AdminUserListItem>()
+  return res.results ?? []
+}
+
+export async function countUsers(db: D1Database, query: string): Promise<number> {
+  const row = await db
+    .prepare('SELECT COUNT(*) AS n FROM users WHERE email LIKE ?')
+    .bind(`%${query.toLowerCase()}%`)
+    .first<{ n: number }>()
+  return row?.n ?? 0
+}
+
+export async function adminStats(
+  db: D1Database,
+): Promise<{ users: number; pro: number; activeSubs: number }> {
+  const users = await db.prepare('SELECT COUNT(*) AS n FROM users').first<{ n: number }>()
+  const pro = await db
+    .prepare("SELECT COUNT(*) AS n FROM subscriptions WHERE tier = 'pro' AND status = 'active'")
+    .first<{ n: number }>()
+  const active = await db
+    .prepare("SELECT COUNT(*) AS n FROM subscriptions WHERE status = 'active'")
+    .first<{ n: number }>()
+  return { users: users?.n ?? 0, pro: pro?.n ?? 0, activeSubs: active?.n ?? 0 }
+}
+
+export async function deleteUserCascade(db: D1Database, userId: string): Promise<void> {
+  // Explicit cascade (SQLite FK enforcement isn't guaranteed on).
+  await db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').bind(userId).run()
+  await db.prepare('DELETE FROM subscriptions WHERE user_id = ?').bind(userId).run()
+  await db.prepare('DELETE FROM users WHERE id = ?').bind(userId).run()
+}
+
 export async function createRefreshToken(
   db: D1Database,
   row: { id: string; userId: string; tokenHash: string; expiresAt: string },

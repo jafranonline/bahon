@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
+import { BottomNav } from '@components/layout/BottomNav'
 import { Button } from '@components/primitives/Button'
 import { useVehicleStore } from '@store/vehicleStore'
+import { useReminderCount } from '@hooks/useReminderCount'
 import { useDocuments, deleteDocument } from '@db/queries/useDocuments'
 import type { VehicleDocument, DocumentType } from '@/types'
 import styles from './DocumentsScreen.module.css'
@@ -53,6 +55,7 @@ export function DocumentsScreen() {
   const navigate = useNavigate()
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const docs = useDocuments(activeVehicleId ?? '')
+  const reminderCount = useReminderCount()
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   async function handleDelete() {
@@ -64,7 +67,7 @@ export function DocumentsScreen() {
   return (
     <div className={styles.root}>
       <TopBar title="Documents" onBack={() => navigate(-1)} />
-      <Screen>
+      <Screen paddingBottom="76px">
         {confirmDelete && (
           <div className={styles.confirmCard}>
             <p className={styles.confirmText}>Delete this document? This cannot be undone.</p>
@@ -121,6 +124,13 @@ export function DocumentsScreen() {
           + Add document
         </button>
       </Screen>
+
+      <BottomNav
+        onHome={() => navigate('/')}
+        onAdd={() => navigate('/log/fuel')}
+        onReminders={() => navigate('/reminders')}
+        reminderCount={reminderCount}
+      />
     </div>
   )
 }

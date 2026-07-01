@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
+import { BottomNav } from '@components/layout/BottomNav'
 import { StackedBarChart } from '@components/charts/StackedBarChart'
 import { LineChart } from '@components/charts/LineChart'
 import { useVehicleStore } from '@store/vehicleStore'
@@ -11,6 +12,7 @@ import { useServiceLogs } from '@db/queries/useServiceLogs'
 import { useExpenses } from '@db/queries/useExpenses'
 import { useCurrency } from '@hooks/useCurrency'
 import { useExport } from '@hooks/useExport'
+import { useReminderCount } from '@hooks/useReminderCount'
 import styles from './StatsScreen.module.css'
 
 type Tab = 'summary' | 'fuel' | 'service'
@@ -41,6 +43,7 @@ export function StatsScreen() {
   const distanceUnit = useSettingsStore((s) => s.distanceUnit)
   const { format, symbol } = useCurrency()
   const { exportAsCSV } = useExport()
+  const reminderCount = useReminderCount()
 
   const fuelLogs = useFuelLogs(activeVehicleId ?? '')
   const serviceLogs = useServiceLogs(activeVehicleId ?? '')
@@ -191,7 +194,7 @@ export function StatsScreen() {
       </div>
       </nav>
 
-      <Screen>
+      <Screen paddingBottom="76px">
         {tab === 'summary' && (
           <>
             {hasNoData ? (
@@ -355,6 +358,13 @@ export function StatsScreen() {
           Export CSV
         </button>
       </Screen>
+
+      <BottomNav
+        onHome={() => navigate('/')}
+        onAdd={() => navigate('/log/fuel')}
+        onReminders={() => navigate('/reminders')}
+        reminderCount={reminderCount}
+      />
     </div>
   )
 }

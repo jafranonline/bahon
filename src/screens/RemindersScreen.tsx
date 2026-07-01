@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
+import { BottomNav } from '@components/layout/BottomNav'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useVehicle } from '@db/queries/useVehicles'
 import { useReminders, dismissReminder, deleteReminder } from '@db/queries/useReminders'
@@ -214,7 +215,7 @@ export function RemindersScreen() {
           </button>
         }
       />
-      <Screen>
+      <Screen paddingBottom="76px">
         {sorted.length > 0 && (
           <div className={styles.sectionHeader}>
             <span className={styles.sectionTitle}>{t('reminder.active')}</span>
@@ -253,6 +254,14 @@ export function RemindersScreen() {
           </div>
         )}
       </Screen>
+
+      <BottomNav
+        activeTab="reminders"
+        onHome={() => navigate('/')}
+        onAdd={() => navigate('/log/fuel')}
+        onReminders={() => navigate('/reminders')}
+        reminderCount={nearCount}
+      />
     </div>
   )
 }

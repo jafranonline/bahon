@@ -2,12 +2,14 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
+import { BottomNav } from '@components/layout/BottomNav'
 import { useVehicles } from '@db/queries/useVehicles'
 import { useFuelLogs } from '@db/queries/useFuelLogs'
 import { useServiceLogs } from '@db/queries/useServiceLogs'
 import { useExpenses } from '@db/queries/useExpenses'
 import { useCurrency } from '@hooks/useCurrency'
 import { useUnits } from '@hooks/useUnits'
+import { useReminderCount } from '@hooks/useReminderCount'
 import styles from './CompareScreen.module.css'
 
 type Period = 'month' | '3months' | 'year' | 'all'
@@ -81,6 +83,7 @@ export function CompareScreen() {
   const navigate = useNavigate()
   const { format: formatMoney } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
+  const reminderCount = useReminderCount()
 
   const vehicles = useVehicles() ?? []
   const [aId, setAId] = useState(() => vehicles[0]?.id ?? '')
@@ -147,12 +150,18 @@ export function CompareScreen() {
     return (
       <div className={styles.root}>
         <TopBar title="Compare" onBack={() => navigate(-1)} />
-        <Screen>
+        <Screen paddingBottom="76px">
           <div className={styles.empty}>
             <span className={styles.emptyIcon}>🚗</span>
             <p className={styles.emptyText}>Add at least 2 vehicles to compare.</p>
           </div>
         </Screen>
+        <BottomNav
+          onHome={() => navigate('/')}
+          onAdd={() => navigate('/log/fuel')}
+          onReminders={() => navigate('/reminders')}
+          reminderCount={reminderCount}
+        />
       </div>
     )
   }
@@ -160,7 +169,7 @@ export function CompareScreen() {
   return (
     <div className={styles.root}>
       <TopBar title="Compare" onBack={() => navigate(-1)} />
-      <Screen padding="16px" gap="16px">
+      <Screen padding="16px" paddingBottom="76px" gap="16px">
 
         {/* Vehicle selectors */}
         <div className={styles.vehicleRow}>
@@ -244,6 +253,13 @@ export function CompareScreen() {
         </div>
 
       </Screen>
+
+      <BottomNav
+        onHome={() => navigate('/')}
+        onAdd={() => navigate('/log/fuel')}
+        onReminders={() => navigate('/reminders')}
+        reminderCount={reminderCount}
+      />
     </div>
   )
 }

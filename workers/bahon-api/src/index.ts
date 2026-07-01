@@ -10,6 +10,7 @@ import { chatTurn, type ChatMessage, type ToolResultInput } from './chat'
 import type { ChatContext } from './systemPrompt'
 import { authRoutes } from './auth/routes'
 import { syncRoutes } from './sync/routes'
+import { adminRoutes } from './admin/routes'
 import { requireAuth } from './middleware/requireAuth'
 import { requirePro } from './middleware/requirePro'
 
@@ -40,6 +41,7 @@ app.get('/api/health', (c) => c.json({ ok: true }))
 
 app.route('/api/auth', authRoutes)
 app.route('/api/sync', syncRoutes)
+app.route('/api/admin', adminRoutes)
 
 app.post('/api/transcribe', requireAuth, requirePro, async (c) => {
   const form = await c.req.formData()
