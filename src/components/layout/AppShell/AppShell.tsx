@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useSettingsStore } from '@store/settingsStore'
 import { useVehicleStore } from '@store/vehicleStore'
-import { useVehicle } from '@db/queries/useVehicles'
+import { useVehicle, useVehicles } from '@db/queries/useVehicles'
 import { useTheme } from '@hooks/useTheme'
 import { useNotifications } from '@hooks/useNotifications'
 import type { AgentContext, AgentToolCall } from '@hooks/useAgent'
@@ -47,7 +47,20 @@ export function AppShell() {
   }, [])
 
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
+  const setActiveVehicle = useVehicleStore((s) => s.setActiveVehicle)
+  const vehicles = useVehicles()
   const vehicle = useVehicle(activeVehicleId ?? '')
+
+  // Ensure an active vehicle is always selected when vehicles exist (e.g. after
+  // they arrive via sync or a logged-in onboarding, which never set one) — so
+  // the AI assistant and other vehicle-scoped features are available.
+  useEffect(() => {
+    if (!vehicles) return
+    const hasActive = activeVehicleId && vehicles.some((v) => v.id === activeVehicleId)
+    if (!hasActive && vehicles.length > 0) {
+      setActiveVehicle(vehicles[0].id)
+    }
+  }, [vehicles, activeVehicleId, setActiveVehicle])
 
   const [agentOpen, setAgentOpen] = useState(false)
 
