@@ -117,4 +117,7 @@ export interface Settings {
   defaultVehicleId?: string
   notificationsEnabled: boolean
   onboardingComplete?: boolean
+  /** Pro only: show the AI assistant button in the center of the bottom nav.
+   * When off, the "+" returns to the center and no AI button is shown. */
+  showAgentButton?: boolean
 }

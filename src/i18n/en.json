@@ -257,7 +257,8 @@
     "languages": {
       "en": "English",
       "bn": "বাংলা"
-    }
+    },
+    "show_agent_button": "Show AI assistant button"
   },
   "about": {
     "title": "About",

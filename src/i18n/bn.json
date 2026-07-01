@@ -256,7 +256,8 @@
     "languages": {
       "en": "English",
       "bn": "বাংলা"
-    }
+    },
+    "show_agent_button": "এআই সহকারী বোতাম দেখান"
   },
   "about": {
     "title": "সম্পর্কে",

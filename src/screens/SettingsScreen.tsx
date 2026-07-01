@@ -4,6 +4,7 @@ import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { Select } from '@components/primitives/Select'
 import { SegmentedControl } from '@components/primitives/SegmentedControl'
+import { Toggle } from '@components/primitives/Toggle'
 import { useSettingsStore } from '@store/settingsStore'
 import { useAuthStore } from '@store/authStore'
 import { useSyncStore } from '@store/syncStore'
@@ -64,6 +65,7 @@ export function SettingsScreen() {
   const distanceUnit = useSettingsStore((s) => s.distanceUnit)
   const volumeUnit = useSettingsStore((s) => s.volumeUnit)
   const efficiencyUnit = useSettingsStore((s) => s.efficiencyUnit)
+  const showAgentButton = useSettingsStore((s) => s.showAgentButton ?? true)
   const update = useSettingsStore((s) => s.update)
 
   const { exportAsCSV, exportAsJSON, importFromJSON } = useExport()
@@ -142,6 +144,22 @@ export function SettingsScreen() {
                       : t('sync.never')}
                 </span>
               </button>
+            </div>
+          </>
+        )}
+
+        {isPro && (
+          <>
+            <p className={styles.sectionLabel}>{t('agent.title')}</p>
+            <div className={styles.section}>
+              <div className={styles.tabRow}>
+                <span className={styles.rowLabel}>{t('settings.show_agent_button')}</span>
+                <Toggle
+                  checked={showAgentButton}
+                  onChange={(v) => update({ showAgentButton: v })}
+                  aria-label={t('settings.show_agent_button')}
+                />
+              </div>
             </div>
           </>
         )}

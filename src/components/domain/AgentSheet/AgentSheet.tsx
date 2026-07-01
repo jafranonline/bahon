@@ -20,6 +20,7 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
     useAgent({ context, onToolCall })
   const [draft, setDraft] = useState('')
   const listEndRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
 
   // Auto-scroll to the newest message / typing indicator.
   useEffect(() => {
@@ -46,6 +47,14 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
 
   const busy = status === 'thinking' || status === 'transcribing'
   const hasText = draft.trim().length > 0
+
+  // Keep the composer focused for uninterrupted typing: on open, and again once
+  // a send finishes (the input is disabled while busy, so re-focus when idle).
+  useEffect(() => {
+    if (open && isPro && !liveMode && !busy) {
+      inputRef.current?.focus()
+    }
+  }, [open, isPro, liveMode, busy])
 
   const liveStatusText =
     status === 'transcribing' ? t('agent.live_transcribing')
@@ -133,6 +142,7 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
         ) : (
           <div className={styles.composer}>
             <input
+              ref={inputRef}
               className={styles.input}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}

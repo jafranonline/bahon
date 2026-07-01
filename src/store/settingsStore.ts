@@ -16,6 +16,7 @@ const defaults: Settings = {
   efficiencyUnit: 'km/L',
   notificationsEnabled: false,
   onboardingComplete: false,
+  showAgentButton: true,
   fuelPrices: {
     octane: 145,
     petrol: 140,
