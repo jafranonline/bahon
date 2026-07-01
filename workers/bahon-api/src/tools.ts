@@ -29,8 +29,9 @@ export const tools: WorkerAITool[] = [
   {
     name: 'add_fuel_log',
     description:
-      'Record a fuel fill-up (litres, price, odometer). If the user gives a ' +
-      'total spent, set pricePerLitre = total ÷ litres.',
+      'Record a fuel fill-up. Provide any of: litres, price per litre, or the ' +
+      'total spent (totalCost). A bare "N taka of fuel" is a TOTAL → pass ' +
+      'totalCost. The app fills the rest using the saved fuel price when needed.',
     parameters: {
       type: 'object',
       properties: {
@@ -38,11 +39,14 @@ export const tools: WorkerAITool[] = [
         date: { type: 'string', description: 'YYYY-MM-DD; default today' },
         volumeLitres: { type: 'number' },
         pricePerLitre: { type: 'number' },
+        totalCost: { type: 'number', description: 'Total taka spent on the fill-up' },
         odometer: { type: 'number' },
         stationName: { type: 'string' },
         notes: { type: 'string' },
       },
-      required: ['vehicleId', 'volumeLitres', 'pricePerLitre'],
+      // Only vehicleId is hard-required; the executor validates that at least
+      // one of litres / price / totalCost is present and derives the rest.
+      required: ['vehicleId'],
     },
   },
   {
@@ -95,6 +99,23 @@ export const tools: WorkerAITool[] = [
         repeatValue: { type: 'number' },
       },
       required: ['vehicleId', 'title', 'type', 'triggerType'],
+    },
+  },
+  {
+    name: 'add_document',
+    description:
+      'Store a vehicle document (fitness, insurance, registration, tax token) ' +
+      'with its expiry date so the app can remind the user before it lapses.',
+    parameters: {
+      type: 'object',
+      properties: {
+        vehicleId: { type: 'string' },
+        type: { type: 'string', enum: ['fitness', 'insurance', 'registration', 'tax_token', 'other'] },
+        title: { type: 'string' },
+        expiryDate: { type: 'string', description: 'YYYY-MM-DD' },
+        notes: { type: 'string' },
+      },
+      required: ['vehicleId', 'type', 'expiryDate'],
     },
   },
   {
@@ -166,6 +187,69 @@ export const tools: WorkerAITool[] = [
         limit: { type: 'number' },
       },
       required: ['vehicleId', 'type'],
+    },
+  },
+  {
+    name: 'compare_periods',
+    description:
+      'Compare two time windows for the active vehicle (e.g. this month vs ' +
+      'last month) and report the deltas in spend, fuel and efficiency.',
+    parameters: {
+      type: 'object',
+      properties: {
+        vehicleId: { type: 'string' },
+        unit: { type: 'string', enum: ['week', 'month', 'year'] },
+      },
+      required: ['vehicleId', 'unit'],
+    },
+  },
+  {
+    name: 'get_vehicle_overview',
+    description:
+      'Read a full snapshot of the active vehicle: odometer, lifetime totals ' +
+      '(fuel/service/expense), average efficiency, and the next due reminder.',
+    parameters: {
+      type: 'object',
+      properties: { vehicleId: { type: 'string' } },
+      required: ['vehicleId'],
+    },
+  },
+  {
+    name: 'delete_recent_log',
+    description:
+      "Delete one of the active vehicle's records. Use `which` to pick which " +
+      'recent entry to remove (1 = most recent). The app confirms with the ' +
+      'user before deleting.',
+    parameters: {
+      type: 'object',
+      properties: {
+        vehicleId: { type: 'string' },
+        type: { type: 'string', enum: ['fuel', 'service', 'expense', 'reminder'] },
+        which: { type: 'number', description: '1 = most recent (default), 2 = next, …' },
+      },
+      required: ['vehicleId', 'type'],
+    },
+  },
+  {
+    name: 'delete_vehicle',
+    description:
+      'Delete the active vehicle and ALL of its logs, reminders and documents. ' +
+      'The app confirms with the user before deleting.',
+    parameters: {
+      type: 'object',
+      properties: { vehicleId: { type: 'string' } },
+      required: ['vehicleId'],
+    },
+  },
+  {
+    name: 'clear_all_data',
+    description:
+      "Erase ALL of the active vehicle's logs, reminders and documents while " +
+      'keeping the vehicle itself. The app confirms with the user first.',
+    parameters: {
+      type: 'object',
+      properties: { vehicleId: { type: 'string' } },
+      required: ['vehicleId'],
     },
   },
 ]

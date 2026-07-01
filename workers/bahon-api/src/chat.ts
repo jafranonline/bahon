@@ -4,9 +4,11 @@ import type { Env } from './types'
 import { tools, type WorkerAITool } from './tools'
 import { buildSystemPrompt, buildChatSystemPrompt, type ChatContext } from './systemPrompt'
 
-// Full-precision Llama 3.1 70B: reliable numbers + multilingual. The fp8 3.3
-// variant produced garbage (e.g. pricePerLitre 5007250) and stray CJK tokens.
-export const MODEL = '@cf/meta/llama-3.1-70b-instruct'
+// Llama 4 Scout: natively multimodal (vision) + function-calling, and a far
+// better instruction-follower than the 3.1 70B it replaced (which mis-fired
+// tools and needed heavy artifact scrubbing). One model now powers chat,
+// tool-calling, and image extraction (see vision.ts).
+export const MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct'
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'tool'
@@ -34,10 +36,39 @@ interface AIMessage {
   content: string
 }
 
+/** OpenAI-style tool wrapper expected by Llama 4 Scout on Workers AI. */
+interface OpenAITool {
+  type: 'function'
+  function: WorkerAITool
+}
+
 // Shape of the Workers AI chat response when tools are provided.
+// Workers AI tool-call shapes vary by model: the flat form ({ name, arguments })
+// and the OpenAI form ({ id, type, function: { name, arguments } }). Llama 4
+// Scout returns the latter. `arguments` may be an object or a JSON string.
+type RawArgs = Record<string, unknown> | string | undefined
 interface AIToolCall {
-  name: string
-  arguments?: Record<string, unknown>
+  name?: string
+  arguments?: RawArgs
+  function?: { name?: string; arguments?: RawArgs }
+}
+
+function toolName(tc: AIToolCall): string {
+  return tc.function?.name ?? tc.name ?? ''
+}
+
+/** Normalizes a tool call's `arguments` (object or JSON string) to an object. */
+function coerceArgs(args: RawArgs): Record<string, unknown> {
+  if (!args) return {}
+  if (typeof args === 'string') {
+    try {
+      const parsed = JSON.parse(args)
+      return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {}
+    } catch {
+      return {}
+    }
+  }
+  return args
 }
 interface AIChatOutput {
   response?: string
@@ -65,8 +96,12 @@ export async function chatTurn(
   // Call through a locally-typed reference to keep our authoring types clean.
   const run = env.AI.run.bind(env.AI) as (
     model: string,
-    inputs: { messages: AIMessage[]; tools?: WorkerAITool[] },
+    inputs: { messages: AIMessage[]; tools?: OpenAITool[] },
   ) => Promise<AIChatOutput>
+
+  // Llama 4 Scout expects OpenAI-style tool definitions ({ type, function })
+  // rather than the flat { name, description, parameters } the 3.1 model took.
+  const openaiTools: OpenAITool[] = tools.map((t) => ({ type: 'function', function: t }))
 
   // Results turn: the frontend already executed the tool(s). Feed the results
   // back WITHOUT tools so the model must produce a text reply (a confirmation,
@@ -95,7 +130,8 @@ export async function chatTurn(
   // costs tokens, but wrongly withholding would drop a real action.
   const lastUserText =
     [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
-  const hasDigit = /\d/.test(lastUserText)
+  // Match ASCII AND Bengali (০-৯) digits, so "৩০০ টাকার তেল" is seen as actionable.
+  const hasDigit = /[\d০-৯]/.test(lastUserText)
   const actionable =
     hasDigit ||
     ACTION_KW.test(lastUserText) ||
@@ -117,13 +153,20 @@ export async function chatTurn(
     { role: 'system', content: buildSystemPrompt(context) },
     ...history,
   ]
-  const result = await run(model, { messages: aiMessages, tools })
+  const result = await run(model, { messages: aiMessages, tools: openaiTools })
 
-  let toolCalls: ToolCall[] = (result.tool_calls ?? []).map((tc, i) => ({
-    id: `call_${i}`,
-    name: tc.name,
-    input: normalizeArgs(tc.name, tc.arguments ?? {}, context, lastUserText),
-  }))
+  let toolCalls: ToolCall[] = (result.tool_calls ?? [])
+    .map((tc, i) => {
+      const name = toolName(tc)
+      const rawArgs = tc.function?.arguments ?? tc.arguments
+      return {
+        id: `call_${i}`,
+        name,
+        input: normalizeArgs(name, coerceArgs(rawArgs), context, lastUserText),
+      }
+    })
+    // Drop any call we couldn't resolve a name for (malformed model output).
+    .filter((tc) => tc.name !== '')
 
   // Guard against hallucinated logs: a fuel/service/expense entry with no
   // numbers in the user's message means the model invented the amounts. Drop
@@ -137,10 +180,11 @@ export async function chatTurn(
   // Tool-calling models over-eagerly fire "soft" tools on greetings/questions
   // (e.g. "how are you" → update_settings). Only keep those when the message
   // actually expresses that intent; otherwise fall through to a chat reply.
+  const READ_TOOLS = ['list_recent_logs', 'get_stats_summary', 'compare_periods', 'get_vehicle_overview']
   toolCalls = toolCalls.filter((c) => {
     if (c.name === 'update_settings') return SETTINGS_KW.test(lastUserText)
     if (c.name === 'navigate_to') return NAV_KW.test(lastUserText)
-    if (c.name === 'list_recent_logs' || c.name === 'get_stats_summary') return READ_KW.test(lastUserText)
+    if (READ_TOOLS.includes(c.name)) return READ_KW.test(lastUserText)
     return true
   })
 
@@ -178,13 +222,14 @@ const ARTIFACT_RE =
 // Intent keywords (English + Banglish + Bangla) that justify a "soft" tool call.
 const SETTINGS_KW = /\b(setting|settings|theme|dark|light|mode|language|bangla|bengali|english|currency|unit|units|km|mile|litre|gallon)\b|সেটিং|ভাষা|থিম|ডার্ক|লাইট|মুদ্রা|একক/i
 const NAV_KW = /\b(go|goto|open|take me|navigate|jao|jabo|kholo|khulo|niye|screen|page|tab|dashboard)\b|যাও|খোল|খুলো|পেজ|স্ক্রিন/i
-const READ_KW = /\b(show|list|recent|latest|last|history|how much|how many|total|spend|spent|summary|stat|stats|koto|ktoto|dekha|dekhao|khoroch|kharoch|hisab)\b|দেখা|দেখাও|কত|তালিকা|খরচ|হিসাব|সারাংশ/i
+const READ_KW = /\b(show|list|recent|latest|last|history|how much|how many|total|spend|spent|summary|stat|stats|compare|comparison|average|avg|mileage|efficiency|per km|per litre|breakdown|overview|koto|ktoto|dekha|dekhao|khoroch|kharoch|hisab|tulona|gore)\b|দেখা|দেখাও|কত|তালিকা|খরচ|হিসাব|সারাংশ|তুলনা|গড়|মাইলেজ/i
 
 // Action verbs (English + Banglish + Bangla) signalling the user wants to log,
-// save, set a reminder, or change something — i.e. a tool might be needed. Kept
-// deliberately broad so real actions are never gated out (see the gate above).
+// save, set a reminder, delete, or change something — i.e. a tool might be
+// needed. Kept deliberately broad so real actions are never gated out (the
+// destructive verbs still pass through the frontend confirmation gate).
 const ACTION_KW =
-  /\b(add|log|save|record|note|put|remind|reminder|set|change|update|fill|filled|refuel|fuel|bought|buy|spent|spend|paid|pay|service|serviced|kinlam|kinechi|dilam|jog|mone)\b|যোগ|মনে|পরিবর্তন|কিনেছি|কিনলাম|দিলাম|সার্ভিস|রিমাইন্ডার/i
+  /\b(add|log|save|record|note|put|remind|reminder|set|change|update|fill|filled|refuel|fuel|petrol|octane|diesel|gas|bought|buy|spent|spend|paid|pay|service|serviced|delete|remove|erase|clear|wipe|reset|kinlam|kinechi|dilam|jog|mone|muche|muchhe|bhorlam|bhorechi|tel)\b|যোগ|মনে|পরিবর্তন|কিনেছি|কিনলাম|দিলাম|সার্ভিস|রিমাইন্ডার|মুছে|ডিলিট|বাদ|তেল|ভরেছি|ভরলাম|ভরো|পেট্রোল|অকটেন|ডিজেল|গ্যাস|খরচ/i
 
 const NULLISH = new Set(['null', 'undefined', '', 'none', 'n/a', 'nil', 'na'])
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/

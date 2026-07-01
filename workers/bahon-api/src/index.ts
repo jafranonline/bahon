@@ -6,6 +6,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import type { Env } from './types'
 import { transcribe } from './transcribe'
+import { extractFromImage, type VisionHint } from './vision'
 import { chatTurn, type ChatMessage, type ToolResultInput } from './chat'
 import type { ChatContext } from './systemPrompt'
 import { authRoutes } from './auth/routes'
@@ -53,6 +54,18 @@ app.post('/api/transcribe', requireAuth, requirePro, async (c) => {
   }
   const transcript = await transcribe(await audio.arrayBuffer(), lang, c.env)
   return c.json({ transcript })
+})
+
+app.post('/api/vision', requireAuth, requirePro, async (c) => {
+  const form = await c.req.formData()
+  const image = form.get('image') as unknown as Blob | string | null
+  const hint = String(form.get('hint') ?? 'auto') as VisionHint
+  if (!image || typeof image === 'string') {
+    return c.json({ error: 'missing_image' }, 400)
+  }
+  const mime = (image as Blob).type || 'image/jpeg'
+  const extract = await extractFromImage(await image.arrayBuffer(), mime, hint, c.env)
+  return c.json({ extract })
 })
 
 app.post('/api/chat', requireAuth, requirePro, async (c) => {

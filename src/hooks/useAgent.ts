@@ -8,6 +8,9 @@ export interface AgentContext {
   vehicleType: string
   fuelType: string
   currentOdometer: number
+  /** Saved price per litre for this vehicle's fuel type (0 if unset). Lets the
+   * agent turn a bare taka total into litres. */
+  fuelPrice: number
   today: string
   language: string
   currency: string
@@ -28,13 +31,38 @@ export type AgentStatus =
   | 'live_capturing'
   | 'transcribing'
   | 'thinking'
+  | 'scanning'
   | 'error'
+
+/** A field parsed from an image, shown as a line in the review card. */
+export interface ConfirmField {
+  labelKey: string
+  value: string
+}
+
+/** A pending action awaiting the user's Confirm/Cancel — used for destructive
+ * tools (delete/clear) and for image-extracted entries before they are saved. */
+export interface PendingConfirm {
+  kind: 'destructive' | 'extract'
+  /** Tool call to run when the user confirms. */
+  call: AgentToolCall
+  /** i18n key for the card's headline (e.g. agent.confirm_delete_vehicle). */
+  titleKey: string
+  /** Extracted fields to preview (extract kind only). */
+  fields?: ConfirmField[]
+  /** Set once acted on, so the buttons disable and read-only. */
+  done?: 'confirmed' | 'cancelled'
+}
 
 export interface AgentMessage {
   id: string
-  role: 'user' | 'assistant' | 'tool_status'
+  role: 'user' | 'assistant' | 'tool_status' | 'confirm'
   content: string
   ts: number
+  /** Data URL of an image the user attached (user rows only). */
+  image?: string
+  /** Present on `confirm` rows. */
+  confirm?: PendingConfirm
 }
 
 interface ChatResponse {
@@ -58,20 +86,89 @@ const LIVE_IDLE_MS = 45_000
 /** Discard captured clips smaller than this (noise/taps) without transcribing. */
 const MIN_CLIP_BYTES = 1200
 
+/** localStorage key + caps for persisting the conversation across reloads. */
+const CHAT_STORAGE_KEY = 'bahon-agent-chat'
+const MAX_PERSIST_MESSAGES = 100
+const MAX_PERSIST_HISTORY = 40
+
+interface PersistedChat {
+  messages: AgentMessage[]
+  apiHistory: { role: 'user' | 'assistant'; content: string }[]
+}
+
+function loadPersistedChat(): PersistedChat {
+  try {
+    const raw = localStorage.getItem(CHAT_STORAGE_KEY)
+    if (!raw) return { messages: [], apiHistory: [] }
+    const data = JSON.parse(raw) as Partial<PersistedChat>
+    return {
+      messages: Array.isArray(data.messages) ? data.messages : [],
+      apiHistory: Array.isArray(data.apiHistory) ? data.apiHistory : [],
+    }
+  } catch {
+    return { messages: [], apiHistory: [] }
+  }
+}
+
+function savePersistedChat(messages: AgentMessage[], apiHistory: PersistedChat['apiHistory']): void {
+  try {
+    const payload: PersistedChat = {
+      // Drop image data URLs — they can be large and the thumbnail is ephemeral.
+      messages: messages.slice(-MAX_PERSIST_MESSAGES).map((m) =>
+        m.image ? { ...m, image: undefined } : m,
+      ),
+      apiHistory: apiHistory.slice(-MAX_PERSIST_HISTORY),
+    }
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(payload))
+  } catch {
+    /* storage full / unavailable — non-fatal */
+  }
+}
+
+function clearPersistedChat(): void {
+  try {
+    localStorage.removeItem(CHAT_STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Destructive tools that must be confirmed by the user before they run. */
+const CONFIRM_REQUIRED = new Set(['delete_recent_log', 'delete_vehicle', 'clear_all_data'])
+
 /** Maps a tool name to a status token used for the i18n label, or null when
  * the tool should not surface a status line (read-only tools). */
-function statusToken(name: string): 'saved' | 'updated' | 'navigating' | null {
+function statusToken(name: string): 'saved' | 'updated' | 'navigating' | 'deleted' | 'cleared' | null {
   if (name === 'navigate_to') return 'navigating'
+  if (name === 'clear_all_data') return 'cleared'
+  if (name.startsWith('delete_')) return 'deleted'
   if (name.startsWith('update_')) return 'updated'
   if (name.startsWith('add_')) return 'saved'
   return null
 }
 
+/** Builds the confirm card headline key + summary for a destructive tool. */
+function destructiveTitleKey(call: AgentToolCall): string {
+  if (call.name === 'delete_vehicle') return 'agent.confirm_delete_vehicle'
+  if (call.name === 'clear_all_data') return 'agent.confirm_clear_all'
+  return 'agent.confirm_delete_log'
+}
+
+/** True when a tool result string represents a successful write ("ok"). Reads
+ * return JSON and needs-info returns a question — neither should show a status. */
+function isOk(content: string): boolean {
+  return /^\s*ok\s*$/i.test(content)
+}
+function isError(content: string): boolean {
+  return /^\s*error\b/i.test(content)
+}
+
 function newMessage(
   role: AgentMessage['role'],
   content: string,
+  extra?: Partial<Pick<AgentMessage, 'image' | 'confirm'>>,
 ): AgentMessage {
-  return { id: crypto.randomUUID(), role, content, ts: Date.now() }
+  return { id: crypto.randomUUID(), role, content, ts: Date.now(), ...extra }
 }
 
 /** Short haptic pulse (no-op where unsupported) — a "your turn" cue for
@@ -84,6 +181,121 @@ function haptic(ms: number): void {
   }
 }
 
+/** Structured data returned by POST /api/vision (mirrors worker VisionExtract). */
+interface VisionExtract {
+  kind: 'odometer' | 'fuel_receipt' | 'document' | 'unknown'
+  odometer?: number
+  volumeLitres?: number
+  pricePerLitre?: number
+  totalCost?: number
+  stationName?: string
+  date?: string
+  documentType?: string
+  expiryDate?: string
+  title?: string
+  confidence?: number
+  note?: string
+}
+
+/** Shrinks an image to ≤1024px JPEG to bound the upload, returning both a Blob
+ * (for the API) and a data URL (for the in-chat thumbnail). */
+async function downscaleImage(file: File): Promise<{ blob: Blob; dataUrl: string }> {
+  const bitmap = await createImageBitmap(file)
+  const max = 1024
+  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height))
+  const w = Math.max(1, Math.round(bitmap.width * scale))
+  const h = Math.max(1, Math.round(bitmap.height * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('no_canvas')
+  ctx.drawImage(bitmap, 0, 0, w, h)
+  bitmap.close?.()
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('no_blob'))), 'image/jpeg', 0.8),
+  )
+  return { blob, dataUrl }
+}
+
+/** Turns a vision extract into a pending confirm card (tool call + preview
+ * fields), or null when nothing usable was found. */
+function buildConfirmFromExtract(
+  ex: VisionExtract | undefined,
+  ctx: AgentContext,
+): PendingConfirm | null {
+  if (!ex) return null
+  const fields: ConfirmField[] = []
+  const push = (labelKey: string, value: string | number | undefined, suffix = '') => {
+    if (value !== undefined && value !== '') fields.push({ labelKey, value: `${value}${suffix}` })
+  }
+  const id = () => crypto.randomUUID()
+
+  const hasFuel = ex.volumeLitres || ex.pricePerLitre || ex.totalCost
+  if (ex.kind === 'fuel_receipt' || (ex.kind !== 'odometer' && ex.kind !== 'document' && hasFuel)) {
+    if (!hasFuel) return null
+    push('agent.field_litres', ex.volumeLitres, ` ${ctx.volumeUnit}`)
+    push('agent.field_price', ex.pricePerLitre)
+    push('agent.field_total', ex.totalCost)
+    push('agent.field_odometer', ex.odometer, ` ${ctx.distanceUnit}`)
+    push('agent.field_date', ex.date)
+    push('agent.field_station', ex.stationName)
+    return {
+      kind: 'extract',
+      titleKey: 'agent.confirm_fuel',
+      fields,
+      call: {
+        id: id(),
+        name: 'add_fuel_log',
+        input: clean({
+          volumeLitres: ex.volumeLitres,
+          pricePerLitre: ex.pricePerLitre,
+          totalCost: ex.totalCost,
+          odometer: ex.odometer,
+          date: ex.date,
+          stationName: ex.stationName,
+        }),
+      },
+    }
+  }
+
+  if (ex.kind === 'odometer' || (ex.odometer && !ex.expiryDate)) {
+    if (!ex.odometer) return null
+    push('agent.field_odometer', ex.odometer, ` ${ctx.distanceUnit}`)
+    return {
+      kind: 'extract',
+      titleKey: 'agent.confirm_odometer',
+      fields,
+      call: { id: id(), name: 'update_vehicle', input: clean({ odometer: ex.odometer }) },
+    }
+  }
+
+  if (ex.kind === 'document' || ex.expiryDate) {
+    if (!ex.expiryDate) return null
+    push('agent.field_doc_type', ex.documentType ?? ex.title)
+    push('agent.field_expiry', ex.expiryDate)
+    return {
+      kind: 'extract',
+      titleKey: 'agent.confirm_document',
+      fields,
+      call: {
+        id: id(),
+        name: 'add_document',
+        input: clean({ type: ex.documentType, title: ex.title, expiryDate: ex.expiryDate }),
+      },
+    }
+  }
+  return null
+}
+
+/** Drops undefined values so tool input stays clean. */
+function clean(obj: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(obj)) if (v !== undefined && v !== '') out[k] = v
+  return out
+}
+
 function stringifyResult(result: unknown): string {
   if (typeof result === 'string') return result
   try {
@@ -94,14 +306,26 @@ function stringifyResult(result: unknown): string {
 }
 
 export function useAgent({ context, onToolCall }: UseAgentOptions) {
-  const [messages, setMessages] = useState<AgentMessage[]>([])
+  // Chat history sent to the API (user/assistant text only, no status lines).
+  const apiHistoryRef = useRef<{ role: 'user' | 'assistant'; content: string }[]>([])
+  // Hydrate the conversation from localStorage so it survives reloads / PWA
+  // restarts (status is intentionally reset — nothing is in-flight after a load).
+  const [messages, setMessages] = useState<AgentMessage[]>(() => {
+    const persisted = loadPersistedChat()
+    apiHistoryRef.current = persisted.apiHistory
+    return persisted.messages
+  })
   const [status, setStatus] = useState<AgentStatus>('idle')
   const [liveMode, setLiveMode] = useState(false)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
-  // Chat history sent to the API (user/assistant text only, no status lines).
-  const apiHistoryRef = useRef<{ role: 'user' | 'assistant'; content: string }[]>([])
+
+  // Persist whenever the visible conversation changes (apiHistoryRef is updated
+  // alongside messages, so this captures both).
+  useEffect(() => {
+    savePersistedChat(messages, apiHistoryRef.current)
+  }, [messages])
 
   // Live (hands-free) mode: a persistent mic stream + VAD drive an auto-turn loop.
   const liveModeRef = useRef(false)
@@ -154,14 +378,25 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
         if (res.toolCalls && res.toolCalls.length > 0) {
           const results: { toolUseId: string; content: string }[] = []
           for (const call of res.toolCalls) {
+            // Destructive tools pause the loop and ask the user first.
+            if (CONFIRM_REQUIRED.has(call.name)) {
+              setMessages((prev) => [
+                ...prev,
+                newMessage('confirm', '', {
+                  confirm: { kind: 'destructive', call, titleKey: destructiveTitleKey(call) },
+                }),
+              ])
+              setStatus('idle')
+              return
+            }
             const content = stringifyResult(await onToolCall(call))
-            // Reflect the ACTUAL outcome: only show "saved"/"updated" when the
-            // executor confirmed success. A failed write surfaces as a failure
-            // line instead of a misleading confirmation.
+            // Reflect the ACTUAL outcome: only show a status when the executor
+            // confirmed "ok". Needs-info (e.g. missing litres) and read results
+            // show no status line; a real failure shows the failure line.
             const token = statusToken(call.name)
             if (token) {
-              const ok = !/^\s*error\b/i.test(content)
-              setMessages((prev) => [...prev, newMessage('tool_status', ok ? token : 'failed')])
+              if (isOk(content)) setMessages((prev) => [...prev, newMessage('tool_status', token)])
+              else if (isError(content)) setMessages((prev) => [...prev, newMessage('tool_status', 'failed')])
             }
             results.push({ toolUseId: call.id, content })
           }
@@ -209,6 +444,94 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
       return runAgentLoop()
     },
     [context, runAgentLoop],
+  )
+
+  // Mark a confirm card done (disables its buttons) without touching others.
+  const markConfirmDone = useCallback(
+    (messageId: string, done: PendingConfirm['done']) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId && m.confirm ? { ...m, confirm: { ...m.confirm, done } } : m,
+        ),
+      )
+    },
+    [],
+  )
+
+  // Resolve a pending confirm card: run the tool on approval, or drop it.
+  const resolveConfirm = useCallback(
+    async (messageId: string, confirm: PendingConfirm, approved: boolean): Promise<void> => {
+      if (confirm.done) return
+      if (!approved) {
+        markConfirmDone(messageId, 'cancelled')
+        setMessages((prev) => [...prev, newMessage('tool_status', 'cancelled')])
+        return
+      }
+      markConfirmDone(messageId, 'confirmed')
+      setStatus('thinking')
+      try {
+        const content = stringifyResult(await onToolCall(confirm.call))
+        const token = statusToken(confirm.call.name)
+        if (token && isOk(content)) {
+          setMessages((prev) => [...prev, newMessage('tool_status', token)])
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            newMessage('tool_status', 'failed'),
+            ...(isError(content) ? [newMessage('assistant', content)] : []),
+          ])
+        }
+        setStatus('idle')
+      } catch {
+        fail('agent.error_generic')
+      }
+    },
+    [onToolCall, markConfirmDone, fail],
+  )
+
+  // Upload a photo, extract structured data, and surface a confirm-to-save card.
+  const sendImage = useCallback(
+    async (file: File): Promise<void> => {
+      const ctx = contextRef.current
+      if (!ctx) return
+      if (!navigator.onLine) {
+        fail('agent.error_offline')
+        return
+      }
+      let prepared: { blob: Blob; dataUrl: string }
+      try {
+        prepared = await downscaleImage(file)
+      } catch {
+        fail('agent.error_generic')
+        return
+      }
+      setMessages((prev) => [
+        ...prev,
+        newMessage('user', 'agent.image_sent', { image: prepared.dataUrl }),
+      ])
+      setStatus('scanning')
+      try {
+        const form = new FormData()
+        form.append('image', prepared.blob, 'photo.jpg')
+        form.append('hint', 'auto')
+        const res = await apiFetch('/api/vision', { method: 'POST', body: form })
+        if (res.status === 403) return fail('agent.pro_required')
+        if (res.status === 401) return fail('agent.login_required')
+        if (!res.ok) throw new Error(`vision_${res.status}`)
+        const { extract } = (await res.json()) as { extract?: VisionExtract }
+        const confirm = buildConfirmFromExtract(extract, ctx)
+        if (!confirm) {
+          setMessages((prev) => [...prev, newMessage('assistant', 'agent.image_no_data')])
+          setStatus('idle')
+          return
+        }
+        setMessages((prev) => [...prev, newMessage('confirm', '', { confirm })])
+        setStatus('idle')
+      } catch {
+        fail('agent.error_generic')
+      }
+    },
+    [fail],
   )
 
   const startVoice = useCallback(async () => {
@@ -376,6 +699,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
     apiHistoryRef.current = []
     setMessages([])
     setStatus('idle')
+    clearPersistedChat()
   }, [stopVoice, stopLive])
 
   // Safety net: never leave the mic/audio graph running past unmount.
@@ -392,5 +716,17 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
     }
   }, [])
 
-  return { messages, status, liveMode, sendText, startVoice, stopVoice, startLive, stopLive, reset }
+  return {
+    messages,
+    status,
+    liveMode,
+    sendText,
+    sendImage,
+    resolveConfirm,
+    startVoice,
+    stopVoice,
+    startLive,
+    stopLive,
+    reset,
+  }
 }

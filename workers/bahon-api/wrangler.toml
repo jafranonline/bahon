@@ -15,6 +15,7 @@ send_email = [
 # LLM agent with tool calling (/api/chat). No external API keys required.
 [ai]
 binding = "AI"
+remote = true
 
 # D1 — users, subscriptions, refresh tokens (Phase 15).
 [[d1_databases]]

@@ -22,6 +22,7 @@ export function AppShell() {
   const currency = useSettingsStore((s) => s.currency)
   const distanceUnit = useSettingsStore((s) => s.distanceUnit)
   const volumeUnit = useSettingsStore((s) => s.volumeUnit)
+  const fuelPrices = useSettingsStore((s) => s.fuelPrices)
 
   useEffect(() => {
     if (i18n.language !== language) {
@@ -75,13 +76,14 @@ export function AppShell() {
       vehicleType: vehicle.type,
       fuelType: vehicle.fuelType,
       currentOdometer: vehicle.odometer,
+      fuelPrice: fuelPrices?.[vehicle.fuelType] ?? 0,
       today: new Date().toISOString().slice(0, 10),
       language,
       currency,
       distanceUnit,
       volumeUnit,
     }
-  }, [vehicle, language, currency, distanceUnit, volumeUnit])
+  }, [vehicle, language, currency, distanceUnit, volumeUnit, fuelPrices])
 
   const executeTool = useToolExecutor()
   const onToolCall = useCallback(

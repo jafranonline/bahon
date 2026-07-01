@@ -1,9 +1,29 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from '@hooks/useTranslation'
+import { useAuthStore } from '@store/authStore'
 import { useAgent, type AgentContext, type AgentToolCall } from '@hooks/useAgent'
 import { AgentMessage } from '../AgentMessage/AgentMessage'
 import styles from './AgentSheet.module.css'
+
+/** The agent's avatar — a gradient sparkle mark with a live "online" dot. */
+function AgentAvatar() {
+  return (
+    <span className={styles.avatar} aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M11.5 3.2c.55 3.9 2.4 5.75 6.3 6.3-3.9.55-5.75 2.4-6.3 6.3-.55-3.9-2.4-5.75-6.3-6.3 3.9-.55 5.75-2.4 6.3-6.3z"
+          fill="currentColor"
+        />
+        <path
+          d="M18.3 14.2c.24 1.7 1.05 2.5 2.75 2.75-1.7.24-2.51 1.05-2.75 2.75-.24-1.7-1.05-2.51-2.75-2.75 1.7-.24 2.51-1.05 2.75-2.75z"
+          fill="currentColor"
+        />
+      </svg>
+      <span className={styles.onlineDot} />
+    </span>
+  )
+}
 
 interface AgentSheetProps {
   open: boolean
@@ -16,11 +36,23 @@ interface AgentSheetProps {
 export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentSheetProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { messages, status, liveMode, sendText, stopVoice, startLive, stopLive } =
-    useAgent({ context, onToolCall })
+  const signedIn = useAuthStore((s) => s.status === 'authenticated')
+  const {
+    messages,
+    status,
+    liveMode,
+    sendText,
+    sendImage,
+    resolveConfirm,
+    stopVoice,
+    startLive,
+    stopLive,
+    reset,
+  } = useAgent({ context, onToolCall })
   const [draft, setDraft] = useState('')
   const listEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const fileRef = useRef<HTMLInputElement | null>(null)
 
   // Auto-scroll to the newest message / typing indicator.
   useEffect(() => {
@@ -45,8 +77,14 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
     }
   }, [open, stopLive, stopVoice])
 
-  const busy = status === 'thinking' || status === 'transcribing'
+  const busy = status === 'thinking' || status === 'transcribing' || status === 'scanning'
   const hasText = draft.trim().length > 0
+
+  const handlePickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-picking the same file
+    if (file) void sendImage(file)
+  }
 
   // Keep the composer focused for uninterrupted typing: on open, and again once
   // a send finishes (the input is disabled while busy, so re-focus when idle).
@@ -83,43 +121,55 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
         aria-hidden={!open}
       >
         <header className={styles.header}>
-          <span className={styles.title}>{t('agent.title')}</span>
-          <button
-            className={styles.close}
-            onClick={onClose}
-            aria-label={t('common.close')}
-            type="button"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-            </svg>
-          </button>
-        </header>
-
-        {!isPro ? (
-          <div className={styles.gate}>
-            <span className={styles.gateIcon} aria-hidden="true">✨</span>
-            <p className={styles.gateTitle}>{t('agent.gate_title')}</p>
-            <p className={styles.gateText}>{t('agent.gate_text')}</p>
+          <div className={styles.identity}>
+            <AgentAvatar />
+            <span className={styles.identityText}>
+              <span className={styles.name}>{t('agent.agent_name')}</span>
+              <span className={styles.presence}>
+                <span className={styles.presenceDot} aria-hidden="true" />
+                {t('agent.online')}
+              </span>
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {isPro && messages.length > 0 && (
+              <button
+                className={styles.close}
+                onClick={reset}
+                aria-label={t('agent.clear')}
+                type="button"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 7h16M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2M6 7l1 12a1 1 0 001 1h8a1 1 0 001-1l1-12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
             <button
-              className={styles.gateCta}
+              className={styles.close}
+              onClick={onClose}
+              aria-label={t('common.close')}
               type="button"
-              onClick={() => { onClose(); navigate('/account') }}
             >
-              {t('agent.gate_cta')}
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+              </svg>
             </button>
           </div>
-        ) : (
-        <>
+        </header>
+
         <div className={styles.messages}>
           {messages.length === 0 && (
-            <p className={styles.empty}>{t('agent.empty_hint')}</p>
+            <p className={styles.empty}>{isPro ? t('agent.empty_hint') : t('agent.gate_text')}</p>
           )}
           {messages.map((m) => (
-            <AgentMessage key={m.id} message={m} />
+            <AgentMessage key={m.id} message={m} onConfirm={resolveConfirm} />
           ))}
-          {(status === 'thinking' || status === 'transcribing') && (
-            <div className={styles.typing} role="status" aria-label={t('agent.thinking')}>
+          {(status === 'thinking' || status === 'transcribing' || status === 'scanning') && (
+            <div
+              className={styles.typing}
+              role="status"
+              aria-label={status === 'scanning' ? t('agent.scanning') : t('agent.thinking')}
+            >
               <span />
               <span />
               <span />
@@ -128,7 +178,25 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
           <div ref={listEndRef} />
         </div>
 
-        {liveMode ? (
+        {!isPro ? (
+          // Free tier: the chat modal is shown but locked — prompt to sign in
+          // (if anonymous) or upgrade (if signed in without Pro).
+          <div className={styles.lockedBar}>
+            <span className={styles.lockIcon} aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" strokeWidth="1.7" />
+                <path d="M8 10.5V8a4 4 0 018 0v2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+              </svg>
+            </span>
+            <button
+              className={styles.lockedCta}
+              type="button"
+              onClick={() => { onClose(); navigate(signedIn ? '/account' : '/auth') }}
+            >
+              {signedIn ? t('agent.locked_upgrade') : t('agent.locked_signin')}
+            </button>
+          </div>
+        ) : liveMode ? (
           // Live (hands-free) mode active — the input is replaced by the live UI.
           <div className={`${styles.liveBar} ${status === 'live_listening' ? styles.liveBarReady : ''}`}>
             <span className={styles.liveIndicator} aria-hidden="true">
@@ -141,6 +209,29 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
           </div>
         ) : (
           <div className={styles.composer}>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handlePickImage}
+              style={{ display: 'none' }}
+              aria-hidden="true"
+              tabIndex={-1}
+            />
+            <button
+              className={styles.attach}
+              onClick={() => fileRef.current?.click()}
+              aria-label={t('agent.attach_image')}
+              type="button"
+              disabled={busy}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.7" />
+                <circle cx="8.5" cy="10" r="1.5" fill="currentColor" />
+                <path d="M5 17l4.5-4.5 3 3L16 12l3 3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
             <input
               ref={inputRef}
               className={styles.input}
@@ -190,8 +281,6 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
               </button>
             )}
           </div>
-        )}
-        </>
         )}
       </section>
     </>

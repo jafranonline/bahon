@@ -1,14 +1,17 @@
 import { useCallback } from 'react'
 import { useNavigate, type NavigateFunction } from 'react-router-dom'
 import { db } from '@db/database'
-import { addFuelLog, getLastOdometer } from '@db/queries/useFuelLogs'
-import { addServiceLog } from '@db/queries/useServiceLogs'
-import { addExpense } from '@db/queries/useExpenses'
-import { addReminder } from '@db/queries/useReminders'
-import { updateVehicle } from '@db/queries/useVehicles'
+import { addFuelLog, deleteFuelLog, getLastOdometer } from '@db/queries/useFuelLogs'
+import { addServiceLog, deleteServiceLog } from '@db/queries/useServiceLogs'
+import { addExpense, deleteExpense } from '@db/queries/useExpenses'
+import { addReminder, deleteReminder } from '@db/queries/useReminders'
+import { addDocument } from '@db/queries/useDocuments'
+import { updateVehicle, deleteVehicle } from '@db/queries/useVehicles'
+import { softDeleteTrackMany } from '@db/tombstones'
 import { useSettingsStore } from '@store/settingsStore'
+import { useVehicleStore } from '@store/vehicleStore'
+import type { FuelType } from '@/types'
 import {
-  calcTotalCost,
   calcEfficiencyKmL,
   calcEfficiencyL100km,
   calcEfficiencyMPG,
@@ -26,6 +29,7 @@ const EXPENSE_CATEGORIES = [
   'tax_token', 'insurance', 'parking', 'toll', 'fuel_tax', 'fine', 'wash',
   'accessories', 'other',
 ]
+const DOCUMENT_TYPES = ['fitness', 'insurance', 'registration', 'tax_token', 'other']
 
 const SCREEN_ROUTES: Record<string, string> = {
   home: '/',
@@ -70,20 +74,31 @@ export async function executeToolCall(
   // Mutating tools need a real target vehicle. A write with an empty id would
   // silently persist a row no screen can show (every view is vehicle-scoped),
   // producing the "saved but not on the dashboard" symptom.
-  const MUTATING = ['add_fuel_log', 'add_service_log', 'add_expense', 'add_reminder', 'update_vehicle']
+  const MUTATING = [
+    'add_fuel_log', 'add_service_log', 'add_expense', 'add_reminder', 'add_document',
+    'update_vehicle', 'delete_recent_log', 'delete_vehicle', 'clear_all_data',
+  ]
   if (MUTATING.includes(call.name) && !vehicleId) {
     return 'Error: no active vehicle is selected, so nothing was saved.'
   }
   try {
     switch (call.name) {
       case 'add_fuel_log': {
-        const volumeLitres = num(p.volumeLitres)
-        const pricePerLitre = num(p.pricePerLitre)
-        // Only litres + price are required. Odometer is optional — default it to
-        // the vehicle's current/last-known reading so the log still saves.
-        if (volumeLitres === undefined || pricePerLitre === undefined) {
-          return 'Error: a fuel log needs at least the litres and the price.'
-        }
+        // Users often give only a taka total ("300 taka of fuel"). Resolve
+        // litres + price from whatever two of {litres, price, total} we have,
+        // falling back to the saved fuel price for this vehicle's fuel type.
+        const vehicleForFuel = await db.vehicles.get(vehicleId)
+        const lockedPrice = vehicleForFuel
+          ? num(useSettingsStore.getState().fuelPrices?.[vehicleForFuel.fuelType as FuelType])
+          : undefined
+        const resolved = resolveFuel(
+          num(p.volumeLitres),
+          num(p.pricePerLitre),
+          num(p.totalCost),
+          lockedPrice,
+        )
+        if ('ask' in resolved) return resolved.ask
+        const { volumeLitres, pricePerLitre, totalCost } = resolved
         const prevOdo = await getLastOdometer(vehicleId)
         let odometer = num(p.odometer)
         if (odometer === undefined || odometer <= 0) {
@@ -97,7 +112,7 @@ export async function executeToolCall(
           date: str(p.date) ?? today(),
           volumeLitres,
           pricePerLitre,
-          totalCost: calcTotalCost(volumeLitres, pricePerLitre),
+          totalCost,
           odometer,
           previousOdometer: prevOdo > 0 ? prevOdo : undefined,
           efficiencyKmPerL: hasDistance ? calcEfficiencyKmL(distance, volumeLitres) : undefined,
@@ -171,6 +186,20 @@ export async function executeToolCall(
         return 'ok'
       }
 
+      case 'add_document': {
+        const expiryDate = str(p.expiryDate)
+        if (!expiryDate) return 'Error: a document needs an expiry date.'
+        const docType = mapEnum(p.type, DOCUMENT_TYPES, 'other')
+        await addDocument({
+          vehicleId,
+          type: docType as never,
+          title: str(p.title) ?? docType.replace(/_/g, ' '),
+          expiryDate,
+          notes: str(p.notes),
+        })
+        return 'ok'
+      }
+
       case 'update_vehicle': {
         const patch: Record<string, unknown> = {}
         if (str(p.name)) patch.name = str(p.name)
@@ -208,6 +237,31 @@ export async function executeToolCall(
           await recentLogs(vehicleId, str(p.type) ?? 'fuel', num(p.limit) ?? 5),
         )
 
+      case 'compare_periods':
+        return JSON.stringify(
+          await comparePeriods(vehicleId, str(p.unit) ?? 'month'),
+        )
+
+      case 'get_vehicle_overview':
+        return JSON.stringify(await vehicleOverview(vehicleId))
+
+      case 'delete_recent_log': {
+        const type = str(p.type) ?? 'fuel'
+        const which = Math.max(1, num(p.which) ?? 1)
+        return await deleteRecentLog(vehicleId, type, which)
+      }
+
+      case 'delete_vehicle': {
+        await deleteVehicle(vehicleId)
+        // Reselect a remaining vehicle so no screen reads the deleted one.
+        const remaining = await db.vehicles.orderBy('createdAt').reverse().toArray()
+        useVehicleStore.getState().setActiveVehicle(remaining[0]?.id ?? null)
+        return 'ok'
+      }
+
+      case 'clear_all_data':
+        return await clearVehicleData(vehicleId)
+
       default:
         return `Error: unknown tool ${call.name}.`
     }
@@ -231,19 +285,187 @@ function periodStart(period: string): string {
   return now.toISOString().slice(0, 10)
 }
 
+const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
+const round = (n: number, dp = 1) => Math.round(n * 10 ** dp) / 10 ** dp
+/** Group a list into { key: total } by a category field + amount field. */
+function breakdown<T>(rows: T[], cat: (r: T) => string, amt: (r: T) => number) {
+  const out: Record<string, number> = {}
+  for (const r of rows) out[cat(r)] = round((out[cat(r)] ?? 0) + amt(r), 0)
+  return out
+}
+
+/** Core aggregates for one vehicle within [from, to] (inclusive dates). */
+async function windowStats(vehicleId: string, from: string, to: string) {
+  const within = (d: string) => d >= from && d <= to
+  const fuel = (await db.fuelLogs.where('vehicleId').equals(vehicleId).toArray()).filter((l) => within(l.date))
+  const service = (await db.serviceLogs.where('vehicleId').equals(vehicleId).toArray()).filter((l) => within(l.date))
+  const expense = (await db.expenses.where('vehicleId').equals(vehicleId).toArray()).filter((l) => within(l.date))
+
+  const odos = fuel.map((l) => l.odometer).filter((o) => o > 0)
+  const distance = odos.length >= 2 ? Math.max(...odos) - Math.min(...odos) : 0
+  const litres = sum(fuel.map((l) => l.volumeLitres))
+  const effs = fuel.map((l) => l.efficiencyKmPerL).filter((e): e is number => typeof e === 'number' && e > 0)
+  const avgKmPerL = effs.length ? round(sum(effs) / effs.length, 2) : null
+  const fuelCost = sum(fuel.map((l) => l.totalCost))
+  const serviceCost = sum(service.map((l) => l.cost))
+  const expenseCost = sum(expense.map((l) => l.amount))
+  const totalCost = round(fuelCost + serviceCost + expenseCost, 0)
+
+  return {
+    fuelCost: round(fuelCost, 0),
+    litres: round(litres, 2),
+    serviceCost: round(serviceCost, 0),
+    expenseCost: round(expenseCost, 0),
+    totalCost,
+    distanceKm: distance,
+    avgKmPerL,
+    costPerKm: distance > 0 ? round(totalCost / distance, 2) : null,
+    counts: { fuel: fuel.length, service: service.length, expense: expense.length },
+    serviceByCategory: breakdown(service, (s) => s.category, (s) => s.cost),
+    expenseByCategory: breakdown(expense, (e) => e.category, (e) => e.amount),
+  }
+}
+
 async function statsSummary(vehicleId: string, period: string) {
   const from = periodStart(period)
-  const inRange = (d: string) => d >= from
-  const fuel = (await db.fuelLogs.where('vehicleId').equals(vehicleId).toArray()).filter((l) => inRange(l.date))
-  const service = (await db.serviceLogs.where('vehicleId').equals(vehicleId).toArray()).filter((l) => inRange(l.date))
-  const expense = (await db.expenses.where('vehicleId').equals(vehicleId).toArray()).filter((l) => inRange(l.date))
-  const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0)
+  const to = today()
+  return { period, ...(await windowStats(vehicleId, from, to)) }
+}
+
+/** Length of one rolling window in days, used by compare_periods. */
+function windowDays(unit: string): number {
+  if (unit === 'week') return 7
+  if (unit === 'year') return 365
+  return 30
+}
+
+function shiftDays(iso: string, days: number): string {
+  const d = new Date(iso)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Compares this rolling window against the immediately preceding one. */
+async function comparePeriods(vehicleId: string, unit: string) {
+  const len = windowDays(unit)
+  const to = today()
+  const curFrom = shiftDays(to, -len)
+  const prevTo = shiftDays(curFrom, -1)
+  const prevFrom = shiftDays(prevTo, -len)
+  const current = await windowStats(vehicleId, curFrom, to)
+  const previous = await windowStats(vehicleId, prevFrom, prevTo)
   return {
-    period,
-    fuel: { count: fuel.length, totalCost: sum(fuel.map((l) => l.totalCost)), totalLitres: sum(fuel.map((l) => l.volumeLitres)) },
-    service: { count: service.length, totalCost: sum(service.map((l) => l.cost)) },
-    expense: { count: expense.length, totalAmount: sum(expense.map((l) => l.amount)) },
+    unit,
+    current: { from: curFrom, to, ...current },
+    previous: { from: prevFrom, to: prevTo, ...previous },
+    delta: {
+      totalCost: round(current.totalCost - previous.totalCost, 0),
+      fuelCost: round(current.fuelCost - previous.fuelCost, 0),
+      litres: round(current.litres - previous.litres, 2),
+      avgKmPerL:
+        current.avgKmPerL != null && previous.avgKmPerL != null
+          ? round(current.avgKmPerL - previous.avgKmPerL, 2)
+          : null,
+    },
   }
+}
+
+/** Whole-life snapshot of a vehicle for "how's my bike doing" questions. */
+async function vehicleOverview(vehicleId: string) {
+  const vehicle = await db.vehicles.get(vehicleId)
+  const fuel = await db.fuelLogs.where('vehicleId').equals(vehicleId).toArray()
+  const service = await db.serviceLogs.where('vehicleId').equals(vehicleId).toArray()
+  const expense = await db.expenses.where('vehicleId').equals(vehicleId).toArray()
+  const reminders = (await db.reminders.where('vehicleId').equals(vehicleId).toArray())
+    .filter((r) => r.isActive)
+  const effs = fuel.map((l) => l.efficiencyKmPerL).filter((e): e is number => typeof e === 'number' && e > 0)
+  const nextReminder = reminders
+    .filter((r) => r.nextDueDate)
+    .sort((a, b) => (a.nextDueDate ?? '').localeCompare(b.nextDueDate ?? ''))[0]
+  return {
+    name: vehicle?.name,
+    odometer: vehicle?.odometer ?? 0,
+    lifetime: {
+      fuelCost: round(sum(fuel.map((l) => l.totalCost)), 0),
+      litres: round(sum(fuel.map((l) => l.volumeLitres)), 2),
+      serviceCost: round(sum(service.map((l) => l.cost)), 0),
+      expenseCost: round(sum(expense.map((l) => l.amount)), 0),
+    },
+    avgKmPerL: effs.length ? round(sum(effs) / effs.length, 2) : null,
+    activeReminders: reminders.length,
+    nextDue: nextReminder
+      ? { title: nextReminder.title, date: nextReminder.nextDueDate, odometer: nextReminder.nextDueOdometer }
+      : null,
+  }
+}
+
+/** Deletes the Nth-most-recent record of a type (1 = most recent). */
+async function deleteRecentLog(vehicleId: string, type: string, which: number): Promise<string> {
+  const pick = <T extends { id: string; date?: string; createdAt?: string }>(arr: T[]) =>
+    arr.sort((a, b) => (b.date ?? b.createdAt ?? '').localeCompare(a.date ?? a.createdAt ?? ''))[which - 1]
+  if (type === 'service') {
+    const row = pick(await db.serviceLogs.where('vehicleId').equals(vehicleId).toArray())
+    if (!row) return 'Error: no matching service log to delete.'
+    await deleteServiceLog(row.id)
+  } else if (type === 'expense') {
+    const row = pick(await db.expenses.where('vehicleId').equals(vehicleId).toArray())
+    if (!row) return 'Error: no matching expense to delete.'
+    await deleteExpense(row.id)
+  } else if (type === 'reminder') {
+    const row = pick(await db.reminders.where('vehicleId').equals(vehicleId).toArray())
+    if (!row) return 'Error: no matching reminder to delete.'
+    await deleteReminder(row.id)
+  } else {
+    const row = pick(await db.fuelLogs.where('vehicleId').equals(vehicleId).toArray())
+    if (!row) return 'Error: no matching fuel log to delete.'
+    await deleteFuelLog(row.id)
+  }
+  return 'ok'
+}
+
+/** Erases all logs/reminders/documents for a vehicle but keeps the vehicle. */
+async function clearVehicleData(vehicleId: string): Promise<string> {
+  await db.transaction(
+    'rw',
+    [db.fuelLogs, db.serviceLogs, db.expenses, db.reminders, db.documents, db.tombstones],
+    async () => {
+      const entities = [
+        ['fuelLogs', db.fuelLogs],
+        ['serviceLogs', db.serviceLogs],
+        ['expenses', db.expenses],
+        ['reminders', db.reminders],
+        ['documents', db.documents],
+      ] as const
+      for (const [name, table] of entities) {
+        const ids = await table.where('vehicleId').equals(vehicleId).primaryKeys()
+        await table.where('vehicleId').equals(vehicleId).delete()
+        await softDeleteTrackMany(name, ids as string[])
+      }
+    },
+  )
+  return 'ok'
+}
+
+/** Resolves a fuel fill-up's litres + price + total from any subset the user
+ * gave, using the saved fuel price as a fallback. Returns { ask } (a short
+ * question) when there isn't enough to compute a real entry. */
+function resolveFuel(
+  litres: number | undefined,
+  price: number | undefined,
+  total: number | undefined,
+  lockedPrice: number | undefined,
+): { volumeLitres: number; pricePerLitre: number; totalCost: number } | { ask: string } {
+  const ok = (l: number, pr: number, t: number) => ({
+    volumeLitres: round(l, 2),
+    pricePerLitre: round(pr, 2),
+    totalCost: round(t, 0),
+  })
+  if (litres && price) return ok(litres, price, litres * price)
+  if (total && price) return ok(total / price, price, total)
+  if (total && litres) return ok(litres, total / litres, total)
+  if (total && lockedPrice) return ok(total / lockedPrice, lockedPrice, total)
+  if (litres && lockedPrice) return ok(litres, lockedPrice, litres * lockedPrice)
+  return { ask: 'How many litres, or what was the price per litre?' }
 }
 
 async function recentLogs(vehicleId: string, type: string, limit: number) {
