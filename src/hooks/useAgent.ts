@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { API_BASE_URL } from '@utils/constants'
+import { apiFetch } from '@api/client'
 
 export interface AgentContext {
   vehicleId: string
@@ -90,7 +90,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
     async (
       toolResults?: { toolUseId: string; content: string }[],
     ): Promise<ChatResponse> => {
-      const res = await fetch(`${API_BASE_URL}/api/chat`, {
+      const res = await apiFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,6 +99,8 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
           toolResults,
         }),
       })
+      if (res.status === 403) throw new Error('pro_required')
+      if (res.status === 401) throw new Error('login_required')
       if (!res.ok) throw new Error(`chat_${res.status}`)
       return (await res.json()) as ChatResponse
     },
@@ -140,8 +142,11 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
       // Ran out of rounds without a final reply.
       setMessages((prev) => [...prev, newMessage('assistant', 'agent.no_understand')])
       setStatus('idle')
-    } catch {
-      fail('agent.error_generic')
+    } catch (err) {
+      const code = err instanceof Error ? err.message : ''
+      if (code === 'pro_required') fail('agent.pro_required')
+      else if (code === 'login_required') fail('agent.login_required')
+      else fail('agent.error_generic')
     }
   }, [postChat, onToolCall, fail])
 
@@ -186,10 +191,9 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
           const form = new FormData()
           form.append('audio', blob, 'voice.webm')
           form.append('lang', context.language)
-          const res = await fetch(`${API_BASE_URL}/api/transcribe`, {
-            method: 'POST',
-            body: form,
-          })
+          const res = await apiFetch('/api/transcribe', { method: 'POST', body: form })
+          if (res.status === 403) return fail('agent.pro_required')
+          if (res.status === 401) return fail('agent.login_required')
           if (!res.ok) throw new Error(`transcribe_${res.status}`)
           const { transcript } = (await res.json()) as { transcript?: string }
           if (transcript && transcript.trim()) sendText(transcript.trim())

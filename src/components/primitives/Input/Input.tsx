@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import styles from './Input.module.css'
 
 interface InputProps {
-  type?: 'text' | 'number' | 'date' | 'email'
+  type?: 'text' | 'number' | 'date' | 'email' | 'password'
   value: string | number
   onChange: (value: string) => void
   placeholder?: string

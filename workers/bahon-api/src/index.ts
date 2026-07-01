@@ -10,6 +10,8 @@ import { chatTurn, type ChatMessage, type ToolResultInput } from './chat'
 import type { ChatContext } from './systemPrompt'
 import { authRoutes } from './auth/routes'
 import { syncRoutes } from './sync/routes'
+import { requireAuth } from './middleware/requireAuth'
+import { requirePro } from './middleware/requirePro'
 
 interface ChatRequestBody {
   messages?: ChatMessage[]
@@ -39,7 +41,7 @@ app.get('/api/health', (c) => c.json({ ok: true }))
 app.route('/api/auth', authRoutes)
 app.route('/api/sync', syncRoutes)
 
-app.post('/api/transcribe', async (c) => {
+app.post('/api/transcribe', requireAuth, requirePro, async (c) => {
   const form = await c.req.formData()
   const audio = form.get('audio') as unknown as Blob | string | null
   const lang = String(form.get('lang') ?? 'en')
@@ -50,7 +52,7 @@ app.post('/api/transcribe', async (c) => {
   return c.json({ transcript })
 })
 
-app.post('/api/chat', async (c) => {
+app.post('/api/chat', requireAuth, requirePro, async (c) => {
   let body: ChatRequestBody
   try {
     body = await c.req.json<ChatRequestBody>()

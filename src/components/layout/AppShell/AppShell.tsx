@@ -7,6 +7,7 @@ import { useTheme } from '@hooks/useTheme'
 import { useNotifications } from '@hooks/useNotifications'
 import type { AgentContext, AgentToolCall } from '@hooks/useAgent'
 import { useToolExecutor } from '@hooks/useToolExecutor'
+import { useAuthStore } from '@store/authStore'
 import { InstallBanner } from '../InstallBanner/InstallBanner'
 import { AgentFAB } from '../../domain/AgentFAB/AgentFAB'
 import { AgentSheet } from '../../domain/AgentSheet/AgentSheet'
@@ -32,6 +33,7 @@ export function AppShell() {
 
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const vehicle = useVehicle(activeVehicleId ?? '')
+  const isPro = useAuthStore((s) => s.entitlements?.pro ?? false)
 
   const [agentOpen, setAgentOpen] = useState(false)
 
@@ -70,6 +72,7 @@ export function AppShell() {
         onClose={() => setAgentOpen(false)}
         context={agentContext}
         onToolCall={onToolCall}
+        isPro={isPro}
       />
     </div>
   )

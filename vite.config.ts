@@ -36,6 +36,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@api': path.resolve(__dirname, './src/api'),
       '@components': path.resolve(__dirname, './src/components'),
       '@screens': path.resolve(__dirname, './src/screens'),
       '@store': path.resolve(__dirname, './src/store'),

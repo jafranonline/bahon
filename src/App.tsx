@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { useSettingsStore } from '@store/settingsStore'
+import { useAuthStore } from '@store/authStore'
 
 const HomeScreen = lazy(() => import('./screens/HomeScreen').then(m => ({ default: m.HomeScreen })))
 const StatsScreen = lazy(() => import('./screens/StatsScreen').then(m => ({ default: m.StatsScreen })))
@@ -18,6 +19,8 @@ const CompareScreen = lazy(() => import('./screens/CompareScreen').then(m => ({ 
 const DocumentsScreen = lazy(() => import('./screens/DocumentsScreen').then(m => ({ default: m.DocumentsScreen })))
 const AddDocumentScreen = lazy(() => import('./screens/AddDocumentScreen').then(m => ({ default: m.AddDocumentScreen })))
 const OnboardingScreen = lazy(() => import('./screens/OnboardingScreen').then(m => ({ default: m.OnboardingScreen })))
+const AuthScreen = lazy(() => import('./screens/AuthScreen').then(m => ({ default: m.AuthScreen })))
+const AccountScreen = lazy(() => import('./screens/AccountScreen').then(m => ({ default: m.AccountScreen })))
 
 function RequireOnboarding({ children }: { children: React.ReactNode }) {
   const onboardingComplete = useSettingsStore((s) => s.onboardingComplete)
@@ -26,6 +29,11 @@ function RequireOnboarding({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  // Session bootstrap: if a refresh token was persisted, hydrate the session.
+  useEffect(() => {
+    void useAuthStore.getState().loadMe()
+  }, [])
+
   useEffect(() => {
     const splash = document.getElementById('splash')
     if (!splash) return
@@ -55,6 +63,8 @@ export default function App() {
             <Route path="/compare" element={<CompareScreen />} />
             <Route path="/documents" element={<DocumentsScreen />} />
             <Route path="/documents/add" element={<AddDocumentScreen />} />
+            <Route path="/auth" element={<AuthScreen />} />
+            <Route path="/account" element={<AccountScreen />} />
           </Route>
         </Routes>
       </Suspense>

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from '@hooks/useTranslation'
 import { useAgent, type AgentContext, type AgentToolCall } from '@hooks/useAgent'
 import { AgentMessage } from '../AgentMessage/AgentMessage'
@@ -9,10 +10,12 @@ interface AgentSheetProps {
   onClose: () => void
   context: AgentContext | null
   onToolCall: (call: AgentToolCall) => Promise<unknown>
+  isPro: boolean
 }
 
-export function AgentSheet({ open, onClose, context, onToolCall }: AgentSheetProps) {
+export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentSheetProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { messages, status, sendText, startVoice, stopVoice } = useAgent({
     context,
     onToolCall,
@@ -77,6 +80,21 @@ export function AgentSheet({ open, onClose, context, onToolCall }: AgentSheetPro
           </button>
         </header>
 
+        {!isPro ? (
+          <div className={styles.gate}>
+            <span className={styles.gateIcon} aria-hidden="true">✨</span>
+            <p className={styles.gateTitle}>{t('agent.gate_title')}</p>
+            <p className={styles.gateText}>{t('agent.gate_text')}</p>
+            <button
+              className={styles.gateCta}
+              type="button"
+              onClick={() => { onClose(); navigate('/account') }}
+            >
+              {t('agent.gate_cta')}
+            </button>
+          </div>
+        ) : (
+        <>
         <div className={styles.messages}>
           {messages.length === 0 && (
             <p className={styles.empty}>{t('agent.empty_hint')}</p>
@@ -131,6 +149,8 @@ export function AgentSheet({ open, onClose, context, onToolCall }: AgentSheetPro
             </svg>
           </button>
         </div>
+        </>
+        )}
       </section>
     </>
   )

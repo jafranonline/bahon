@@ -362,6 +362,42 @@
     "tool_update_vehicle_ok": "Vehicle updated",
     "tool_update_settings_ok": "Settings updated",
     "tool_error": "Couldn't complete that",
-    "no_understand": "Sorry, I didn't catch that — could you rephrase?"
+    "no_understand": "Sorry, I didn't catch that — could you rephrase?",
+    "pro_required": "The AI assistant is a Pro feature. Upgrade to use voice & AI.",
+    "login_required": "Please sign in to use the AI assistant.",
+    "gate_title": "Bahon AI is a Pro feature",
+    "gate_text": "Sign in and upgrade to Pro to add logs by voice, chat with the assistant, and sync across devices.",
+    "gate_cta": "Sign in / Upgrade"
+  },
+  "auth": {
+    "title": "Account",
+    "login": "Log in",
+    "register": "Sign up",
+    "intro": "Sign in to sync your data across devices and unlock voice & AI features.",
+    "name": "Name",
+    "name_placeholder": "Your name (optional)",
+    "email": "Email",
+    "password": "Password",
+    "password_hint": "At least 8 characters",
+    "create_account": "Create account",
+    "sign_in": "Sign in",
+    "err_required": "Please enter your email and password.",
+    "err_invalid_email": "Please enter a valid email address.",
+    "err_weak_password": "Password must be at least 8 characters.",
+    "err_email_taken": "An account with this email already exists.",
+    "err_invalid_credentials": "Incorrect email or password.",
+    "err_generic": "Something went wrong. Please try again."
+  },
+  "account": {
+    "title": "Account",
+    "pro": "Pro",
+    "free": "Free",
+    "pro_active": "Pro is active",
+    "pro_lifetime": "Lifetime access — no expiry.",
+    "expires_on": "Renews/expires on {{date}}.",
+    "upgrade_title": "Upgrade to Pro",
+    "upgrade_text": "Pro unlocks cloud sync across devices, voice commands, and the AI assistant.",
+    "upgrade_cta": "Contact to upgrade",
+    "logout": "Log out"
   }
 }
