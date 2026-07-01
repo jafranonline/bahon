@@ -338,5 +338,21 @@
     "compare_vehicles": "Compare vehicles",
     "your_vehicles": "Your Vehicles",
     "vs_last_month": "vs last month"
+  },
+  "agent": {
+    "title": "Bahon AI",
+    "placeholder": "Ask or add anything…",
+    "listening": "Listening…",
+    "thinking": "Thinking…",
+    "tap_to_speak": "Tap to speak",
+    "stop": "Stop recording",
+    "send": "Send",
+    "empty_hint": "Add logs, set reminders, or ask about your vehicle — by text or voice.",
+    "error_offline": "Voice and AI need an internet connection.",
+    "error_generic": "Something went wrong. Please try again.",
+    "error_no_mic": "Couldn't access the microphone.",
+    "tool_status_saved": "Saved ✓",
+    "tool_status_navigating": "Opening…",
+    "tool_status_updated": "Updated ✓"
   }
 }

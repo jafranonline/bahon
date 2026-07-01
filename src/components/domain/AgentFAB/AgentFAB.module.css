@@ -1,0 +1,28 @@
+.fab {
+  position: absolute;
+  right: 16px;
+  bottom: calc(64px + 16px + env(safe-area-inset-bottom, 0px));
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-circle);
+  border: none;
+  background: var(--accent);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.42);
+  z-index: 190;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fab:active {
+  transform: scale(0.94);
+}
+
+.fab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-shadow), 0 6px 20px rgba(99, 102, 241, 0.42);
+}

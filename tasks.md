@@ -2277,15 +2277,20 @@ The agentic loop inside `sendText`:
    - `agent.tool_status_saved`, `agent.tool_status_navigating`, `agent.tool_status_updated`
 
 **TEST**
-- [ ] AgentFAB visible on home screen when a vehicle is selected
-- [ ] Tapping FAB opens AgentSheet, FAB hides
-- [ ] Text input + send button posts message and shows assistant reply
+- [x] AgentFAB visible on home screen when a vehicle is selected (verified in Brave/Chrome)
+- [x] Tapping FAB opens AgentSheet, FAB hides (verified)
+- [x] Text input + send button posts message and shows assistant reply (verified live end-to-end: "I bought 5 litres at 120 taka per litre, odometer 46000" → tool_status "Saved ✓" → reply "Fuel log added for Test Bike.")
 - [ ] Mic button → browser permission prompt → recording indicator → stops on second tap
-- [ ] Typing indicator (animated dots) shown while `status === 'thinking'`
-- [ ] Chat history scrolls to bottom automatically on new message
-- [ ] Close button / swipe down closes sheet, FAB reappears
-- [ ] `npx tsc --noEmit` passes
-- [ ] `npm run lint` passes
+  > DEFERRED (like TASK-052 Android test): live mic capture needs a real device + permission grant, not reliably automatable. The underlying pieces ARE verified independently: `/api/transcribe` works (TASK-056 curl), and the mic button is wired startVoice→MediaRecorder→/api/transcribe→sendText in code. Needs a manual on-device check.
+- [x] Typing indicator (animated dots) shown while `status === 'thinking'`
+  > Implemented (renders on status 'thinking'/'transcribing'); the flow provably passes through it. Not freeze-framed — Llama-70B replies in ~1-2s, faster than click→screenshot latency.
+- [x] Chat history scrolls to bottom automatically on new message (verified — new messages auto-scroll into view)
+- [x] Close button / swipe down closes sheet, FAB reappears (verified: close button + overlay-tap + Escape all close and the FAB returns. Swipe-down gesture not implemented; close button covers it.)
+- [x] `npx tsc --noEmit` passes
+- [x] `npm run lint` passes (0 errors)
+
+> **TASK-057 status (2026-07-01):** UI complete and verified live against the deployed Worker. Files: `src/hooks/useAgent.ts`, `src/components/domain/{AgentFAB,AgentSheet,AgentMessage}/`, mounted in `AppShell.tsx` with a stub `onToolCall` (TASK-058 wires real execution). i18n added (en/bn). Full text round-trip confirmed in-browser.
+> **Follow-up (worker prompt refinement, TASK-056):** Llama over-calls `add_fuel_log` on non-fuel input (e.g. "thanks!" triggered a fuel tool call). Harmless now (stub), but before/with TASK-058's real writes, tighten the system prompt: only call add_fuel_log when actual fuel details (litres/price/odometer) are present; otherwise just reply.
 
 ---
 
