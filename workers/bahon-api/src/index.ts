@@ -1,16 +1,13 @@
-// Bahon API — Cloudflare Worker.
-// Phase 14: AI agent backend (STT + Claude Haiku proxy).
-// Phase 15 (TASK-059+) will refactor this hand-rolled router onto Hono and add
-// auth / sync / admin routes plus D1 + R2 bindings.
+// Bahon API — Cloudflare Worker (Hono router).
+// Phase 14: AI agent (STT + Workers AI agent). Phase 15 adds auth / sync /
+// admin routes and D1 + R2 bindings onto this same app.
 
-import { handlePreflight, jsonResponse } from './cors'
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import type { Env } from './types'
 import { transcribe } from './transcribe'
 import { chatTurn, type ChatMessage, type ToolResultInput } from './chat'
 import type { ChatContext } from './systemPrompt'
-
-export interface Env {
-  AI: Ai
-}
 
 interface ChatRequestBody {
   messages?: ChatMessage[]
@@ -18,58 +15,55 @@ interface ChatRequestBody {
   toolResults?: ToolResultInput[]
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method === 'OPTIONS') return handlePreflight(request)
+const app = new Hono<{ Bindings: Env }>()
 
-    const url = new URL(request.url)
+app.use(
+  '*',
+  cors({
+    origin: [
+      'https://bahon.jafran.online',
+      'https://admin.bahon.jafran.online',
+      'http://localhost:4546',
+      'http://localhost:4547',
+    ],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400,
+  }),
+)
 
-    try {
-      if (url.pathname === '/api/transcribe' && request.method === 'POST') {
-        return await handleTranscribe(request, env)
-      }
-      if (url.pathname === '/api/chat' && request.method === 'POST') {
-        return await handleChat(request, env)
-      }
-      return jsonResponse(request, { error: 'not_found' }, 404)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'unknown_error'
-      return jsonResponse(request, { error: 'server_error', message }, 500)
-    }
-  },
-} satisfies ExportedHandler<Env>
+app.get('/api/health', (c) => c.json({ ok: true }))
 
-async function handleTranscribe(request: Request, env: Env): Promise<Response> {
-  const form = await request.formData()
-  // Workers types `FormData.get` as `string | null`, but file uploads return a
-  // Blob/File at runtime — cast, then guard on the string case.
+app.post('/api/transcribe', async (c) => {
+  const form = await c.req.formData()
   const audio = form.get('audio') as unknown as Blob | string | null
   const lang = String(form.get('lang') ?? 'en')
-
   if (!audio || typeof audio === 'string') {
-    return jsonResponse(request, { error: 'missing_audio' }, 400)
+    return c.json({ error: 'missing_audio' }, 400)
   }
+  const transcript = await transcribe(await audio.arrayBuffer(), lang, c.env)
+  return c.json({ transcript })
+})
 
-  const transcript = await transcribe(await audio.arrayBuffer(), lang, env)
-  return jsonResponse(request, { transcript })
-}
-
-async function handleChat(request: Request, env: Env): Promise<Response> {
-  // Validate the request body first (400s) before checking server config (500).
+app.post('/api/chat', async (c) => {
   let body: ChatRequestBody
   try {
-    body = (await request.json()) as ChatRequestBody
+    body = await c.req.json<ChatRequestBody>()
   } catch {
-    return jsonResponse(request, { error: 'invalid_json' }, 400)
+    return c.json({ error: 'invalid_json' }, 400)
   }
-
   if (!Array.isArray(body.messages) || body.messages.length === 0) {
-    return jsonResponse(request, { error: 'missing_messages' }, 400)
+    return c.json({ error: 'missing_messages' }, 400)
   }
   if (!body.context) {
-    return jsonResponse(request, { error: 'missing_context' }, 400)
+    return c.json({ error: 'missing_context' }, 400)
   }
+  const result = await chatTurn(body.messages, body.context, body.toolResults, c.env)
+  return c.json(result)
+})
 
-  const result = await chatTurn(body.messages, body.context, body.toolResults, env)
-  return jsonResponse(request, result)
-}
+app.onError((err, c) =>
+  c.json({ error: 'server_error', message: err instanceof Error ? err.message : 'unknown' }, 500),
+)
+
+export default app

@@ -2455,12 +2455,14 @@ CREATE INDEX idx_users_email ON users(email);
 9. Create `src/types.ts` — `Env` interface (DB, BUCKET, AI, JWT_SECRET, ADMIN_*)
 
 **TEST**
-- [ ] `wrangler d1 execute bahon-db --local --command "SELECT name FROM sqlite_master WHERE type='table'"` lists users, subscriptions, refresh_tokens
-- [ ] `wrangler dev` boots the Hono app with no errors
-- [ ] `GET /api/health` returns `{ ok: true }`
-- [ ] Existing `/api/chat` and `/api/transcribe` still respond (regression check)
-- [ ] CORS preflight from `http://localhost:4546` and the admin origin both return 200
-- [ ] `db.ts` helper unit test (or manual curl) creates and reads back a user row
+- [x] `wrangler d1 execute bahon-db --local` lists users, subscriptions, refresh_tokens (verified)
+- [x] `wrangler dev` boots the Hono app with no errors (Ready on :8788)
+- [x] `GET /api/health` returns `{ ok: true }` (verified local + live)
+- [x] Existing `/api/chat` and `/api/transcribe` still respond (verified live through Hono: chat → add_fuel_log, transcribe → transcript)
+- [x] CORS preflight from `http://localhost:4546` and the admin origin both return 2xx with correct `Access-Control-Allow-Origin` (Hono's cors returns 204 — standard preflight success — for both origins)
+- [x] `db.ts` helper creates and reads back a user row (verified: inserted user+subscription in D1, read back email/tier/status/data_version)
+
+> **TASK-059 DONE (2026-07-01):** Provisioned D1 `bahon-db` (id 0c5fd666…) + R2 `bahon-user-data`; schema applied local + remote (users, subscriptions, refresh_tokens). Refactored the Worker to **Hono** with global CORS (app + admin + localhost origins), `/api/health`, and the existing AI routes. Added `src/types.ts` (Env with DB/BUCKET/AI + secret placeholders) and `src/db.ts` (typed D1 helpers). Deployed with all three bindings (DB, BUCKET, AI). Note: `wrangler dev --local` can't run the AI binding (needs remote), so AI routes were regression-tested against the live deploy.
 
 ---
 

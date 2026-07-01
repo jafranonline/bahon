@@ -1,6 +1,6 @@
 // Agent conversation turn with tool calling, via Cloudflare Workers AI.
 
-import type { Env } from './index'
+import type { Env } from './types'
 import { tools, type WorkerAITool } from './tools'
 import { buildSystemPrompt, type ChatContext } from './systemPrompt'
 

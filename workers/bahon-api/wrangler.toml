@@ -8,4 +8,13 @@ compatibility_flags = ["nodejs_compat"]
 [ai]
 binding = "AI"
 
-# Phase 15 (TASK-059+) will add [[d1_databases]] and [[r2_buckets]] bindings here.
+# D1 — users, subscriptions, refresh tokens (Phase 15).
+[[d1_databases]]
+binding = "DB"
+database_name = "bahon-db"
+database_id = "0c5fd666-35f9-41dd-8673-b69db33318ae"
+
+# R2 — one JSON snapshot per user for cloud sync (Phase 15).
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "bahon-user-data"

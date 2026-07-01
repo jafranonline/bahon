@@ -1,6 +1,6 @@
 // Whisper speech-to-text via Cloudflare Workers AI.
 
-import type { Env } from './index'
+import type { Env } from './types'
 
 /**
  * Transcribes audio to text using @cf/openai/whisper.
