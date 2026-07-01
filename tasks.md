@@ -1992,6 +1992,7 @@ Replace any remaining uses with the semantic tokens above.
 - [x] Lighthouse PWA: Installable check passes (SW active, manifest present, HTTPS, hasInstallPrompt: true)
 - [x] App works offline after first visit (69 Workbox-precached assets confirmed)
 - [ ] Install prompt appears on Android Chrome (manual device test — cannot automate)
+  > NOTE (2026-07-01): Deferred — requires a physical Android device. Cannot be automated in the loop. All other TASK-052 items pass. Loop resumes at TASK-056.
 
 ---
 
@@ -2073,6 +2074,643 @@ Import strategy: full replace (clear + insert). No merge. User picks the file de
 - [x] Importing an invalid JSON shows an error message
 - [x] `npx tsc --noEmit` passes
 
+
+---
+
+## Phase 14 — AI Agent (voice + chat, online feature)
+
+A conversational AI agent that lets the user do anything in the app using natural language — typed or spoken — including Banglish (romanized Bengali mixed with English). Example: "Rajshahi theke 500 takay 2 litre octane nilam ajke, r amar odo ekhon 45009km" is parsed into a complete fuel log.
+
+**Why Claude Haiku, not Llama:** Banglish is nuanced. Small Workers AI models fail at romanized Bengali number extraction, mixed script, and informal phrasing. `claude-haiku-4-5-20251001` handles it reliably at low cost.
+
+**Architecture overview:**
+```
+User (text or voice)
+  ↓
+AgentSheet (frontend)
+  ↓ POST /api/transcribe  (voice only — audio → text via Whisper)
+  ↓ POST /api/chat        (text → Claude with tool definitions)
+  ← { reply?, toolCalls? }
+  ↓ execute tool calls against Dexie (frontend has DB access)
+  ↓ POST /api/chat again  (with tool results)
+  ← { reply }  ← final conversational response
+AgentSheet shows reply + chat history
+```
+
+**Why the agentic loop runs on the frontend:** The Worker has no access to Dexie (IndexedDB lives on the user's device). The Worker is a stateless proxy to the Anthropic API; the frontend orchestrates tool execution and re-submission.
+
+**Design decisions:**
+- Worker lives in `workers/bahon-api/` in the repo — this is the **single consolidated backend** (Hono router). Phase 10 adds auth, sync, and admin routes onto this same Worker.
+- AI endpoints for now: `POST /api/transcribe` (audio → text) and `POST /api/chat` (messages + context → reply or tool calls)
+- Anthropic API key stored as a Worker secret (`ANTHROPIC_API_KEY`) — never in the frontend
+- Agent model: `claude-haiku-4-5-20251001` (fast, cheap, strong multilingual)
+- STT: `@cf/openai/whisper` via Workers AI (Bengali support, free tier)
+- Agent FAB opens a full chat sheet (persistent session history for the session, not persisted to IndexedDB)
+- Both text input and mic button available in the chat sheet
+- Agent responds in the same language the user speaks in
+- **Pro gating (added in Phase 10 / TASK-063):** `/api/chat` and `/api/transcribe` are wrapped by `requireAuth` + `requirePro` middleware. In Phase 9 they are built open (no auth) for development; TASK-063 retrofits the gate. Until then the frontend AgentFAB is shown unconditionally; from TASK-064 it is gated on `tier === 'pro'`.
+
+**Tool set (what Claude can invoke):**
+```
+add_fuel_log        — add a fuel fill-up record
+add_service_log     — add a service/maintenance record
+add_expense         — add a misc expense
+add_reminder        — add a maintenance reminder
+update_vehicle      — update vehicle name, odometer, colour, plate
+update_settings     — change language, theme, currency, distance/volume units
+navigate_to         — go to a screen (home, stats, reminders, logs, settings, vehicles)
+get_stats_summary   — read recent totals (frontend reads Dexie, returns to Claude)
+list_recent_logs    — read recent logs of a type (frontend reads Dexie, returns to Claude)
+```
+
+**Worker URL constant:** `API_BASE_URL` in `src/utils/constants.ts`.
+
+---
+
+### TASK-056: Cloudflare Worker — AI agent backend (STT + Claude Haiku proxy)
+
+**PLAN**
+
+Create `workers/bahon-api/` with two endpoints:
+
+**`POST /api/transcribe`** — audio → text
+- Body: `multipart/form-data` with `audio` (WebM/Opus blob) and `lang` (`"en"` or `"bn"`)
+- Runs `@cf/openai/whisper` via Workers AI binding
+- Returns `{ transcript: string }`
+
+**`POST /api/chat`** — agentic conversation turn
+- Body JSON:
+  ```json
+  {
+    "messages": [{ "role": "user"|"assistant", "content": "..." }],
+    "context": {
+      "vehicleId": "...",
+      "vehicleName": "...",
+      "vehicleType": "car",
+      "fuelType": "octane",
+      "currentOdometer": 45000,
+      "today": "2026-06-30",
+      "language": "en",
+      "currency": "BDT",
+      "distanceUnit": "km",
+      "volumeUnit": "L"
+    },
+    "toolResults": [{ "toolUseId": "...", "content": "..." }]
+  }
+  ```
+- Builds system prompt with: app description, today's date, active vehicle context, response language instruction, all tool schemas
+- Calls Claude Haiku via Anthropic SDK: `anthropic.messages.create({ model: "claude-haiku-4-5-20251001", tools: [...], messages: [...] })`
+- If response has `tool_use` blocks → returns `{ toolCalls: [{ id, name, input }] }`
+- If response has `text` block → returns `{ reply: string }`
+- CORS: allow `https://bahon.jafran.online` and `http://localhost:4546`
+
+System prompt template (built per-request):
+```
+You are the AI assistant for Bahon, a vehicle management app.
+
+Today is {{today}}. Active vehicle: {{vehicleName}} ({{vehicleType}}, fuel: {{fuelType}}, current odometer: {{currentOdometer}} {{distanceUnit}}).
+Currency: {{currency}}. Distance: {{distanceUnit}}. Volume: {{volumeUnit}}.
+
+The user may write in English, Bangla, or Banglish (romanized Bengali). Always respond in the same language they use.
+Be concise and conversational. After completing an action, confirm it briefly.
+
+When the user describes a fuel fill-up, ALWAYS call add_fuel_log — never ask for confirmation first unless a required field is missing.
+```
+
+Tool schemas for Claude (passed as `tools` array — NOT injected into system prompt):
+- `add_fuel_log`: vehicleId(string), date(string YYYY-MM-DD), volumeLitres(number), pricePerLitre(number), odometer(number), stationName?(string), notes?(string)
+- `add_service_log`: vehicleId(string), date(string), title(string), category(ServiceCategory enum), cost(number), odometer?(number), shopName?(string), notes?(string)
+- `add_expense`: vehicleId(string), date(string), title(string), category(ExpenseCategory enum), amount(number), notes?(string)
+- `add_reminder`: vehicleId(string), title(string), type("one-time"|"repeat"), triggerType("date"|"odometer"|"both"), dueDate?(string), dueOdometer?(number), repeatUnit?(ReminderRepeatUnit), repeatValue?(number)
+- `update_vehicle`: vehicleId(string), name?(string), odometer?(number), colour?(string), plateNumber?(string)
+- `update_settings`: language?("en"|"bn"), theme?("light"|"dark"|"system"), currency?(string), distanceUnit?("km"|"mi"), volumeUnit?("L"|"gal")
+- `navigate_to`: screen("home"|"stats"|"reminders"|"logs"|"settings"|"vehicles")
+- `get_stats_summary`: vehicleId(string), period?("week"|"month"|"year") — Claude calls this to read data; frontend executes it
+- `list_recent_logs`: vehicleId(string), type("fuel"|"service"|"expense"|"reminder"), limit?(number)
+
+**EXECUTE**
+1. Create `workers/bahon-api/` with:
+   - `src/index.ts` — routes `OPTIONS`/`POST /api/transcribe`/`POST /api/chat`
+   - `src/transcribe.ts` — Whisper helper: `transcribe(audio: ArrayBuffer, lang: string): Promise<string>`
+   - `src/chat.ts` — Claude Haiku call: `chatTurn(messages, context, toolResults, env): Promise<{ reply?, toolCalls? }>`
+   - `src/tools.ts` — tool definitions array (typed with Anthropic SDK `Tool[]`)
+   - `src/systemPrompt.ts` — builds system prompt string from context
+   - `src/cors.ts` — CORS header helper, allowed origins list
+   - `wrangler.toml` — `name = "bahon-api"`, `ai = { binding = "AI" }`, `compatibility_date`
+   - `package.json` — deps: `@anthropic-ai/sdk`, `@cloudflare/workers-types`
+   - `tsconfig.json`
+2. In `chat.ts`: import `Anthropic` from `@anthropic-ai/sdk`; construct client with `env.ANTHROPIC_API_KEY`; build messages array (inject tool results as `tool` role messages if present); call `messages.create`; parse response
+3. Store `ANTHROPIC_API_KEY` as a Worker secret via `wrangler secret put ANTHROPIC_API_KEY`
+4. Add `API_BASE_URL = ''` to `src/utils/constants.ts` (filled in after deploy)
+5. Deploy: `wrangler deploy` from `workers/bahon-api/`, update `API_BASE_URL`
+
+**TEST**
+- [ ] `wrangler deploy` succeeds
+  > BLOCKED (2026-07-01): `wrangler deploy --dry-run` bundles cleanly (188 KiB, AI binding OK), so the code is deploy-ready. Actual deploy needs the user's Cloudflare auth (`wrangler login` or `CLOUDFLARE_API_TOKEN` + account id). Cannot run autonomously.
+- [ ] `POST /api/transcribe` with a real WebM audio file returns `{ transcript: "..." }`
+  > BLOCKED: needs deployed Worker + Workers AI (remote, billed) auth.
+- [ ] `POST /api/chat` with message "I added 10L at 115tk, odo 52000" + valid context returns `{ toolCalls: [{ name: "add_fuel_log", input: { volumeLitres: 10, pricePerLitre: 115, odometer: 52000, ... } }] }`
+  > BLOCKED: needs `ANTHROPIC_API_KEY` secret set on a deployed Worker.
+- [ ] Banglish input "Rajshahi theke 500 takay 2 litre octane nilam ajke, odo 45009" returns correct `add_fuel_log` tool call with `stationName: "Rajshahi"`, `volumeLitres: 2`, `pricePerLitre: 250`, `odometer: 45009`
+  > BLOCKED: needs `ANTHROPIC_API_KEY` on a deployed Worker.
+- [ ] `POST /api/chat` with tool results included returns `{ reply: "..." }` (final text turn)
+  > BLOCKED: needs `ANTHROPIC_API_KEY` on a deployed Worker.
+- [ ] `navigate_to` intent → `{ toolCalls: [{ name: "navigate_to", input: { screen: "reminders" } }] }`
+  > BLOCKED: needs `ANTHROPIC_API_KEY` on a deployed Worker.
+- [x] Request without `ANTHROPIC_API_KEY` secret set → 500 with descriptive error
+- [x] CORS preflight `OPTIONS` from `http://localhost:4546` → 200 with correct headers
+- [x] Missing `messages` body field → 400
+
+> **TASK-056 status (2026-07-01):** Code complete, type-checks clean, dry-run builds. 3/9 tests verified locally via `wrangler dev` (no-credential paths). Remaining 6 are blocked on user-provided Cloudflare deploy + `ANTHROPIC_API_KEY` — see per-item notes above. Loop hard-stopped here awaiting credentials.
+
+---
+
+### TASK-057: Agent chat UI — AgentFAB, AgentSheet, useAgent hook
+
+**PLAN**
+
+Add a floating action button (AgentFAB) that opens a full-height chat sheet (AgentSheet). The sheet has a scrollable message history and a composer at the bottom with a text input and a mic button.
+
+**AgentFAB:** Round button with a combined mic+chat icon (use `IconMessageDots` or similar from Tabler). Fixed position above BottomNav: `bottom: calc(var(--bottom-nav-height) + 16px); right: 16px`. Hidden when the agent sheet is open. Only visible when a vehicle is selected.
+
+**AgentSheet:** Slides up from the bottom, full-height (85vh or more). Contains:
+- Header: "Bahon AI" title + close button
+- Scrollable message list (user bubbles right, assistant bubbles left, tool-execution status lines)
+- Composer: text `<input>` + mic button (IconMicrophone) + send button
+
+**Message bubble types:**
+- `user` — right-aligned, primary colour background
+- `assistant` — left-aligned, surface colour, shows typing indicator while waiting
+- `tool_status` — small centre line: "Fuel log saved ✓" or "Navigating to reminders…" (shown when a tool call completes)
+
+**useAgent hook** — owns the entire agent loop:
+```
+state: { messages: AgentMessage[], status: 'idle'|'listening'|'transcribing'|'thinking'|'error' }
+sendText(text: string): void
+startVoice(): void    — starts MediaRecorder
+stopVoice(): void     — stops, sends to /api/transcribe, then sendText(transcript)
+reset(): void
+```
+
+The agentic loop inside `sendText`:
+1. Add user message to history
+2. POST `/api/chat` with `{ messages: history, context, toolResults: null }`
+3. If response has `toolCalls` → call `onToolCall` callback for each, collect results → POST again with `{ toolResults }` → repeat until `reply`
+4. Add assistant `reply` to history, set status `idle`
+
+`onToolCall` is a prop/callback passed from `AppShell` (where Dexie mutations and navigation live) — the hook itself is pure state, the shell provides the execution layer.
+
+**EXECUTE**
+1. Create `src/hooks/useAgent.ts`:
+   - `AgentMessage` type: `{ id: string, role: 'user'|'assistant'|'tool_status', content: string, ts: number }`
+   - `AgentToolCall` type: `{ id: string, name: string, input: Record<string, unknown> }`
+   - Hook accepts `{ context: AppContext, onToolCall: (call: AgentToolCall) => Promise<unknown> }`
+   - Manages `messages` state, `status` state, MediaRecorder ref
+   - `sendText`, `startVoice`, `stopVoice`, `reset` as returned functions
+   - Loops until `reply` received (max 5 tool-call rounds to prevent infinite loops)
+2. Create `src/components/domain/AgentFAB.tsx` + `AgentFAB.module.css`
+3. Create `src/components/domain/AgentSheet.tsx` + `AgentSheet.module.css`:
+   - Uses `useAgent` internally
+   - Renders message list with auto-scroll to bottom on new message
+   - Composer row at bottom
+4. Create `src/components/domain/AgentMessage.tsx` — renders a single message bubble or tool status line
+5. Mount `<AgentFAB>` and `<AgentSheet>` inside `AppShell.tsx`
+6. Add i18n keys to `en.json` and `bn.json`:
+   - `agent.title`, `agent.placeholder`, `agent.listening`, `agent.thinking`
+   - `agent.error_offline`, `agent.error_generic`, `agent.tap_to_speak`
+   - `agent.tool_status_saved`, `agent.tool_status_navigating`, `agent.tool_status_updated`
+
+**TEST**
+- [ ] AgentFAB visible on home screen when a vehicle is selected
+- [ ] Tapping FAB opens AgentSheet, FAB hides
+- [ ] Text input + send button posts message and shows assistant reply
+- [ ] Mic button → browser permission prompt → recording indicator → stops on second tap
+- [ ] Typing indicator (animated dots) shown while `status === 'thinking'`
+- [ ] Chat history scrolls to bottom automatically on new message
+- [ ] Close button / swipe down closes sheet, FAB reappears
+- [ ] `npx tsc --noEmit` passes
+- [ ] `npm run lint` passes
+
+---
+
+### TASK-058: Agent tool execution bridge — wire tool calls to Dexie + navigation
+
+**PLAN**
+
+The `onToolCall` callback is the bridge between Claude's structured tool calls and the app's Dexie mutations, settings store, and router. It lives in `AppShell.tsx` (which has access to `useNavigate`, `settingsStore`, `vehicleStore`, and can import all DB mutation functions).
+
+**Tool execution map:**
+
+| Tool | Execution |
+|------|-----------|
+| `add_fuel_log` | Call `addFuelLog(params)`, inject `vehicleId` + derived efficiency fields |
+| `add_service_log` | Call `addServiceLog(params)`, map `category` string → `ServiceCategory` enum |
+| `add_expense` | Call `addExpense(params)`, map `category` → `ExpenseCategory` enum |
+| `add_reminder` | Call `addReminder(params)` |
+| `update_vehicle` | Call `updateVehicle(vehicleId, patch)` |
+| `update_settings` | Call `settingsStore.update(patch)` |
+| `navigate_to` | Call `navigate(screenToRoute[screen])` |
+| `get_stats_summary` | Query Dexie for totals, return JSON string to Claude |
+| `list_recent_logs` | Query Dexie for recent logs, return JSON string to Claude |
+
+**Result returned to Claude:**
+- Write tools (`add_*`, `update_*`, `navigate_to`): return `"ok"` on success, error message on failure
+- Read tools (`get_stats_summary`, `list_recent_logs`): return serialized JSON of the data
+
+**Category mapping:** LLM provides category as a string (e.g. `"oil_change"`, `"parking"`). Validate it is a known enum value (strict match); fallback to `"other"` if not recognized.
+
+**Tool status messages:** After each tool call completes, `useAgent` adds a `tool_status` message to the chat (e.g. "Fuel log saved", "Navigated to reminders"). These are in i18n.
+
+**EXECUTE**
+1. Create `src/hooks/useToolExecutor.ts`:
+   - `executeToolCall(call: AgentToolCall, vehicleId: string): Promise<string>` — returns result string for Claude
+   - Imports: `addFuelLog`, `addServiceLog`, `addExpense`, `addReminder`, `updateVehicle` from db queries
+   - Imports: `settingsStore` from Zustand
+   - Accepts `navigate` function as a parameter (passed from the component)
+   - `get_stats_summary` and `list_recent_logs` query Dexie directly (not via hooks — use `await db.fuelLogs.where(...)`)
+   - For `add_fuel_log`: calculate `totalCost = volumeLitres * pricePerLitre`, get `previousOdometer` via `getLastOdometer`, calculate efficiency fields before calling `addFuelLog`
+2. Update `AppShell.tsx`:
+   - Import `useToolExecutor` and build the `onToolCall` callback
+   - Pass it to `AgentSheet`
+   - After each successful write tool, generate `tool_status` message text (use i18n key lookup per tool name)
+3. Add i18n keys if missing: `agent.tool_add_fuel_ok`, `agent.tool_add_service_ok`, `agent.tool_add_expense_ok`, `agent.tool_add_reminder_ok`, `agent.tool_navigate_ok`, `agent.tool_update_vehicle_ok`, `agent.tool_update_settings_ok`, `agent.tool_error`
+
+**TEST**
+- [ ] "Rajshahi theke 500 takay 2 litre octane nilam ajke, odo 45009" → fuel log appears with volumeLitres=2, pricePerLitre=250, odometer=45009, stationName contains "Rajshahi"
+- [ ] "Oil change done, 800 taka, odo 45200" → service log with category "oil_change", cost 800
+- [ ] "Parking laglo 50 taka" → expense with category "parking", amount 50
+- [ ] "5000 km pore tire check korar reminder dao" → reminder with dueOdometer = currentOdometer + 5000
+- [ ] "Settings e dark mode on koro" → theme changes to dark
+- [ ] "Reminder screen e jao" → navigates to /reminders
+- [ ] "Amar last 5 ta fuel log dao" → assistant replies with a list of recent fuel logs
+- [ ] Tool error (e.g. Dexie write fails) → assistant shows error message, does not crash
+- [ ] `npx tsc --noEmit` passes
+- [ ] `npm run lint` passes
+
+---
+
+## Phase 15 — Accounts, Cloud Sync & Subscriptions
+
+Adds user accounts, cross-device cloud sync, and a Pro subscription tier that gates all online features (sync + voice + AI agent). Plus an admin dashboard to manage users and subscriptions manually (no payment gateway yet — upgrades are done by hand from the dashboard).
+
+### Product model (decided)
+
+| Tier | Who | Gets |
+|------|-----|------|
+| **Anonymous** (no account) | Default. Current experience. | Full offline app. No sync, no AI. |
+| **Free account** | Registered, not subscribed | Offline app only. Account exists but online features are locked. |
+| **Pro account** | Registered + active subscription | Everything: cloud sync across devices + web, voice commands, AI agent. |
+
+**Gate rule:** every online endpoint (`/api/sync/*`, `/api/chat`, `/api/transcribe`) requires `requireAuth` + `requirePro`. Free-tier accounts authenticate successfully but receive `403 { error: "pro_required" }` from gated routes.
+
+### Auth model (decided)
+
+- **Email + password** now; schema is OAuth-ready for later (Google/Apple as alternate login).
+- Password hashing: **PBKDF2 via WebCrypto** (`crypto.subtle`) — native to the Workers runtime, no WASM. 210k iterations, SHA-256, per-user random salt.
+- Tokens: short-lived **JWT access token** (15 min, signed HS256 with `JWT_SECRET`) + long-lived **refresh token** (30 days, opaque random, stored hashed in D1, rotated on each refresh).
+- Frontend stores refresh token in `localStorage`, access token in memory; attaches `Authorization: Bearer <access>` to API calls. (Tradeoff vs httpOnly cookies noted: bearer is simpler for cross-subdomain PWA + offline; XSS surface accepted for v1.)
+
+### Backend stack (decided — all Cloudflare)
+
+| Concern | Tech | Why |
+|---------|------|-----|
+| Routing | Hono on the existing `bahon-api` Worker | Tiny, typed, one Worker for everything |
+| Relational data | **D1** (SQLite) | users, subscriptions, refresh_tokens, sync metadata |
+| Blob storage | **R2** | one JSON snapshot per user at `users/{userId}/data.json` |
+| Secrets | Worker secrets | `JWT_SECRET`, `ANTHROPIC_API_KEY`, `ADMIN_PASSWORD_HASH` |
+
+### Sync model (decided — client-merge snapshots, schema-agnostic backend)
+
+The backend never parses app data — it stores an opaque JSON blob + a version integer. All merge logic lives on the **client** (where the Dexie schema is known). This keeps the backend decoupled from every future schema migration.
+
+- Each user row in D1 has `data_version` (int) and `data_updated_at`.
+- **Push:** client sends `{ baseVersion, snapshot }`. Server accepts only if `baseVersion === data_version` (optimistic concurrency); on match, writes blob to R2, increments `data_version`, returns new version. On mismatch → `409 { serverVersion }`.
+- **Pull:** client `GET /api/sync` → `{ version, snapshot }`.
+- **Merge (client side):** on 409 or scheduled sync, client pulls remote snapshot, merges with local by record `id` using last-write-wins on `updatedAt`/`createdAt`, applies **tombstones** for deletes, writes merged result to Dexie, then re-pushes with the new `baseVersion`. Retry on 409 up to 3×.
+- **Tombstones:** new Dexie table `tombstones { id, entity, deletedAt }`. Every delete writes a tombstone. Tombstones are included in the snapshot so deletes propagate across devices. A tombstone newer than a record removes that record on merge.
+- Reuses `exportAsJSON()` / `importFromJSON()` (TASK-055) as the snapshot serialize/apply primitives, extended with tombstones.
+
+### Admin dashboard (decided)
+
+Separate lightweight React app in `admin/`, deployed to Cloudflare Pages at `admin.bahon.jafran.online`. Talks to the same `bahon-api` under `/api/admin/*`, protected by a single admin login (env-configured credentials, separate JWT audience). Lets you: list/search users, view a user's subscription + sync status, grant/revoke Pro (set tier + expiry), and see basic usage counts.
+
+---
+
+### TASK-059: Backend foundation — D1 schema, Hono router, migrations
+
+**PLAN**
+
+Establish the data layer and HTTP framework on the `bahon-api` Worker before any auth logic. Introduce Hono as the router (replacing the hand-rolled routing from Phase 14 tasks if already built; otherwise establish it fresh). Define the D1 schema and bindings.
+
+**D1 schema** (`workers/bahon-api/schema.sql`):
+```sql
+CREATE TABLE users (
+  id            TEXT PRIMARY KEY,            -- uuid
+  email         TEXT NOT NULL UNIQUE,         -- lowercased
+  password_hash TEXT,                         -- PBKDF2 (nullable for future OAuth-only)
+  password_salt TEXT,                         -- per-user random
+  oauth_provider TEXT,                        -- null now; 'google'|'apple' later
+  oauth_sub     TEXT,                         -- provider subject id, later
+  display_name  TEXT,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL,
+  data_version  INTEGER NOT NULL DEFAULT 0,
+  data_updated_at TEXT
+);
+CREATE TABLE subscriptions (
+  user_id    TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  tier       TEXT NOT NULL DEFAULT 'free',   -- 'free' | 'pro'
+  status     TEXT NOT NULL DEFAULT 'active', -- 'active' | 'expired' | 'cancelled'
+  source     TEXT NOT NULL DEFAULT 'manual', -- 'manual' | 'stripe' (future)
+  started_at TEXT,
+  expires_at TEXT,                            -- null = no expiry
+  notes      TEXT,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE refresh_tokens (
+  id          TEXT PRIMARY KEY,               -- uuid
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL,                  -- SHA-256 of opaque token
+  expires_at  TEXT NOT NULL,
+  created_at  TEXT NOT NULL,
+  revoked_at  TEXT
+);
+CREATE INDEX idx_refresh_user ON refresh_tokens(user_id);
+CREATE INDEX idx_users_email ON users(email);
+```
+
+**EXECUTE**
+1. Add deps to `workers/bahon-api/package.json`: `hono`
+2. Create `workers/bahon-api/schema.sql` with the tables above
+3. Update `wrangler.toml`: add `[[d1_databases]]` (binding `DB`), `[[r2_buckets]]` (binding `BUCKET`), keep `[ai]` binding
+4. Create the D1 database: `wrangler d1 create bahon-db`; paste returned id into `wrangler.toml`
+5. Apply schema: `wrangler d1 execute bahon-db --file=./schema.sql` (and `--local` for dev)
+6. Create R2 bucket: `wrangler r2 bucket create bahon-user-data`
+7. Refactor `src/index.ts` to use Hono: mount existing `/api/chat` + `/api/transcribe`; add CORS middleware (allowed origins: app + admin + localhost)
+8. Create `src/db.ts` — typed helpers over D1 (`getUserByEmail`, `getUserById`, `createUser`, `getSubscription`, `upsertSubscription`, refresh-token CRUD)
+9. Create `src/types.ts` — `Env` interface (DB, BUCKET, AI, JWT_SECRET, ANTHROPIC_API_KEY, ADMIN_*)
+
+**TEST**
+- [ ] `wrangler d1 execute bahon-db --local --command "SELECT name FROM sqlite_master WHERE type='table'"` lists users, subscriptions, refresh_tokens
+- [ ] `wrangler dev` boots the Hono app with no errors
+- [ ] `GET /api/health` returns `{ ok: true }`
+- [ ] Existing `/api/chat` and `/api/transcribe` still respond (regression check)
+- [ ] CORS preflight from `http://localhost:4546` and the admin origin both return 200
+- [ ] `db.ts` helper unit test (or manual curl) creates and reads back a user row
+
+---
+
+### TASK-060: Auth endpoints — register, login, refresh, logout, me
+
+**PLAN**
+
+Implement email+password auth with JWT access + rotating refresh tokens. All hashing via WebCrypto PBKDF2. New users get a `subscriptions` row with `tier='free'` automatically.
+
+**Endpoints** (under `/api/auth`):
+- `POST /register` — `{ email, password, displayName? }` → creates user + free subscription, returns `{ accessToken, refreshToken, user }`
+- `POST /login` — `{ email, password }` → verifies hash, returns `{ accessToken, refreshToken, user }`
+- `POST /refresh` — `{ refreshToken }` → validates + rotates, returns `{ accessToken, refreshToken }`
+- `POST /logout` — `{ refreshToken }` → revokes the refresh token
+- `GET /me` — `Authorization: Bearer` → returns `{ user, subscription }`
+
+**EXECUTE**
+1. Create `src/auth/crypto.ts`: `hashPassword(pw)` → `{ hash, salt }`, `verifyPassword(pw, hash, salt)`, `sha256(str)` — all via `crypto.subtle` (PBKDF2 210k/SHA-256)
+2. Create `src/auth/jwt.ts`: `signAccessToken(userId, env)` (HS256, 15 min, claim `{ sub, type:'access' }`), `verifyAccessToken(token, env)`; use WebCrypto HMAC (no external jwt lib, or `hono/jwt` helper)
+3. Create `src/auth/routes.ts`: the 5 endpoints; validate body with a small schema check; lowercase emails; reject duplicate email on register (409); generic "invalid credentials" on login failure (no user-enumeration)
+4. Refresh-token flow: store SHA-256 hash in `refresh_tokens`; on `/refresh`, look up by hash, check not expired/revoked, revoke old, issue new (rotation)
+5. Mount `/api/auth` routes in `index.ts`
+6. Create `src/middleware/requireAuth.ts` — Hono middleware: reads Bearer token, verifies, sets `c.set('userId', ...)`; 401 on failure
+
+**TEST**
+- [ ] `POST /api/auth/register` with new email → 200, returns tokens + user, creates a `free` subscription row
+- [ ] Register with an existing email → 409
+- [ ] Register with weak/empty password (< 8 chars) → 400
+- [ ] `POST /api/auth/login` correct password → 200 with tokens
+- [ ] Login wrong password → 401 with generic message (no "user not found" leak)
+- [ ] `GET /api/auth/me` with valid access token → 200 with user + subscription
+- [ ] `GET /api/auth/me` with expired/invalid token → 401
+- [ ] `POST /api/auth/refresh` rotates: old refresh token rejected after use, new one works
+- [ ] `POST /api/auth/logout` revokes refresh token (subsequent refresh → 401)
+- [ ] Password hash + salt stored, never the plaintext
+
+---
+
+### TASK-061: Subscription gating middleware + entitlements endpoint
+
+**PLAN**
+
+Add `requirePro` middleware and a clean way for the frontend to know the user's entitlements. `requirePro` runs after `requireAuth`, loads the subscription, and enforces `tier==='pro' && status==='active' && (expires_at is null || expires_at > now)`.
+
+**EXECUTE**
+1. Create `src/middleware/requirePro.ts` — loads subscription for `c.get('userId')`; on fail returns `403 { error: 'pro_required' }`; on success sets `c.set('subscription', sub)`
+2. Extend `GET /api/auth/me` response to include a computed `entitlements: { pro: boolean, expiresAt: string|null }` block (single source of truth for the frontend)
+3. Create a helper `isProActive(sub): boolean` used by both middleware and `/me`
+4. (No gated routes wired yet — that happens in TASK-063; this task is the reusable mechanism + tests)
+
+**TEST**
+- [ ] `requirePro` allows a user whose subscription is `tier=pro, status=active, expires_at` in future
+- [ ] `requirePro` blocks a `free` user → 403 `pro_required`
+- [ ] `requirePro` blocks a `pro` user whose `expires_at` is in the past → 403
+- [ ] `requirePro` blocks `status=cancelled` even if tier=pro → 403
+- [ ] `GET /api/auth/me` returns correct `entitlements.pro` for free vs pro users
+- [ ] `expires_at = null` (lifetime pro) is treated as active
+
+---
+
+### TASK-062: Cloud sync endpoints (push/pull) + R2 blob storage
+
+**PLAN**
+
+Implement the schema-agnostic snapshot sync. Backend stores an opaque blob in R2 keyed by user, with an optimistic-concurrency version in D1. Gated by `requireAuth` + `requirePro`.
+
+**Endpoints** (under `/api/sync`, all Pro-gated):
+- `GET /api/sync` → `{ version, snapshot, updatedAt }` (snapshot is `null` if user has never pushed)
+- `POST /api/sync` — `{ baseVersion, snapshot }` → if `baseVersion === data_version`: write R2, bump version, return `{ version }`; else `409 { serverVersion }`
+- `GET /api/sync/status` → `{ version, updatedAt }` (lightweight, no blob — for "last synced" UI)
+
+**EXECUTE**
+1. Create `src/sync/routes.ts` with the three endpoints
+2. R2 key: `users/{userId}/data.json`; store snapshot as the R2 object body, `version` + `updatedAt` in D1 `users` row (authoritative)
+3. Enforce a max snapshot size (e.g. 5 MB) → 413 if exceeded
+4. `POST` is transactional-ish: re-read `data_version` inside the handler, compare to `baseVersion`, only then write R2 + update D1 (best-effort optimistic lock acceptable for single-user-multi-device)
+5. Mount `/api/sync` behind `requireAuth` + `requirePro`
+
+**TEST**
+- [ ] `GET /api/sync` for a fresh Pro user → `{ version: 0, snapshot: null }`
+- [ ] `POST /api/sync` with `baseVersion: 0` → 200 `{ version: 1 }`, blob present in R2
+- [ ] `GET /api/sync` after push → returns the stored snapshot and `version: 1`
+- [ ] `POST /api/sync` with stale `baseVersion: 0` after version is 1 → 409 `{ serverVersion: 1 }`
+- [ ] `POST /api/sync` with `baseVersion: 1` (current) → 200 `{ version: 2 }`
+- [ ] A `free` user calling any `/api/sync` route → 403 `pro_required`
+- [ ] Oversized snapshot (> 5 MB) → 413
+- [ ] `GET /api/sync/status` returns version + updatedAt without the blob
+
+---
+
+### TASK-063: Retrofit Pro gate onto AI endpoints
+
+**PLAN**
+
+Wrap the Phase 14 AI endpoints (`/api/chat`, `/api/transcribe`) with `requireAuth` + `requirePro`. Update the frontend agent calls to send the `Authorization` header and handle 401 (refresh or prompt login) and 403 (`pro_required` → show upgrade prompt).
+
+**EXECUTE**
+1. In `index.ts`, apply `requireAuth` + `requirePro` middleware to `/api/chat` and `/api/transcribe`
+2. Update `src/hooks/useAgent.ts` (Phase 14) to attach `Authorization: Bearer` from the auth store and to retry once after a token refresh on 401
+3. On `403 pro_required` from the agent API → surface an "Upgrade to Pro" message in the AgentSheet instead of a generic error
+4. Add i18n keys: `agent.pro_required`, `agent.login_required`
+
+**TEST**
+- [ ] Unauthenticated request to `/api/chat` → 401
+- [ ] Authenticated `free` user → 403 `pro_required`
+- [ ] Authenticated `pro` user → normal agent behavior (regression of TASK-056 tests)
+- [ ] Frontend: free user opening agent sees "Upgrade to Pro", not a crash
+- [ ] Frontend: expired access token auto-refreshes and the request succeeds
+- [ ] `npx tsc --noEmit` passes (both worker and app)
+
+---
+
+### TASK-064: Frontend auth — store, screens, and session bootstrap
+
+**PLAN**
+
+Add an auth layer to the PWA: a Zustand `authStore` (persisted), login/register/account screens, and session bootstrap on app load. The app remains fully usable logged-out (offline mode); auth unlocks online features.
+
+**EXECUTE**
+1. Create `src/store/authStore.ts` (Zustand + persist): holds `{ user, accessToken (memory only), refreshToken, entitlements, status }`; actions `register`, `login`, `logout`, `refresh`, `loadMe`; persist only `refreshToken` (not access token)
+2. Create `src/api/client.ts` — fetch wrapper that injects `Authorization`, auto-refreshes on 401 once, points at `API_BASE_URL`
+3. Create `src/screens/AuthScreen.tsx` (+ `.module.css`) — tabbed Login / Register, email + password fields, validation, error display
+4. Create `src/screens/AccountScreen.tsx` (+ `.module.css`, route `/account`) — shows email, tier badge (Free/Pro), expiry, sync status, Logout button; "Upgrade to Pro" CTA for free users (links to a static "contact to upgrade" note for now, since billing is manual)
+5. Add routes in `App.tsx`: `/auth`, `/account`; add an entry to the Drawer/Settings ("Account")
+6. On app boot: if a refresh token exists, call `loadMe()` to hydrate session; on failure, silently fall back to logged-out
+7. Add i18n keys: `auth.*` (login, register, email, password, etc.), `account.*` (tier, free, pro, expires, logout, upgrade, etc.)
+
+**TEST**
+- [ ] App still loads and works fully offline with no account (regression)
+- [ ] Register from the UI creates an account and lands logged-in
+- [ ] Login persists across reload (refresh token in localStorage rehydrates session)
+- [ ] Logout clears session and returns to logged-out state
+- [ ] AccountScreen shows correct tier badge (Free vs Pro) from `entitlements`
+- [ ] AgentFAB / voice are hidden or show "Upgrade to Pro" for non-Pro users (ties to TASK-063)
+- [ ] `npx tsc --noEmit` passes
+- [ ] `npm run lint` passes
+
+---
+
+### TASK-065: Frontend sync engine — client merge, tombstones, sync UI
+
+**PLAN**
+
+Implement the client-side sync engine: snapshot serialize (with tombstones), merge-by-id LWW, push/pull against `/api/sync`, conflict retry, and a Settings UI to trigger/show sync. Gated behind a logged-in Pro user.
+
+**EXECUTE**
+1. Add Dexie `tombstones` table (`id, entity, deletedAt`) via a DB migration in `database.ts`; bump Dexie version
+2. Update all delete mutations (vehicles, fuel, service, expenses, reminders, documents) to also write a tombstone (centralize via a `softDeleteTrack(entity, id)` helper)
+3. Extend `exportAsJSON()` to include `tombstones`; this is the snapshot
+4. Create `src/sync/merge.ts` — pure `mergeSnapshots(local, remote)`: union records by `id`, keep the one with newer `updatedAt`/`createdAt`; drop any record with a tombstone whose `deletedAt` is newer; return merged snapshot
+5. Create `src/sync/syncEngine.ts` — `syncNow()`: pull remote → merge with local → write merged to Dexie (`importFromJSON`) → push with `baseVersion`; on 409 re-pull and retry (≤3×); update `lastSyncedAt` in authStore
+6. Trigger points: manual "Sync now" button + on app foreground (visibilitychange) + after login. Debounced auto-sync after writes (optional, behind a setting)
+7. Add a "Sync" section to `SettingsScreen.tsx`: last-synced time, "Sync now" button, sync status/spinner, error display (only visible to Pro users)
+8. Add i18n keys: `sync.*` (sync_now, last_synced, syncing, synced, error, pro_required)
+
+**TEST**
+- [ ] Device A pushes data; Device B (same account) pulls and sees A's vehicles/logs after sync
+- [ ] Edit same vehicle on A and B; sync both → newer `updatedAt` wins, no duplication
+- [ ] Delete a log on A, sync; B after sync no longer shows it (tombstone propagated)
+- [ ] Add different logs on A and B offline; sync both → both logs present (merge, no loss)
+- [ ] 409 conflict (concurrent push) auto-resolves via re-pull + retry
+- [ ] Free/logged-out user does not see the Sync section (or sees upgrade prompt)
+- [ ] `mergeSnapshots` unit tests cover: newer-wins, tombstone-wins, disjoint-union
+- [ ] `npx tsc --noEmit` passes
+- [ ] `npm run lint` passes
+
+---
+
+### TASK-066: Admin API — protected user & subscription management endpoints
+
+**PLAN**
+
+Add `/api/admin/*` routes to `bahon-api`, protected by a separate admin auth (not the user JWT). Admin authenticates with env-configured credentials and receives an admin-scoped JWT (claim `role: 'admin'`). These endpoints power the dashboard.
+
+**Endpoints** (under `/api/admin`, all `requireAdmin`):
+- `POST /api/admin/login` — `{ username, password }` → admin JWT (verifies against `ADMIN_USERNAME` + `ADMIN_PASSWORD_HASH` secrets)
+- `GET /api/admin/users?query=&page=` — paginated user list with tier + sync status
+- `GET /api/admin/users/:id` — user detail (profile, subscription, data_version, last sync)
+- `POST /api/admin/users/:id/subscription` — `{ tier, status, expiresAt, notes }` → upsert subscription (this is the **manual upgrade** action)
+- `DELETE /api/admin/users/:id` — delete user + cascade (R2 blob + D1 rows)
+- `GET /api/admin/stats` — totals: user count, pro count, active subs
+
+**EXECUTE**
+1. Create `src/middleware/requireAdmin.ts` — verifies admin JWT (`role==='admin'`); 401/403 on failure
+2. Create `src/admin/routes.ts` with the endpoints above; reuse `db.ts` helpers; add pagination
+3. `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` (PBKDF2), `ADMIN_JWT_SECRET` as Worker secrets
+4. Subscription upsert sets `source='manual'`, stamps `updated_at`, writes `notes`
+5. Mount `/api/admin` in `index.ts`; ensure admin origin is in CORS allowlist
+
+**TEST**
+- [ ] `POST /api/admin/login` with correct creds → admin JWT; wrong creds → 401
+- [ ] Admin endpoints reject a normal user JWT → 403
+- [ ] `GET /api/admin/users` returns paginated list with tier + sync columns
+- [ ] `POST /api/admin/users/:id/subscription` with `{ tier:'pro', expiresAt }` upgrades the user; their `/api/auth/me` then shows `entitlements.pro = true`
+- [ ] Setting tier back to `free` revokes Pro (user's gated routes return 403 again)
+- [ ] `DELETE /api/admin/users/:id` removes D1 rows and the R2 blob
+- [ ] `GET /api/admin/stats` returns correct counts
+
+---
+
+### TASK-067: Admin dashboard app (separate React app on Cloudflare Pages)
+
+**PLAN**
+
+Build a minimal, separate React + Vite app in `admin/` that talks to `/api/admin/*`. Deployed to Cloudflare Pages at `admin.bahon.jafran.online`. Not part of the PWA bundle. Plain, functional UI — no need for the full design system.
+
+**Screens:**
+- Login (admin username + password)
+- Users list (search, paginate, tier badge, last-synced)
+- User detail (profile + subscription editor: tier, status, expiry, notes → Save)
+- Stats overview (user/pro counts)
+
+**EXECUTE**
+1. Scaffold `admin/` — Vite React TS app, its own `package.json`, port 4547 for dev
+2. Create `admin/src/api.ts` — admin API client (stores admin JWT in memory/localStorage, `API_BASE_URL`)
+3. Create screens: `LoginPage`, `UsersPage`, `UserDetailPage`, `StatsPage` + simple routing (React Router)
+4. Subscription editor form on `UserDetailPage` → calls `POST /api/admin/users/:id/subscription`; shows success/error
+5. Add `admin/wrangler.toml` or Pages config; document deploy: build → `wrangler pages deploy admin/dist --project-name bahon-admin`
+6. Add `ADMIN_DASHBOARD_URL` note; configure custom domain `admin.bahon.jafran.online`
+7. Basic auth guard: redirect to Login if no admin token; logout button
+
+**TEST**
+- [ ] `npm run dev` in `admin/` boots on port 4547
+- [ ] Admin login works against the deployed API; bad creds show an error
+- [ ] Users list loads, search filters, pagination works
+- [ ] Opening a user shows their subscription; editing tier→pro + Save persists (verify via that user's `/api/auth/me`)
+- [ ] Stats page shows counts
+- [ ] Unauthenticated visit redirects to Login
+- [ ] `npx tsc --noEmit` passes in `admin/`
+- [ ] Production build deploys to Cloudflare Pages and loads at the admin URL
+
+---
+
+### TASK-068: End-to-end integration & deployment
+
+**PLAN**
+
+Wire the whole thing together in production, verify the full lifecycle, and document the ops runbook (secrets, domains, manual upgrade process).
+
+**EXECUTE**
+1. Deploy `bahon-api` with all bindings (D1, R2, AI) and secrets (`JWT_SECRET`, `ANTHROPIC_API_KEY`, `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `ADMIN_JWT_SECRET`); apply D1 schema to remote
+2. Point the PWA's `API_BASE_URL` at the production API (custom domain `api.bahon.jafran.online`)
+3. Deploy the admin dashboard to Pages with its custom domain
+4. Document in `README.md` (or `docs/ops.md`): how to grant Pro manually, rotate secrets, the sync model, and the auth flow
+5. Verify CORS allowlist includes prod app + admin origins only
+
+**TEST**
+- [ ] Full lifecycle on production: register → (free, AI blocked) → admin grants Pro → AI + sync work
+- [ ] Cross-device: log in on two browsers, data syncs both directions
+- [ ] Web version (desktop browser) can log in and sync the same account as the PWA
+- [ ] Revoking Pro from admin immediately blocks AI + sync on next request
+- [ ] Logged-out / anonymous use still fully works offline (final regression)
+- [ ] Secrets are not present in any frontend bundle (grep `dist/` for key names → none)
+- [ ] Ops runbook documented and accurate
 
 ---
 

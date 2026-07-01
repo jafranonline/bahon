@@ -1,0 +1,13 @@
+name = "bahon-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-09"
+compatibility_flags = ["nodejs_compat"]
+
+# Workers AI binding — used for Whisper STT in /api/transcribe
+[ai]
+binding = "AI"
+
+# Secrets (set via `wrangler secret put <NAME>`), do NOT commit values:
+#   ANTHROPIC_API_KEY  — Anthropic API key for Claude Haiku (/api/chat)
+#
+# Phase 15 (TASK-059+) will add [[d1_databases]] and [[r2_buckets]] bindings here.
