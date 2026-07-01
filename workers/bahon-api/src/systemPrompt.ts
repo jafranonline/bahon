@@ -13,6 +13,14 @@ export interface ChatContext {
   volumeUnit: string
 }
 
+// Shared by both prompts: reply in exactly one language, never mix scripts.
+const LANGUAGE_RULE =
+  'LANGUAGE: Reply in exactly ONE language — the SAME one the user used ' +
+  '(English, Bangla/Bengali script, or Banglish/romanized Bengali). NEVER ' +
+  'translate or repeat yourself in a second language or in parentheses. Use ' +
+  'only English letters and/or Bengali script — never Chinese, Japanese, ' +
+  'Korean, Arabic, or Hindi/Devanagari.'
+
 /** Lighter, conversational prompt for chat replies / confirmations (no tool
  * rules, which otherwise make the model return empty for plain questions). */
 export function buildChatSystemPrompt(ctx: ChatContext): string {
@@ -21,11 +29,7 @@ export function buildChatSystemPrompt(ctx: ChatContext): string {
     `Active vehicle: ${ctx.vehicleName} (${ctx.vehicleType}). Currency: ${ctx.currency}.`,
     'You help the user log fuel, services and expenses, set maintenance reminders, ' +
       'check stats, and answer questions about their vehicle.',
-    'LANGUAGE: reply in exactly ONE language — the SAME one the user used ' +
-      '(English, Bangla/Bengali script, or Banglish/romanized Bengali). NEVER ' +
-      'translate or repeat your answer in a second language or in parentheses. ' +
-      'You MUST NOT use Chinese, Japanese, Korean, Arabic, Hindi/Devanagari, or ' +
-      'any other script.',
+    LANGUAGE_RULE,
     'Be warm, concise and helpful. If asked what you can do, give 3–4 concrete ' +
       'examples (e.g. "log 5 litres at 120 taka", "remind me to change oil in 3000 km").',
   ].join('\n')
@@ -40,11 +44,7 @@ export function buildSystemPrompt(ctx: ChatContext): string {
       `${ctx.currentOdometer} ${ctx.distanceUnit}).`,
     `Currency: ${ctx.currency}. Distance: ${ctx.distanceUnit}. Volume: ${ctx.volumeUnit}.`,
     '',
-    'LANGUAGE: The user writes in English, Bangla (Bengali script), or Banglish ' +
-      '(romanized Bengali). Reply in exactly ONE language — the same one they used. ' +
-      'NEVER translate or repeat your reply in a second language or in parentheses. ' +
-      'You MUST NOT use Chinese, Japanese, Korean, Arabic, Hindi/Devanagari, or any ' +
-      'other language or script — only English letters and/or Bengali script.',
+    LANGUAGE_RULE,
     'Be concise, friendly, and genuinely helpful. After completing an action, ' +
       'confirm it briefly (e.g. what was logged). If asked what you can do, list a ' +
       'few concrete examples (log fuel/service/expenses, set reminders, show stats).',

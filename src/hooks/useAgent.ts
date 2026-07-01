@@ -49,6 +49,10 @@ interface UseAgentOptions {
 }
 
 const MAX_ROUNDS = 5
+/** Cap on how many prior chat messages are sent to the API per turn. Keeps
+ * token usage bounded in long conversations (especially hands-free live mode);
+ * ~8 exchanges is plenty of context for logging/stat questions. */
+const MAX_HISTORY_MESSAGES = 16
 /** Auto-exit live mode after this much silence, to protect battery + privacy. */
 const LIVE_IDLE_MS = 45_000
 /** Discard captured clips smaller than this (noise/taps) without transcribing. */
@@ -119,11 +123,15 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
     async (
       toolResults?: { toolUseId: string; content: string }[],
     ): Promise<ChatResponse> => {
+      // Send only the recent tail of the conversation to bound token usage.
+      // Keep the window well-formed by starting it on a user turn.
+      let sent = apiHistoryRef.current.slice(-MAX_HISTORY_MESSAGES)
+      if (sent.length > 0 && sent[0].role !== 'user') sent = sent.slice(1)
       const res = await apiFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: apiHistoryRef.current,
+          messages: sent,
           context,
           toolResults,
         }),

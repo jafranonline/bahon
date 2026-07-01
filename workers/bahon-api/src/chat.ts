@@ -88,14 +88,36 @@ export async function chatTurn(
     return { reply: stripArtifacts(result.response ?? '') }
   }
 
-  // First turn: offer the tools and let the model decide.
+  // First turn. Decide whether the message could plausibly need a tool. For
+  // greetings, small talk and general questions we skip the tool schema
+  // entirely: a smaller prompt (fewer tokens), a faster reply, and no risk of
+  // a spurious tool call. The gate is intentionally broad — over-offering only
+  // costs tokens, but wrongly withholding would drop a real action.
+  const lastUserText =
+    [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
+  const hasDigit = /\d/.test(lastUserText)
+  const actionable =
+    hasDigit ||
+    ACTION_KW.test(lastUserText) ||
+    SETTINGS_KW.test(lastUserText) ||
+    NAV_KW.test(lastUserText) ||
+    READ_KW.test(lastUserText)
+
+  if (!actionable) {
+    const chat = await run(model, {
+      messages: [
+        { role: 'system', content: buildChatSystemPrompt(context) },
+        ...history,
+      ],
+    })
+    return { reply: stripArtifacts(chat.response ?? '') }
+  }
+
   const aiMessages: AIMessage[] = [
     { role: 'system', content: buildSystemPrompt(context) },
     ...history,
   ]
   const result = await run(model, { messages: aiMessages, tools })
-
-  const lastUserText = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
 
   let toolCalls: ToolCall[] = (result.tool_calls ?? []).map((tc, i) => ({
     id: `call_${i}`,
@@ -106,7 +128,6 @@ export async function chatTurn(
   // Guard against hallucinated logs: a fuel/service/expense entry with no
   // numbers in the user's message means the model invented the amounts. Drop
   // those so the frontend asks the user for details instead of saving garbage.
-  const hasDigit = /\d/.test(lastUserText)
   if (!hasDigit) {
     toolCalls = toolCalls.filter(
       (c) => !['add_fuel_log', 'add_service_log', 'add_expense'].includes(c.name),
@@ -158,6 +179,12 @@ const ARTIFACT_RE =
 const SETTINGS_KW = /\b(setting|settings|theme|dark|light|mode|language|bangla|bengali|english|currency|unit|units|km|mile|litre|gallon)\b|সেটিং|ভাষা|থিম|ডার্ক|লাইট|মুদ্রা|একক/i
 const NAV_KW = /\b(go|goto|open|take me|navigate|jao|jabo|kholo|khulo|niye|screen|page|tab|dashboard)\b|যাও|খোল|খুলো|পেজ|স্ক্রিন/i
 const READ_KW = /\b(show|list|recent|latest|last|history|how much|how many|total|spend|spent|summary|stat|stats|koto|ktoto|dekha|dekhao|khoroch|kharoch|hisab)\b|দেখা|দেখাও|কত|তালিকা|খরচ|হিসাব|সারাংশ/i
+
+// Action verbs (English + Banglish + Bangla) signalling the user wants to log,
+// save, set a reminder, or change something — i.e. a tool might be needed. Kept
+// deliberately broad so real actions are never gated out (see the gate above).
+const ACTION_KW =
+  /\b(add|log|save|record|note|put|remind|reminder|set|change|update|fill|filled|refuel|fuel|bought|buy|spent|spend|paid|pay|service|serviced|kinlam|kinechi|dilam|jog|mone)\b|যোগ|মনে|পরিবর্তন|কিনেছি|কিনলাম|দিলাম|সার্ভিস|রিমাইন্ডার/i
 
 const NULLISH = new Set(['null', 'undefined', '', 'none', 'n/a', 'nil', 'na'])
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/

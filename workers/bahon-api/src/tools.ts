@@ -29,9 +29,8 @@ export const tools: WorkerAITool[] = [
   {
     name: 'add_fuel_log',
     description:
-      'Record a fuel fill-up. Use whenever the user mentions buying fuel, ' +
-      'litres, fuel price, or an odometer reading at a fill-up. Compute ' +
-      'pricePerLitre from total spent ÷ litres if the user gives a total.',
+      'Record a fuel fill-up (litres, price, odometer). If the user gives a ' +
+      'total spent, set pricePerLitre = total ÷ litres.',
     parameters: {
       type: 'object',
       properties: {
@@ -145,8 +144,8 @@ export const tools: WorkerAITool[] = [
   {
     name: 'get_stats_summary',
     description:
-      'Read recent totals for the active vehicle. The frontend executes this ' +
-      'and returns the data so you can answer questions about spending/usage.',
+      'Read recent totals for the active vehicle to answer questions about ' +
+      'spending or usage.',
     parameters: {
       type: 'object',
       properties: {
@@ -158,9 +157,7 @@ export const tools: WorkerAITool[] = [
   },
   {
     name: 'list_recent_logs',
-    description:
-      'Read recent logs of a given type for the active vehicle. The frontend ' +
-      'executes this and returns the data.',
+    description: 'Read recent logs of a given type for the active vehicle.',
     parameters: {
       type: 'object',
       properties: {
