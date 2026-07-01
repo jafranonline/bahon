@@ -6,6 +6,8 @@ interface UIStore {
   toggleDrawer: () => void
   statsTab: 'summary' | 'fuel' | 'service'
   setStatsTab: (tab: 'summary' | 'fuel' | 'service') => void
+  agentOpen: boolean
+  setAgentOpen: (open: boolean) => void
 }
 
 export const useUIStore = create<UIStore>()((set) => ({
@@ -14,4 +16,6 @@ export const useUIStore = create<UIStore>()((set) => ({
   toggleDrawer: () => set((s) => ({ drawerOpen: !s.drawerOpen })),
   statsTab: 'summary',
   setStatsTab: (tab) => set({ statsTab: tab }),
+  agentOpen: false,
+  setAgentOpen: (open) => set({ agentOpen: open }),
 }))

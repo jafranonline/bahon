@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { useCallback, useEffect, useMemo } from 'react'
+import { Outlet } from 'react-router-dom'
 import { useSettingsStore } from '@store/settingsStore'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useVehicle, useVehicles } from '@db/queries/useVehicles'
@@ -8,9 +8,9 @@ import { useNotifications } from '@hooks/useNotifications'
 import type { AgentContext, AgentToolCall } from '@hooks/useAgent'
 import { useToolExecutor } from '@hooks/useToolExecutor'
 import { useAuthStore } from '@store/authStore'
+import { useUIStore } from '@store/uiStore'
 import { syncNow } from '@/sync/syncEngine'
 import { InstallBanner } from '../InstallBanner/InstallBanner'
-import { AgentFAB } from '../../domain/AgentFAB/AgentFAB'
 import { AgentSheet } from '../../domain/AgentSheet/AgentSheet'
 import i18n from '@i18n/config'
 import styles from './AppShell.module.css'
@@ -62,13 +62,10 @@ export function AppShell() {
     }
   }, [vehicles, activeVehicleId, setActiveVehicle])
 
-  const [agentOpen, setAgentOpen] = useState(false)
-
-  // The AI FAB sits paired with the bottom-nav "+" button, so only show it on
-  // the tab screens that actually render the bottom nav (not on form/detail views).
-  const { pathname } = useLocation()
-  const navScreens = ['/', '/reminders', '/documents', '/stats', '/compare']
-  const showAgentFab = navScreens.includes(pathname)
+  // The AI FAB lives inside the bottom nav (next to "+"); the open-state is
+  // shared via uiStore so any nav-bearing screen can trigger it.
+  const agentOpen = useUIStore((s) => s.agentOpen)
+  const setAgentOpen = useUIStore((s) => s.setAgentOpen)
 
   const agentContext = useMemo<AgentContext | null>(() => {
     if (!vehicle) return null
@@ -97,9 +94,6 @@ export function AppShell() {
     <div className={styles.shell}>
       <Outlet />
       <InstallBanner />
-      {agentContext && !agentOpen && showAgentFab && (
-        <AgentFAB onClick={() => setAgentOpen(true)} />
-      )}
       <AgentSheet
         open={agentOpen}
         onClose={() => setAgentOpen(false)}

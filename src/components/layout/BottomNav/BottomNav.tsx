@@ -1,4 +1,6 @@
 import { useTranslation } from '@hooks/useTranslation'
+import { useUIStore } from '@store/uiStore'
+import { useVehicleStore } from '@store/vehicleStore'
 import styles from './BottomNav.module.css'
 
 type NavTab = 'home' | 'reminders'
@@ -13,6 +15,10 @@ interface BottomNavProps {
 
 export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount = 0 }: BottomNavProps) {
   const { t } = useTranslation()
+  const setAgentOpen = useUIStore((s) => s.setAgentOpen)
+  const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
+  // The AI assistant is vehicle-scoped; only offer it when a vehicle is active.
+  const showAgent = Boolean(activeVehicleId)
   return (
     <nav className={styles.nav} aria-label="Main navigation">
       <button
@@ -28,15 +34,37 @@ export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount
       </button>
 
       <div className={styles.fabWrapper}>
-        <button
-          className={styles.fab}
-          onClick={onAdd}
-          aria-label="Add log entry"
-        >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" />
-          </svg>
-        </button>
+        <div className={styles.fabCluster}>
+          <button
+            className={styles.fab}
+            onClick={onAdd}
+            aria-label="Add log entry"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" />
+            </svg>
+          </button>
+          {showAgent && (
+            <button
+              className={styles.agentFab}
+              onClick={() => setAgentOpen(true)}
+              aria-label={t('agent.title')}
+              type="button"
+            >
+              {/* Four-point "AI sparkle" — the recognisable assistant glyph */}
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M11.5 3.2c.55 3.9 2.4 5.75 6.3 6.3-3.9.55-5.75 2.4-6.3 6.3-.55-3.9-2.4-5.75-6.3-6.3 3.9-.55 5.75-2.4 6.3-6.3z"
+                  fill="currentColor"
+                />
+                <path
+                  d="M18.3 14.2c.24 1.7 1.05 2.5 2.75 2.75-1.7.24-2.51 1.05-2.75 2.75-.24-1.7-1.05-2.51-2.75-2.75 1.7-.24 2.51-1.05 2.75-2.75z"
+                  fill="currentColor"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       <button

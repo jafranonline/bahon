@@ -50,6 +50,19 @@
   position: relative;
 }
 
+/* Holds the "+" (and, when a vehicle is active, the AI button) as a raised,
+ * horizontally centred pair straddling the nav's top edge. Centring the whole
+ * cluster keeps the pair balanced instead of shoving "+" toward the tabs. */
+.fabCluster {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .fab {
   width: 56px;
   height: 56px;
@@ -62,8 +75,7 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.45);
-  position: absolute;
-  bottom: 8px;
+  flex: none;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
@@ -74,6 +86,34 @@
 }
 
 .fab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-shadow);
+}
+
+/* AI assistant — companion to "+", slightly smaller so "+" stays primary. */
+.agentFab {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-circle);
+  background: linear-gradient(145deg, #7c83f5 0%, var(--accent-dark) 100%);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.45);
+  flex: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.agentFab:active {
+  transform: scale(0.94);
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+}
+
+.agentFab:focus-visible {
   outline: none;
   box-shadow: var(--focus-shadow);
 }
