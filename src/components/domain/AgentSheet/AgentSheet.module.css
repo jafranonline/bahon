@@ -166,6 +166,100 @@
   }
 }
 
+.liveBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  min-height: 40px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-0);
+  transition: background 0.3s ease;
+}
+
+/* "Speak now" — subtle accent glow while it's the user's turn. */
+.liveBarReady {
+  background: var(--accent-bg);
+  animation: liveReadyPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes liveReadyPulse {
+  0%, 100% { background: var(--accent-bg); }
+  50% { background: var(--surface-0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveBarReady {
+    animation: none;
+  }
+}
+
+.liveStart {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.liveStart:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.liveStart:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-shadow);
+}
+
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.liveDot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-circle);
+  background: var(--danger);
+  animation: pulse 1.3s infinite;
+}
+
+.liveStatus {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.liveStop {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.liveStop:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-shadow);
+}
+
 .composer {
   display: flex;
   align-items: center;

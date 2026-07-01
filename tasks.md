@@ -2773,6 +2773,29 @@ Close the account-recovery gap: registered users had no way to verify their emai
 
 ---
 
+## Phase 16 — Live (hands-free) voice mode
+
+### TASK-070: Hands-free "live" voice mode for the AI agent
+
+**PLAN**
+
+Upgrade the agent's push-to-talk voice (record → Whisper → text reply) into a **continuous, hands-free loop**: the mic stays open, voice-activity detection segments each utterance, it auto-transcribes and runs the agent, then auto-resumes listening — no button press per turn. Decided scope (with the owner): **text replies, no speak-back (no TTS)** — which sidesteps the Bangla-TTS gap entirely and keeps this **frontend-only** (reuses `/api/transcribe` + `/api/chat`, no backend/deploy). Half-duplex: listening pauses while a turn is transcribed/answered, then resumes.
+
+**EXECUTE**
+1. `src/utils/vad.ts` — energy-based VAD over a MediaStream via Web Audio `AnalyserNode` (RMS + silence hangover), no dependency/model download. Emits `onSpeechStart` / `onSpeechEnd(longEnough)`; `pause`/`resume`/`stop`.
+2. `src/hooks/useAgent.ts` — `liveMode` + `startLive()`/`stopLive()`: persistent mic stream, per-utterance `MediaRecorder`, VAD-driven capture → transcribe → `sendText` (now awaitable) → resume. Blip/size guard, 45 s idle auto-exit, graceful stop on 401/403/offline/no-mic, and an unmount cleanup so the mic never leaks.
+3. `AgentSheet.tsx` + CSS — a "Live voice" bar above the composer: start button ↔ active state (pulsing dot + Listening/Transcribing/Thinking + Stop); single-shot mic disabled during live; release mic on sheet close. **"Speak now" affordance:** haptic pulse (`navigator.vibrate`) when it becomes the user's turn, plus a subtle accent-glow pulse on the bar during `live_listening` (respects `prefers-reduced-motion`).
+4. i18n `en.json` + `bn.json` — `agent.live_*` strings.
+
+**TEST**
+- [x] Worker N/A (frontend-only); frontend `tsc --noEmit`, lint, and prod build all pass
+- [x] VAD logic unit-tested — 4 cases: loud onset fires start; full utterance → `onSpeechEnd(true)`; sub-`minSpeech` blip → `onSpeechEnd(false)`; no double-detect; `pause()` closes an in-progress utterance (`tests/unit/vad.test.ts`)
+- [x] AgentSheet renders the "Live voice" bar (browser-verified on a Pro session); app loads with no console errors
+- [x] Mic released on sheet close + on unmount (cleanup effects); half-duplex pause/resume around each turn
+- [ ] **Manual (needs a Pro account + real device mic):** full loop — speak → auto-transcribe → agent replies in text → auto-resumes listening; idle auto-exit after ~45 s; noisy-environment false-trigger check (upgrade to Silero `@ricky0123/vad-web` if the energy VAD proves too trigger-happy)
+
+---
+
 ## Done
 
 When TASK-042 passes all tests, Bahon v1.0.0 is ready for production deployment. TASK-043–052 cover post-launch improvements and the final go-live steps.

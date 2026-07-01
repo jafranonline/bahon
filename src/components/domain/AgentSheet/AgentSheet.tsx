@@ -16,10 +16,8 @@ interface AgentSheetProps {
 export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentSheetProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { messages, status, sendText, startVoice, stopVoice } = useAgent({
-    context,
-    onToolCall,
-  })
+  const { messages, status, liveMode, sendText, startVoice, stopVoice, startLive, stopLive } =
+    useAgent({ context, onToolCall })
   const [draft, setDraft] = useState('')
   const listEndRef = useRef<HTMLDivElement | null>(null)
 
@@ -38,8 +36,22 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
     return () => document.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
+  // Release the mic / live loop whenever the sheet is closed.
+  useEffect(() => {
+    if (!open) {
+      stopLive()
+      stopVoice()
+    }
+  }, [open, stopLive, stopVoice])
+
   const listening = status === 'listening'
   const busy = status === 'thinking' || status === 'transcribing'
+
+  const liveStatusText =
+    status === 'transcribing' ? t('agent.live_transcribing')
+    : status === 'thinking' ? t('agent.thinking')
+    : status === 'live_capturing' ? t('agent.live_capturing')
+    : t('agent.live_listening')
 
   const handleSend = () => {
     if (!draft.trim()) return
@@ -112,6 +124,36 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
           <div ref={listEndRef} />
         </div>
 
+        <div className={`${styles.liveBar} ${status === 'live_listening' ? styles.liveBarReady : ''}`}>
+          {liveMode ? (
+            <>
+              <span className={styles.liveIndicator} aria-hidden="true">
+                <span className={styles.liveDot} />
+              </span>
+              <span className={styles.liveStatus} role="status">{liveStatusText}</span>
+              <button
+                className={styles.liveStop}
+                onClick={stopLive}
+                type="button"
+              >
+                {t('agent.live_stop')}
+              </button>
+            </>
+          ) : (
+            <button
+              className={styles.liveStart}
+              onClick={() => void startLive()}
+              type="button"
+              disabled={busy}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 12h2M9 7v10M12 4v16M15 8v8M20 12h-2" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+              </svg>
+              {t('agent.live_start')}
+            </button>
+          )}
+        </div>
+
         <div className={styles.composer}>
           <input
             className={styles.input}
@@ -130,7 +172,7 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
             aria-label={listening ? t('agent.stop') : t('agent.tap_to_speak')}
             aria-pressed={listening}
             type="button"
-            disabled={busy}
+            disabled={busy || liveMode}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" />

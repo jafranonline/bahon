@@ -367,7 +367,13 @@
     "login_required": "Please sign in to use the AI assistant.",
     "gate_title": "Bahon AI is a Pro feature",
     "gate_text": "Sign in and upgrade to Pro to add logs by voice, chat with the assistant, and sync across devices.",
-    "gate_cta": "Sign in / Upgrade"
+    "gate_cta": "Sign in / Upgrade",
+    "live_start": "Live voice",
+    "live_stop": "Stop",
+    "live_listening": "Listening… speak now",
+    "live_capturing": "Listening…",
+    "live_transcribing": "Transcribing…",
+    "live_timeout": "Live voice paused after a quiet moment. Tap Live voice to resume."
   },
   "auth": {
     "title": "Account",
