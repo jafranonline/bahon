@@ -2629,15 +2629,17 @@ Implement the client-side sync engine: snapshot serialize (with tombstones), mer
 8. Add i18n keys: `sync.*` (sync_now, last_synced, syncing, synced, error, pro_required)
 
 **TEST**
-- [ ] Device A pushes data; Device B (same account) pulls and sees A's vehicles/logs after sync
-- [ ] Edit same vehicle on A and B; sync both → newer `updatedAt` wins, no duplication
-- [ ] Delete a log on A, sync; B after sync no longer shows it (tombstone propagated)
-- [ ] Add different logs on A and B offline; sync both → both logs present (merge, no loss)
-- [ ] 409 conflict (concurrent push) auto-resolves via re-pull + retry
-- [ ] Free/logged-out user does not see the Sync section (or sees upgrade prompt)
-- [ ] `mergeSnapshots` unit tests cover: newer-wins, tombstone-wins, disjoint-union
-- [ ] `npx tsc --noEmit` passes
-- [ ] `npm run lint` passes
+- [x] Device A pushes data; Device B (same account) pulls and sees A's data after sync (verified in-browser: auto-sync pushed 3 vehicles; cleared local + Sync now restored all 3 from server)
+- [x] Edit same vehicle on A and B; sync → newer `updatedAt` wins, no duplication (mergeSnapshots unit test: newer-wins)
+- [x] Delete a log on A, sync; B no longer shows it (tombstone propagated) (unit test: tombstone-wins; delete mutations write tombstones)
+- [x] Add different logs on A and B; sync → both present, no loss (unit test: disjoint-union; restore test confirmed union)
+- [x] 409 conflict auto-resolves via re-pull + retry (syncEngine retry loop ≤3; 409 endpoint behavior verified in TASK-062)
+- [x] Free/logged-out user does not see the Sync section (gated `signedIn && isPro`)
+- [x] `mergeSnapshots` unit tests cover newer-wins, tombstone-wins, disjoint-union (+ re-created-survives, newest-tombstone) — 5/5 pass
+- [x] `npx tsc --noEmit` passes
+- [x] `npm run lint` passes (0 errors)
+
+> **TASK-065 DONE (2026-07-01):** Dexie v3 adds `tombstones`; all delete mutations write tombstones (`softDeleteTrack`/`softDeleteTrackMany`; deleteVehicle tombstones children too). `src/sync/snapshot.ts` (build/apply), `src/sync/merge.ts` (pure LWW-by-id using `updatedAt ?? createdAt`, tombstone suppression, unit-tested), `src/sync/syncEngine.ts` (`syncNow`: pull→merge→apply→push, 409 retry ≤3, Pro-gated). `src/store/syncStore.ts` (status + lastSyncedAt, persisted). Triggers: auto on becoming Pro + on app foreground + manual "Sync now" in a Settings Sync section (Pro only). JSON backup/import extended with tombstones. Verified: 5 merge unit tests + full browser push/restore round-trip. Test account + R2 blob cleaned up.
 
 ---
 

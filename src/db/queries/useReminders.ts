@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@db/database'
+import { softDeleteTrack } from '@db/tombstones'
 import type { Reminder } from '@/types'
 
 export function useReminders(vehicleId?: string) {
@@ -38,6 +39,7 @@ export async function updateReminder(
 
 export async function deleteReminder(id: string): Promise<void> {
   await db.reminders.delete(id)
+  await softDeleteTrack('reminders', id)
 }
 
 export function advanceRepeatReminder(reminder: Reminder, currentOdometer: number): Reminder {

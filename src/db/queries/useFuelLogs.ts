@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@db/database'
+import { softDeleteTrack } from '@db/tombstones'
 import type { FuelLog } from '@/types'
 
 export function useFuelLogs(vehicleId: string) {
@@ -50,6 +51,7 @@ export async function updateFuelLog(
 
 export async function deleteFuelLog(id: string): Promise<void> {
   await db.fuelLogs.delete(id)
+  await softDeleteTrack('fuelLogs', id)
 }
 
 export async function getLastOdometer(vehicleId: string): Promise<number> {

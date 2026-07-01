@@ -6,6 +6,8 @@ import { Select } from '@components/primitives/Select'
 import { SegmentedControl } from '@components/primitives/SegmentedControl'
 import { useSettingsStore } from '@store/settingsStore'
 import { useAuthStore } from '@store/authStore'
+import { useSyncStore } from '@store/syncStore'
+import { syncNow } from '@/sync/syncEngine'
 import { useExport } from '@hooks/useExport'
 import { useTranslation } from '@hooks/useTranslation'
 import { APP_VERSION } from '@utils/constants'
@@ -53,6 +55,9 @@ export function SettingsScreen() {
   const authUser = useAuthStore((s) => s.user)
   const entitlements = useAuthStore((s) => s.entitlements)
   const signedIn = authStatus === 'authenticated' && authUser != null
+  const isPro = entitlements?.pro ?? false
+  const syncStatus = useSyncStore((s) => s.status)
+  const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt)
   const theme = useSettingsStore((s) => s.theme)
   const language = useSettingsStore((s) => s.language)
   const currency = useSettingsStore((s) => s.currency)
@@ -115,6 +120,31 @@ export function SettingsScreen() {
             </span>
           </button>
         </div>
+
+        {signedIn && isPro && (
+          <>
+            <p className={styles.sectionLabel}>{t('sync.title')}</p>
+            <div className={styles.section}>
+              <button
+                type="button"
+                className={styles.row}
+                onClick={() => void syncNow()}
+                disabled={syncStatus === 'syncing'}
+              >
+                <span className={styles.rowLabel}>
+                  {syncStatus === 'syncing' ? t('sync.syncing') : t('sync.sync_now')}
+                </span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
+                  {syncStatus === 'error'
+                    ? t('sync.error')
+                    : lastSyncedAt
+                      ? new Date(lastSyncedAt).toLocaleString()
+                      : t('sync.never')}
+                </span>
+              </button>
+            </div>
+          </>
+        )}
 
         <p className={styles.sectionLabel}>Display</p>
         <div className={styles.section}>

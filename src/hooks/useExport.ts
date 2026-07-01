@@ -11,6 +11,7 @@ interface BackupFile {
   expenses: unknown[]
   reminders: unknown[]
   documents: unknown[]
+  tombstones?: unknown[]
 }
 
 function toCSV(rows: Record<string, unknown>[]): string {
@@ -77,6 +78,7 @@ export function useExport() {
       expenses: await db.expenses.toArray(),
       reminders: await db.reminders.toArray(),
       documents: await db.documents.toArray(),
+      tombstones: await db.tombstones.toArray(),
     }
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
     downloadBlob(blob, `bahon-backup-${date}.json`)
@@ -92,7 +94,7 @@ export function useExport() {
 
     await db.transaction(
       'rw',
-      [db.vehicles, db.fuelLogs, db.serviceLogs, db.expenses, db.reminders, db.documents],
+      [db.vehicles, db.fuelLogs, db.serviceLogs, db.expenses, db.reminders, db.documents, db.tombstones],
       async () => {
         await db.vehicles.clear()
         await db.fuelLogs.clear()
@@ -100,6 +102,8 @@ export function useExport() {
         await db.expenses.clear()
         await db.reminders.clear()
         await db.documents.clear()
+        await db.tombstones.clear()
+        if (data.tombstones?.length) await db.tombstones.bulkAdd(data.tombstones as Parameters<typeof db.tombstones.bulkAdd>[0])
 
         if (data.vehicles.length) await db.vehicles.bulkAdd(data.vehicles as Parameters<typeof db.vehicles.bulkAdd>[0])
         if (data.fuelLogs.length) await db.fuelLogs.bulkAdd(data.fuelLogs as Parameters<typeof db.fuelLogs.bulkAdd>[0])

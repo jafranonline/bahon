@@ -99,6 +99,13 @@ export interface VehicleDocument {
   createdAt: string
 }
 
+/** Records a deletion so it can propagate across devices during sync. */
+export interface Tombstone {
+  id: string // the deleted record's id
+  entity: 'vehicles' | 'fuelLogs' | 'serviceLogs' | 'expenses' | 'reminders' | 'documents'
+  deletedAt: string
+}
+
 export interface Settings {
   language: Language
   theme: Theme

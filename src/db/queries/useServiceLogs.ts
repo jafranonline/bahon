@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@db/database'
+import { softDeleteTrack } from '@db/tombstones'
 import type { ServiceLog } from '@/types'
 
 export function useServiceLogs(vehicleId: string) {
@@ -38,4 +39,5 @@ export async function updateServiceLog(
 
 export async function deleteServiceLog(id: string): Promise<void> {
   await db.serviceLogs.delete(id)
+  await softDeleteTrack('serviceLogs', id)
 }

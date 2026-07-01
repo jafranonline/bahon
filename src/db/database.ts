@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie'
-import type { Vehicle, FuelLog, ServiceLog, Expense, Reminder, VehicleDocument } from '@/types'
+import type { Vehicle, FuelLog, ServiceLog, Expense, Reminder, VehicleDocument, Tombstone } from '@/types'
 
 export class BahonDatabase extends Dexie {
   vehicles!: Table<Vehicle, string>
@@ -8,6 +8,7 @@ export class BahonDatabase extends Dexie {
   expenses!: Table<Expense, string>
   reminders!: Table<Reminder, string>
   documents!: Table<VehicleDocument, string>
+  tombstones!: Table<Tombstone, string>
 
   constructor() {
     super('BahonDB')
@@ -25,6 +26,16 @@ export class BahonDatabase extends Dexie {
       expenses: 'id, vehicleId, date, category, createdAt',
       reminders: 'id, vehicleId, isActive, nextDueDate',
       documents: 'id, vehicleId, type, expiryDate, createdAt',
+    })
+    // v3: tombstones for cross-device delete propagation (Phase 15 sync).
+    this.version(3).stores({
+      vehicles: 'id, type, createdAt',
+      fuelLogs: 'id, vehicleId, date, createdAt',
+      serviceLogs: 'id, vehicleId, date, category, createdAt',
+      expenses: 'id, vehicleId, date, category, createdAt',
+      reminders: 'id, vehicleId, isActive, nextDueDate',
+      documents: 'id, vehicleId, type, expiryDate, createdAt',
+      tombstones: 'id, entity, deletedAt',
     })
   }
 }

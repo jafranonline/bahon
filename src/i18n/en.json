@@ -399,5 +399,15 @@
     "upgrade_text": "Pro unlocks cloud sync across devices, voice commands, and the AI assistant.",
     "upgrade_cta": "Contact to upgrade",
     "logout": "Log out"
+  },
+  "sync": {
+    "title": "Sync",
+    "sync_now": "Sync now",
+    "syncing": "Syncing…",
+    "synced": "Synced",
+    "last_synced": "Last synced",
+    "never": "Not synced yet",
+    "error": "Sync failed",
+    "pro_required": "Sync requires Pro"
   }
 }

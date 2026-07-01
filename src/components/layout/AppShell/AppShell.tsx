@@ -8,6 +8,7 @@ import { useNotifications } from '@hooks/useNotifications'
 import type { AgentContext, AgentToolCall } from '@hooks/useAgent'
 import { useToolExecutor } from '@hooks/useToolExecutor'
 import { useAuthStore } from '@store/authStore'
+import { syncNow } from '@/sync/syncEngine'
 import { InstallBanner } from '../InstallBanner/InstallBanner'
 import { AgentFAB } from '../../domain/AgentFAB/AgentFAB'
 import { AgentSheet } from '../../domain/AgentSheet/AgentSheet'
@@ -31,9 +32,22 @@ export function AppShell() {
   const { requestPermission } = useNotifications()
   void requestPermission()
 
+  const isPro = useAuthStore((s) => s.entitlements?.pro ?? false)
+
+  // Cloud sync triggers: when the user becomes Pro, and on app foreground.
+  useEffect(() => {
+    if (isPro) void syncNow()
+  }, [isPro])
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void syncNow()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const vehicle = useVehicle(activeVehicleId ?? '')
-  const isPro = useAuthStore((s) => s.entitlements?.pro ?? false)
 
   const [agentOpen, setAgentOpen] = useState(false)
 

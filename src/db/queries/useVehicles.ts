@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@db/database'
+import { softDeleteTrack, softDeleteTrackMany } from '@db/tombstones'
 import type { Vehicle } from '@/types'
 
 export function useVehicles() {
@@ -29,11 +30,30 @@ export async function updateVehicle(
 }
 
 export async function deleteVehicle(id: string): Promise<void> {
-  await db.transaction('rw', [db.vehicles, db.fuelLogs, db.serviceLogs, db.expenses, db.reminders], async () => {
-    await db.vehicles.delete(id)
-    await db.fuelLogs.where('vehicleId').equals(id).delete()
-    await db.serviceLogs.where('vehicleId').equals(id).delete()
-    await db.expenses.where('vehicleId').equals(id).delete()
-    await db.reminders.where('vehicleId').equals(id).delete()
-  })
+  await db.transaction(
+    'rw',
+    [db.vehicles, db.fuelLogs, db.serviceLogs, db.expenses, db.reminders, db.documents, db.tombstones],
+    async () => {
+      // Collect child ids first so their deletions also propagate via tombstones.
+      const fuelIds = await db.fuelLogs.where('vehicleId').equals(id).primaryKeys()
+      const serviceIds = await db.serviceLogs.where('vehicleId').equals(id).primaryKeys()
+      const expenseIds = await db.expenses.where('vehicleId').equals(id).primaryKeys()
+      const reminderIds = await db.reminders.where('vehicleId').equals(id).primaryKeys()
+      const documentIds = await db.documents.where('vehicleId').equals(id).primaryKeys()
+
+      await db.vehicles.delete(id)
+      await db.fuelLogs.where('vehicleId').equals(id).delete()
+      await db.serviceLogs.where('vehicleId').equals(id).delete()
+      await db.expenses.where('vehicleId').equals(id).delete()
+      await db.reminders.where('vehicleId').equals(id).delete()
+      await db.documents.where('vehicleId').equals(id).delete()
+
+      await softDeleteTrack('vehicles', id)
+      await softDeleteTrackMany('fuelLogs', fuelIds)
+      await softDeleteTrackMany('serviceLogs', serviceIds)
+      await softDeleteTrackMany('expenses', expenseIds)
+      await softDeleteTrackMany('reminders', reminderIds)
+      await softDeleteTrackMany('documents', documentIds)
+    },
+  )
 }
