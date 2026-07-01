@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useSettingsStore } from '@store/settingsStore'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useVehicle, useVehicles } from '@db/queries/useVehicles'
@@ -64,6 +64,12 @@ export function AppShell() {
 
   const [agentOpen, setAgentOpen] = useState(false)
 
+  // The AI FAB sits paired with the bottom-nav "+" button, so only show it on
+  // the tab screens that actually render the bottom nav (not on form/detail views).
+  const { pathname } = useLocation()
+  const navScreens = ['/', '/reminders', '/documents', '/stats', '/compare']
+  const showAgentFab = navScreens.includes(pathname)
+
   const agentContext = useMemo<AgentContext | null>(() => {
     if (!vehicle) return null
     return {
@@ -91,7 +97,7 @@ export function AppShell() {
     <div className={styles.shell}>
       <Outlet />
       <InstallBanner />
-      {agentContext && !agentOpen && (
+      {agentContext && !agentOpen && showAgentFab && (
         <AgentFAB onClick={() => setAgentOpen(true)} />
       )}
       <AgentSheet

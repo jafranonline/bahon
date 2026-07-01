@@ -1,28 +1,31 @@
+/* Sits raised on the bottom nav, immediately to the right of the centre "+"
+ * button so the two read as a pair. Vertically centred on the "+" FAB. */
 .fab {
-  position: absolute;
-  right: 16px;
-  bottom: calc(64px + 16px + env(safe-area-inset-bottom, 0px));
-  width: 52px;
-  height: 52px;
+  position: fixed;
+  left: 50%;
+  transform: translateX(42px);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-circle);
   border: none;
-  background: var(--accent);
+  background: linear-gradient(140deg, var(--accent) 0%, var(--accent-dark) 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.42);
-  z-index: 190;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.5);
+  z-index: 201;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .fab:active {
-  transform: scale(0.94);
+  transform: translateX(42px) scale(0.92);
 }
 
 .fab:focus-visible {
   outline: none;
-  box-shadow: var(--focus-shadow), 0 6px 20px rgba(99, 102, 241, 0.42);
+  box-shadow: var(--focus-shadow), 0 4px 14px rgba(99, 102, 241, 0.5);
 }

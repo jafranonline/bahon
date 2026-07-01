@@ -16,19 +16,15 @@ export function AgentFAB({ onClick }: AgentFABProps) {
       aria-label={t('agent.title')}
       type="button"
     >
-      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        {/* Four-point "AI sparkle" — the modern, widely-recognised assistant glyph */}
         <path
-          d="M20 11.5a8.5 8.5 0 01-12.28 7.6L4 20l.9-3.72A8.5 8.5 0 1120 11.5z"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinejoin="round"
+          d="M11.5 3.2c.55 3.9 2.4 5.75 6.3 6.3-3.9.55-5.75 2.4-6.3 6.3-.55-3.9-2.4-5.75-6.3-6.3 3.9-.55 5.75-2.4 6.3-6.3z"
+          fill="currentColor"
         />
         <path
-          d="M12 7.5v2M12 9.5a1.75 1.75 0 011.75 1.75v.5a1.75 1.75 0 11-3.5 0v-.5A1.75 1.75 0 0112 9.5zM9.5 14.2a3.2 3.2 0 005 0"
-          stroke="currentColor"
-          strokeWidth="1.7"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          d="M18.3 14.2c.24 1.7 1.05 2.5 2.75 2.75-1.7.24-2.51 1.05-2.75 2.75-.24-1.7-1.05-2.51-2.75-2.75 1.7-.24 2.51-1.05 2.75-2.75z"
+          fill="currentColor"
         />
       </svg>
     </button>

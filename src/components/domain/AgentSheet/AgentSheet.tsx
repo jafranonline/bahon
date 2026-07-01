@@ -142,6 +142,15 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
               placeholder={t('agent.placeholder')}
               aria-label={t('agent.placeholder')}
               disabled={busy}
+              type="text"
+              name="agent-message"
+              enterKeyHint="send"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck={false}
+              data-1p-ignore
+              data-lpignore="true"
             />
             {hasText ? (
               // Text typed → show Send.
