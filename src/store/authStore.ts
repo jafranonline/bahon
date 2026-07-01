@@ -53,6 +53,13 @@ async function errorMessage(res: Response): Promise<string> {
   }
 }
 
+// Single-flight guard for token refresh. The refresh token is single-use and
+// rotates on the server, so two concurrent refreshes (StrictMode double-mount,
+// the bootstrap racing an apiFetch 401 retry, or the sync engine) would each
+// spend it — the loser gets a 401 and would wipe the whole session. Coalesce
+// all concurrent callers onto one network refresh.
+let refreshInFlight: Promise<boolean> | null = null
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -119,22 +126,32 @@ export const useAuthStore = create<AuthState>()(
       },
 
       refresh: async () => {
-        const rt = get().refreshToken
-        if (!rt) return false
-        const res = await postJSON('/api/auth/refresh', { refreshToken: rt })
-        if (!res.ok) {
-          set({
-            user: null,
-            accessToken: null,
-            refreshToken: null,
-            entitlements: null,
-            status: 'anonymous',
-          })
-          return false
+        // Coalesce concurrent refreshes onto one in-flight request so the
+        // single-use refresh token rotates exactly once (see refreshInFlight).
+        if (refreshInFlight) return refreshInFlight
+        refreshInFlight = (async () => {
+          const rt = get().refreshToken
+          if (!rt) return false
+          const res = await postJSON('/api/auth/refresh', { refreshToken: rt })
+          if (!res.ok) {
+            set({
+              user: null,
+              accessToken: null,
+              refreshToken: null,
+              entitlements: null,
+              status: 'anonymous',
+            })
+            return false
+          }
+          const data = (await res.json()) as { accessToken: string; refreshToken: string }
+          set({ accessToken: data.accessToken, refreshToken: data.refreshToken })
+          return true
+        })()
+        try {
+          return await refreshInFlight
+        } finally {
+          refreshInFlight = null
         }
-        const data = (await res.json()) as { accessToken: string; refreshToken: string }
-        set({ accessToken: data.accessToken, refreshToken: data.refreshToken })
-        return true
       },
 
       loadMe: async () => {
