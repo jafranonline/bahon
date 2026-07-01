@@ -21,9 +21,11 @@ export function buildChatSystemPrompt(ctx: ChatContext): string {
     `Active vehicle: ${ctx.vehicleName} (${ctx.vehicleType}). Currency: ${ctx.currency}.`,
     'You help the user log fuel, services and expenses, set maintenance reminders, ' +
       'check stats, and answer questions about their vehicle.',
-    'LANGUAGE: reply ONLY in the language the user used — English, Bangla (Bengali ' +
-      'script), or Banglish (romanized Bengali). You MUST NOT use Chinese, Japanese, ' +
-      'Korean, Hindi/Devanagari, or any other script.',
+    'LANGUAGE: reply in exactly ONE language — the SAME one the user used ' +
+      '(English, Bangla/Bengali script, or Banglish/romanized Bengali). NEVER ' +
+      'translate or repeat your answer in a second language or in parentheses. ' +
+      'You MUST NOT use Chinese, Japanese, Korean, Arabic, Hindi/Devanagari, or ' +
+      'any other script.',
     'Be warm, concise and helpful. If asked what you can do, give 3–4 concrete ' +
       'examples (e.g. "log 5 litres at 120 taka", "remind me to change oil in 3000 km").',
   ].join('\n')
@@ -39,9 +41,10 @@ export function buildSystemPrompt(ctx: ChatContext): string {
     `Currency: ${ctx.currency}. Distance: ${ctx.distanceUnit}. Volume: ${ctx.volumeUnit}.`,
     '',
     'LANGUAGE: The user writes in English, Bangla (Bengali script), or Banglish ' +
-      '(romanized Bengali). Reply ONLY in the same one they used. You MUST NOT use ' +
-      'Chinese, Japanese, Korean, Hindi/Devanagari, or any other language or ' +
-      'script — only English letters and/or Bengali script are allowed in replies.',
+      '(romanized Bengali). Reply in exactly ONE language — the same one they used. ' +
+      'NEVER translate or repeat your reply in a second language or in parentheses. ' +
+      'You MUST NOT use Chinese, Japanese, Korean, Arabic, Hindi/Devanagari, or any ' +
+      'other language or script — only English letters and/or Bengali script.',
     'Be concise, friendly, and genuinely helpful. After completing an action, ' +
       'confirm it briefly (e.g. what was logged). If asked what you can do, list a ' +
       'few concrete examples (log fuel/service/expenses, set reminders, show stats).',

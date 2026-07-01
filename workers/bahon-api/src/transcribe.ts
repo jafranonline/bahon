@@ -2,22 +2,39 @@
 
 import type { Env } from './types'
 
+function toBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf)
+  let binary = ''
+  const chunk = 0x8000
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+  }
+  return btoa(binary)
+}
+
 /**
- * Transcribes audio to text using @cf/openai/whisper.
+ * Transcribes audio to text using whisper-large-v3-turbo, which — unlike the
+ * base model — accepts an explicit `language`. We force it from the app's
+ * language ("en"/"bn") so Bangla/English speech isn't mis-detected as Arabic.
  * @param audio Raw audio bytes (WebM/Opus from MediaRecorder).
- * @param _lang Language hint ("en" or "bn"). The base Whisper model
- *   auto-detects language and takes no explicit hint, so this is reserved for
- *   a future switch to a model that accepts one (e.g. whisper-large-v3-turbo).
+ * @param lang  App language hint ("en" or "bn").
  */
 export async function transcribe(
   audio: ArrayBuffer,
-  _lang: string,
+  lang: string,
   env: Env,
 ): Promise<string> {
-  // Whisper expects an array of bytes for the `audio` field.
-  const result = await env.AI.run('@cf/openai/whisper', {
-    audio: [...new Uint8Array(audio)],
-  })
+  const language = lang === 'bn' ? 'bn' : 'en'
+  // The generated AI types don't model turbo's inputs; call via a typed ref.
+  const run = env.AI.run.bind(env.AI) as (
+    model: string,
+    inputs: { audio: string; language?: string; task?: string },
+  ) => Promise<{ text?: string }>
 
+  const result = await run('@cf/openai/whisper-large-v3-turbo', {
+    audio: toBase64(audio),
+    language,
+    task: 'transcribe',
+  })
   return result.text ?? ''
 }
