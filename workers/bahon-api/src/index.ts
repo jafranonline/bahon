@@ -8,6 +8,7 @@ import type { Env } from './types'
 import { transcribe } from './transcribe'
 import { chatTurn, type ChatMessage, type ToolResultInput } from './chat'
 import type { ChatContext } from './systemPrompt'
+import { authRoutes } from './auth/routes'
 
 interface ChatRequestBody {
   messages?: ChatMessage[]
@@ -33,6 +34,8 @@ app.use(
 )
 
 app.get('/api/health', (c) => c.json({ ok: true }))
+
+app.route('/api/auth', authRoutes)
 
 app.post('/api/transcribe', async (c) => {
   const form = await c.req.formData()

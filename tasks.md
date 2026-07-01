@@ -2488,16 +2488,18 @@ Implement email+password auth with JWT access + rotating refresh tokens. All has
 6. Create `src/middleware/requireAuth.ts` — Hono middleware: reads Bearer token, verifies, sets `c.set('userId', ...)`; 401 on failure
 
 **TEST**
-- [ ] `POST /api/auth/register` with new email → 200, returns tokens + user, creates a `free` subscription row
-- [ ] Register with an existing email → 409
-- [ ] Register with weak/empty password (< 8 chars) → 400
-- [ ] `POST /api/auth/login` correct password → 200 with tokens
-- [ ] Login wrong password → 401 with generic message (no "user not found" leak)
-- [ ] `GET /api/auth/me` with valid access token → 200 with user + subscription
-- [ ] `GET /api/auth/me` with expired/invalid token → 401
-- [ ] `POST /api/auth/refresh` rotates: old refresh token rejected after use, new one works
-- [ ] `POST /api/auth/logout` revokes refresh token (subsequent refresh → 401)
-- [ ] Password hash + salt stored, never the plaintext
+- [x] `POST /api/auth/register` with new email → 200, returns tokens + user, creates a `free` subscription row (verified local + live)
+- [x] Register with an existing email → 409 (verified)
+- [x] Register with weak/empty password (< 8 chars) → 400 (verified)
+- [x] `POST /api/auth/login` correct password → 200 with tokens (verified)
+- [x] Login wrong password → 401 with generic `invalid_credentials` (no user-enumeration leak) (verified)
+- [x] `GET /api/auth/me` with valid access token → 200 with user + subscription (verified: tier=free, status=active)
+- [x] `GET /api/auth/me` with expired/invalid token → 401 (verified)
+- [x] `POST /api/auth/refresh` rotates: old refresh token rejected after use, new one works (verified: reuse→401, new→200)
+- [x] `POST /api/auth/logout` revokes refresh token (subsequent refresh → 401) (verified)
+- [x] Password hash + salt stored, never the plaintext (verified via D1: hash_len=64, salt_len=32, is_plaintext=0)
+
+> **TASK-060 DONE (2026-07-01):** Auth on the Hono app under `/api/auth`. `src/auth/crypto.ts` (PBKDF2/WebCrypto + sha256 + random tokens), `src/auth/jwt.ts` (HS256 access token via hono/jwt, 15 min), `src/auth/routes.ts` (register/login/refresh/logout/me), `src/middleware/requireAuth.ts` (Bearer → `userId`). Refresh tokens stored SHA-256-hashed in D1, single-use rotation. New users auto-get a `free` subscription. `JWT_SECRET` set as a Worker secret; deployed. **Gotcha:** Cloudflare Workers caps PBKDF2 at 100k iterations (210k throws at runtime) — set to 100k. Live test users cleaned up (remote users count back to 0).
 
 ---
 
