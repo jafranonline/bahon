@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { API_BASE_URL } from '@utils/constants'
+import { apiFetch } from '@api/client'
 
 export interface AuthUser {
   id: string
   email: string
   displayName: string | null
+  emailVerified: boolean
 }
 
 export interface Entitlements {
@@ -27,6 +29,11 @@ interface AuthState {
   refresh: () => Promise<boolean>
   loadMe: () => Promise<void>
   getAccessToken: () => string | null
+  // Email verification & password recovery.
+  forgotPassword: (email: string) => Promise<void>
+  resetPassword: (token: string, newPassword: string) => Promise<void>
+  verifyEmail: (token: string) => Promise<void>
+  resendVerification: () => Promise<void>
 }
 
 async function postJSON(path: string, body: unknown): Promise<Response> {
@@ -150,6 +157,30 @@ export const useAuthStore = create<AuthState>()(
         if (!res.ok) return
         const data = (await res.json()) as { user: AuthUser; entitlements: Entitlements }
         set({ user: data.user, entitlements: data.entitlements, status: 'authenticated' })
+      },
+
+      forgotPassword: async (email) => {
+        // Server always responds 200 (no account enumeration); only surface
+        // transport/JSON errors.
+        const res = await postJSON('/api/auth/forgot-password', { email })
+        if (!res.ok) throw new Error(await errorMessage(res))
+      },
+
+      resetPassword: async (token, newPassword) => {
+        const res = await postJSON('/api/auth/reset-password', { token, newPassword })
+        if (!res.ok) throw new Error(await errorMessage(res))
+      },
+
+      verifyEmail: async (token) => {
+        const res = await postJSON('/api/auth/verify-email', { token })
+        if (!res.ok) throw new Error(await errorMessage(res))
+        // Refresh cached user if this device is signed in.
+        if (get().accessToken || get().refreshToken) await get().loadMe()
+      },
+
+      resendVerification: async () => {
+        const res = await apiFetch('/api/auth/resend-verification', { method: 'POST' })
+        if (!res.ok) throw new Error(await errorMessage(res))
       },
     }),
     {

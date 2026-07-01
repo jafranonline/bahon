@@ -12,6 +12,7 @@ export interface UserRow {
   updated_at: string
   data_version: number
   data_updated_at: string | null
+  email_verified_at: string | null
 }
 
 export interface SubscriptionRow {
@@ -184,8 +185,131 @@ export async function adminStats(
 export async function deleteUserCascade(db: D1Database, userId: string): Promise<void> {
   // Explicit cascade (SQLite FK enforcement isn't guaranteed on).
   await db.prepare('DELETE FROM refresh_tokens WHERE user_id = ?').bind(userId).run()
+  await db.prepare('DELETE FROM email_tokens WHERE user_id = ?').bind(userId).run()
   await db.prepare('DELETE FROM subscriptions WHERE user_id = ?').bind(userId).run()
   await db.prepare('DELETE FROM users WHERE id = ?').bind(userId).run()
+}
+
+// ---- Email tokens (verification / password reset / email change) ----
+
+export type EmailTokenPurpose = 'verify_email' | 'reset_password' | 'change_email'
+
+export interface EmailTokenRow {
+  id: string
+  user_id: string
+  token_hash: string
+  purpose: string
+  new_email: string | null
+  expires_at: string
+  consumed_at: string | null
+  created_at: string
+}
+
+export async function createEmailToken(
+  db: D1Database,
+  row: {
+    id: string
+    userId: string
+    tokenHash: string
+    purpose: EmailTokenPurpose
+    newEmail?: string | null
+    expiresAt: string
+  },
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO email_tokens (id, user_id, token_hash, purpose, new_email, expires_at, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      row.id,
+      row.userId,
+      row.tokenHash,
+      row.purpose,
+      row.newEmail ?? null,
+      row.expiresAt,
+      new Date().toISOString(),
+    )
+    .run()
+}
+
+export async function getEmailTokenByHash(
+  db: D1Database,
+  tokenHash: string,
+): Promise<EmailTokenRow | null> {
+  return db
+    .prepare('SELECT * FROM email_tokens WHERE token_hash = ?')
+    .bind(tokenHash)
+    .first<EmailTokenRow>()
+}
+
+export async function consumeEmailToken(db: D1Database, id: string): Promise<void> {
+  await db
+    .prepare('UPDATE email_tokens SET consumed_at = ? WHERE id = ?')
+    .bind(new Date().toISOString(), id)
+    .run()
+}
+
+/**
+ * True if a live (unconsumed, unexpired) token of this purpose was created for
+ * the user within `withinMs`. Used to throttle verification/reset emails.
+ */
+export async function hasRecentEmailToken(
+  db: D1Database,
+  userId: string,
+  purpose: EmailTokenPurpose,
+  withinMs: number,
+): Promise<boolean> {
+  const since = new Date(Date.now() - withinMs).toISOString()
+  const row = await db
+    .prepare(
+      `SELECT 1 AS n FROM email_tokens
+       WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL AND created_at > ?
+       LIMIT 1`,
+    )
+    .bind(userId, purpose, since)
+    .first<{ n: number }>()
+  return row != null
+}
+
+export async function setUserEmailVerified(db: D1Database, userId: string): Promise<void> {
+  const now = new Date().toISOString()
+  await db
+    .prepare('UPDATE users SET email_verified_at = ?, updated_at = ? WHERE id = ?')
+    .bind(now, now, userId)
+    .run()
+}
+
+export async function updateUserPassword(
+  db: D1Database,
+  userId: string,
+  passwordHash: string,
+  passwordSalt: string,
+): Promise<void> {
+  await db
+    .prepare('UPDATE users SET password_hash = ?, password_salt = ?, updated_at = ? WHERE id = ?')
+    .bind(passwordHash, passwordSalt, new Date().toISOString(), userId)
+    .run()
+}
+
+export async function updateUserEmail(
+  db: D1Database,
+  userId: string,
+  email: string,
+): Promise<void> {
+  const now = new Date().toISOString()
+  await db
+    .prepare('UPDATE users SET email = ?, email_verified_at = ?, updated_at = ? WHERE id = ?')
+    .bind(email.toLowerCase(), now, now, userId)
+    .run()
+}
+
+/** Revoke every live refresh token for a user (e.g. after a password reset). */
+export async function revokeAllRefreshTokens(db: D1Database, userId: string): Promise<void> {
+  await db
+    .prepare('UPDATE refresh_tokens SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL')
+    .bind(new Date().toISOString(), userId)
+    .run()
 }
 
 export async function createRefreshToken(

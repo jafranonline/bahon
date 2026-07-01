@@ -3,6 +3,14 @@ main = "src/index.ts"
 compatibility_date = "2025-01-09"
 compatibility_flags = ["nodejs_compat"]
 
+# Cloudflare Email Service (Email Sending) — verification & password-reset
+# emails (TASK-069). Requires Workers Paid + a verified sender domain.
+# NOTE: must stay a top-level key, above the [ai]/[[...]] table headers — a
+# bare key placed after a table header would be parsed into that table.
+send_email = [
+  { name = "EMAIL" },
+]
+
 # Workers AI binding — powers both Whisper STT (/api/transcribe) and the
 # LLM agent with tool calling (/api/chat). No external API keys required.
 [ai]
@@ -18,3 +26,8 @@ database_id = "0c5fd666-35f9-41dd-8673-b69db33318ae"
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "bahon-user-data"
+
+# Plain (non-secret) vars.
+[vars]
+FROM_EMAIL = "Bahon <no-reply@bahon.jafran.online>"
+APP_ORIGIN = "https://bahon.jafran.online"

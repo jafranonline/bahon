@@ -386,7 +386,13 @@
     "err_weak_password": "Password must be at least 8 characters.",
     "err_email_taken": "An account with this email already exists.",
     "err_invalid_credentials": "Incorrect email or password.",
-    "err_generic": "Something went wrong. Please try again."
+    "err_generic": "Something went wrong. Please try again.",
+    "forgot_link": "Forgot password?",
+    "forgot_title": "Reset password",
+    "forgot_intro": "Enter your account email and we'll send you a link to reset your password.",
+    "forgot_submit": "Send reset link",
+    "forgot_sent": "If an account exists for {{email}}, a password reset link is on its way. Check your inbox.",
+    "back_to_login": "Back to login"
   },
   "account": {
     "title": "Account",
@@ -398,7 +404,36 @@
     "upgrade_title": "Upgrade to Pro",
     "upgrade_text": "Pro unlocks cloud sync across devices, voice commands, and the AI assistant.",
     "upgrade_cta": "Contact to upgrade",
-    "logout": "Log out"
+    "logout": "Log out",
+    "verify_title": "Verify your email",
+    "verify_text": "We sent a verification link to {{email}}. Verify to secure your account and enable recovery.",
+    "verify_sent": "Verification email sent. Check your inbox.",
+    "verify_resend": "Resend email",
+    "verify_sending": "Sending…",
+    "verify_error": "Couldn't send right now. Please try again shortly."
+  },
+  "verify": {
+    "title": "Email verification",
+    "verifying_title": "Verifying…",
+    "verifying_text": "Confirming your email address.",
+    "success_title": "Email verified",
+    "success_text": "Your email address is confirmed. Your account is now fully set up.",
+    "error_title": "Link invalid or expired",
+    "error_text": "This verification link is invalid or has expired. Sign in and resend a fresh one from your account.",
+    "missing_title": "Missing token",
+    "missing_text": "This link is incomplete. Open the verification link from your email again.",
+    "go_account": "Go to account"
+  },
+  "reset": {
+    "title": "New password",
+    "intro": "Choose a new password for your account.",
+    "new_password": "New password",
+    "confirm_password": "Confirm password",
+    "submit": "Update password",
+    "success": "Your password has been updated. Sign in with your new password.",
+    "missing_token": "This link is incomplete. Open the reset link from your email again.",
+    "err_invalid_token": "This reset link is invalid or has expired. Request a new one.",
+    "err_mismatch": "The passwords don't match."
   },
   "sync": {
     "title": "Sync",

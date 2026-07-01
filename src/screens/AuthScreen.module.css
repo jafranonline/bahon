@@ -50,3 +50,15 @@
   font-size: var(--text-sm);
   margin: 0;
 }
+
+.forgotLink {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 4px 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}

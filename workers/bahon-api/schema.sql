@@ -11,8 +11,25 @@ CREATE TABLE IF NOT EXISTS users (
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL,
   data_version    INTEGER NOT NULL DEFAULT 0,
-  data_updated_at TEXT
+  data_updated_at TEXT,
+  email_verified_at TEXT                       -- null = unverified
 );
+
+-- Single-use, hashed, expiring tokens delivered by email:
+-- account verification, password reset, and email-change confirmation.
+CREATE TABLE IF NOT EXISTS email_tokens (
+  id          TEXT PRIMARY KEY,               -- uuid
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash  TEXT NOT NULL,                  -- SHA-256 of the opaque token
+  purpose     TEXT NOT NULL,                  -- 'verify_email' | 'reset_password' | 'change_email'
+  new_email   TEXT,                           -- target address for 'change_email'
+  expires_at  TEXT NOT NULL,
+  consumed_at TEXT,
+  created_at  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_tokens_hash ON email_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_email_tokens_user ON email_tokens(user_id, purpose);
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   user_id    TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

@@ -2734,6 +2734,43 @@ Wire the whole thing together in production, verify the full lifecycle, and docu
 
 ---
 
+### TASK-069: Email verification & password recovery (Cloudflare Email Service)
+
+**PLAN**
+
+Close the account-recovery gap: registered users had no way to verify their email or recover a forgotten password. Add three email-driven flows on a single shared, hashed, single-use, expiring token primitive (same pattern as `refresh_tokens`), delivered via the native **Cloudflare Email Service** (`send_email` binding — Workers Paid, verified sender domain). Purposes: `verify_email`, `reset_password`, `change_email`.
+
+**EXECUTE**
+1. D1: add `users.email_verified_at`; new `email_tokens` table (`purpose`, `new_email`, `token_hash`, `expires_at`, `consumed_at`). `schema.sql` (fresh) + `migrations/0001_email_tokens.sql` (live ALTER).
+2. `types.ts`: `EMAIL` (`SendEmailBinding`), `FROM_EMAIL`, `APP_ORIGIN`. `wrangler.toml`: top-level `send_email = [{ name = "EMAIL" }]` + `[vars]`.
+3. `db.ts`: create/get/consume email token, `hasRecentEmailToken` (throttle), `setUserEmailVerified`, `updateUserPassword`, `updateUserEmail`, `revokeAllRefreshTokens`; cascade cleanup.
+4. `email.ts`: branded HTML+text templates; `env.EMAIL.send({to,from,subject,html,text})`.
+5. `auth/routes.ts`: register sends verification (`waitUntil`, non-fatal); `POST /verify-email`, `/resend-verification` (authed), `/forgot-password` (generic 200), `/reset-password` (revokes all sessions), `/change-email` (re-auth by password). `publicUser` gains `emailVerified`.
+6. Frontend: `authStore` (`forgotPassword`/`resetPassword`/`verifyEmail`/`resendVerification`, `AuthUser.emailVerified`); AuthScreen "forgot" mode; `VerifyEmailScreen` (`/verify`) + `ResetPasswordScreen` (`/reset`) as pre-onboarding routes; AccountScreen unverified banner + resend; i18n en+bn.
+
+**TEST**
+- [x] Worker + frontend `tsc --noEmit`, lint, and prod build all pass
+- [x] `wrangler deploy --dry-run` shows `env.EMAIL` as a Send Email binding, no config warnings
+- [x] register → `emailVerified:false`; verification email fired via `waitUntil` (non-blocking)
+- [x] `verify-email` valid token → `/me` shows `emailVerified:true`; token is single-use (reuse → 400); expired/invalid → 400
+- [x] `resend-verification` when already verified → `{ok, alreadyVerified}`
+- [x] `forgot-password` returns 200 for both existing and unknown emails (no enumeration)
+- [x] `reset-password` valid token → new password works, old fails, and all refresh tokens are revoked
+- [x] `change-email`: wrong password → 401; correct → 200; confirm token swaps login email (old email 401, new 200)
+- [x] New screens render (verify/reset/forgot) in the browser (bn locale verified)
+- [x] Remote D1 migration applied (`num_tables: 4`, `email_verified_at` present)
+- [x] Worker deployed to prod (`bahon-api`, Version `b2f473d2`); prod smoke test passed (register→`emailVerified:false`, forgot→200, verify bogus→400)
+- [ ] **BLOCKED — real email delivery:** prod `wrangler tail` shows the send failing with `Error: destination address is not a verified address`. The `send_email`/`EMAIL` binding is still in Email-Routing-restricted mode (can only send to verified *destination* addresses), not open Email Sending. Requires a **dashboard action** the CLI can't do — see below.
+
+> **Deploy status (done by Claude, 2026-07-01):**
+> 1. ✅ `wrangler d1 execute bahon-db --remote --file=migrations/0001_email_tokens.sql`
+> 2. ✅ `wrangler deploy` — binding shows `env.EMAIL (unrestricted) · Send Email`.
+> 3. ⛔ **Owner action (dashboard):** Cloudflare **Email → Email Sending** → add & verify the sending domain `bahon.jafran.online` (adds DKIM/SPF/DMARC on the zone). Until this is complete, `env.EMAIL.send` only reaches addresses verified under *Email Routing → Destination addresses*; arbitrary user emails bounce with "destination address is not a verified address."
+> 4. After (3), re-run a live register/forgot with a real inbox to confirm delivery, then check this section's blocked box.
+> 5. Adjust `FROM_EMAIL` / `APP_ORIGIN` in `wrangler.toml` if the sender or app origin differs.
+
+---
+
 ## Done
 
 When TASK-042 passes all tests, Bahon v1.0.0 is ready for production deployment. TASK-043–052 cover post-launch improvements and the final go-live steps.

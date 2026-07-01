@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
@@ -14,6 +14,8 @@ export function AccountScreen() {
   const user = useAuthStore((s) => s.user)
   const entitlements = useAuthStore((s) => s.entitlements)
   const logout = useAuthStore((s) => s.logout)
+  const resendVerification = useAuthStore((s) => s.resendVerification)
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
   // Not signed in → go to the auth screen.
   useEffect(() => {
@@ -24,6 +26,16 @@ export function AccountScreen() {
 
   const pro = entitlements?.pro ?? false
   const expiresAt = entitlements?.expiresAt
+
+  const handleResend = async () => {
+    setResendState('sending')
+    try {
+      await resendVerification()
+      setResendState('sent')
+    } catch {
+      setResendState('error')
+    }
+  }
 
   return (
     <div className={styles.root}>
@@ -40,6 +52,30 @@ export function AccountScreen() {
             </span>
           </div>
         </div>
+
+        {!user.emailVerified && (
+          <div className={styles.verifyBox}>
+            <p className={styles.verifyTitle}>{t('account.verify_title')}</p>
+            <p className={styles.verifyText}>
+              {resendState === 'sent'
+                ? t('account.verify_sent')
+                : t('account.verify_text', { email: user.email })}
+            </p>
+            {resendState !== 'sent' && (
+              <button
+                type="button"
+                className={styles.verifyBtn}
+                onClick={() => void handleResend()}
+                disabled={resendState === 'sending'}
+              >
+                {resendState === 'sending' ? t('account.verify_sending') : t('account.verify_resend')}
+              </button>
+            )}
+            {resendState === 'error' && (
+              <p className={styles.verifyError} role="alert">{t('account.verify_error')}</p>
+            )}
+          </div>
+        )}
 
         {pro ? (
           <div className={styles.infoBox}>

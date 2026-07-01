@@ -15,6 +15,7 @@ export function AuthScreen() {
   const { t } = useTranslation()
   const login = useAuthStore((s) => s.login)
   const register = useAuthStore((s) => s.register)
+  const forgotPassword = useAuthStore((s) => s.forgotPassword)
 
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
@@ -22,6 +23,8 @@ export function AuthScreen() {
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [forgot, setForgot] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
 
   const errorText = (code: string): string => {
     const map: Record<string, string> = {
@@ -49,6 +52,61 @@ export function AuthScreen() {
     } finally {
       setBusy(false)
     }
+  }
+
+  const submitForgot = async () => {
+    setError(null)
+    if (!email.trim()) {
+      setError(t('auth.err_required'))
+      return
+    }
+    setBusy(true)
+    try {
+      await forgotPassword(email.trim())
+      setForgotSent(true) // generic success — server never reveals if the account exists
+    } catch (e) {
+      setError(errorText(e instanceof Error ? e.message : 'auth.err_generic'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const backToLogin = () => {
+    setForgot(false)
+    setForgotSent(false)
+    setError(null)
+  }
+
+  if (forgot) {
+    return (
+      <div className={styles.root}>
+        <TopBar title={t('auth.forgot_title')} onBack={backToLogin} />
+        <Screen>
+          {forgotSent ? (
+            <div className={styles.form}>
+              <p className={styles.intro}>{t('auth.forgot_sent', { email: email.trim() })}</p>
+              <Button onClick={backToLogin} fullWidth>{t('auth.back_to_login')}</Button>
+            </div>
+          ) : (
+            <div className={styles.form}>
+              <p className={styles.intro}>{t('auth.forgot_intro')}</p>
+              <Input
+                type="email"
+                label={t('auth.email')}
+                value={email}
+                onChange={setEmail}
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
+              {error && <p className={styles.error} role="alert">{error}</p>}
+              <Button onClick={submitForgot} loading={busy} fullWidth>
+                {t('auth.forgot_submit')}
+              </Button>
+            </div>
+          )}
+        </Screen>
+      </div>
+    )
   }
 
   return (
@@ -107,6 +165,15 @@ export function AuthScreen() {
           <Button onClick={submit} loading={busy} fullWidth>
             {mode === 'register' ? t('auth.create_account') : t('auth.sign_in')}
           </Button>
+          {mode === 'login' && (
+            <button
+              type="button"
+              className={styles.forgotLink}
+              onClick={() => { setForgot(true); setError(null) }}
+            >
+              {t('auth.forgot_link')}
+            </button>
+          )}
         </div>
       </Screen>
     </div>

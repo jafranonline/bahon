@@ -21,6 +21,8 @@ const AddDocumentScreen = lazy(() => import('./screens/AddDocumentScreen').then(
 const OnboardingScreen = lazy(() => import('./screens/OnboardingScreen').then(m => ({ default: m.OnboardingScreen })))
 const AuthScreen = lazy(() => import('./screens/AuthScreen').then(m => ({ default: m.AuthScreen })))
 const AccountScreen = lazy(() => import('./screens/AccountScreen').then(m => ({ default: m.AccountScreen })))
+const VerifyEmailScreen = lazy(() => import('./screens/VerifyEmailScreen').then(m => ({ default: m.VerifyEmailScreen })))
+const ResetPasswordScreen = lazy(() => import('./screens/ResetPasswordScreen').then(m => ({ default: m.ResetPasswordScreen })))
 
 function RequireOnboarding({ children }: { children: React.ReactNode }) {
   const onboardingComplete = useSettingsStore((s) => s.onboardingComplete)
@@ -48,6 +50,9 @@ export default function App() {
       <Suspense>
         <Routes>
           <Route path="/onboarding" element={<OnboardingScreen />} />
+          {/* Email link targets — reachable without onboarding (e.g. fresh device). */}
+          <Route path="/verify" element={<VerifyEmailScreen />} />
+          <Route path="/reset" element={<ResetPasswordScreen />} />
           <Route element={<RequireOnboarding><AppShell /></RequireOnboarding>}>
             <Route path="/" element={<HomeScreen />} />
             <Route path="/stats" element={<StatsScreen />} />
