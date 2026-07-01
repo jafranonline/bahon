@@ -54,30 +54,17 @@ export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount
   return (
     <>
       <nav className={styles.nav} aria-label="Main navigation">
-        <div className={styles.side}>
-          {/* When the AI owns the centre, "+" moves to the left corner. */}
-          {proCenterAgent && (
-            <button
-              className={styles.addMini}
-              onClick={onAdd}
-              aria-label="Add log entry"
-              type="button"
-            >
-              <PlusIcon />
-            </button>
-          )}
-          <button
-            className={`${styles.navItem} ${activeTab === 'home' ? styles.active : ''}`}
-            onClick={onHome}
-            aria-label={t('nav.home')}
-            aria-current={activeTab === 'home' ? 'page' : undefined}
-          >
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-              <path d="M3 10.5L11 3l8 7.5V19a1 1 0 01-1 1H14v-5h-4v5H4a1 1 0 01-1-1V10.5z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
-            </svg>
-            <span className={styles.label}>{t('nav.home')}</span>
-          </button>
-        </div>
+        <button
+          className={`${styles.navItem} ${activeTab === 'home' ? styles.active : ''}`}
+          onClick={onHome}
+          aria-label={t('nav.home')}
+          aria-current={activeTab === 'home' ? 'page' : undefined}
+        >
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+            <path d="M3 10.5L11 3l8 7.5V19a1 1 0 01-1 1H14v-5h-4v5H4a1 1 0 01-1-1V10.5z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+          </svg>
+          <span className={styles.label}>{t('nav.home')}</span>
+        </button>
 
         <div className={styles.fabWrapper}>
           {proCenterAgent ? (
@@ -121,6 +108,19 @@ export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount
           <span className={styles.label}>{t('nav.reminders')}</span>
         </button>
       </nav>
+
+      {/* Pro tier: the AI owns the nav centre, so "+" floats in the bottom-left
+       * corner, above the footer. */}
+      {proCenterAgent && (
+        <button
+          className={styles.addCorner}
+          onClick={onAdd}
+          aria-label="Add log entry"
+          type="button"
+        >
+          <PlusIcon />
+        </button>
+      )}
 
       {/* Free tier: highlighted AI button floating in the bottom-right corner,
        * above the nav — an upsell entry point into the assistant. */}

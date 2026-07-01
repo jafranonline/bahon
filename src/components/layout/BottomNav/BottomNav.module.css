@@ -46,52 +46,6 @@
   font-weight: 500;
 }
 
-/* Left third: the Home tab, plus (when the AI owns the centre) a demoted
- * "+" pinned to the far-left corner. */
-.side {
-  flex: 1;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-}
-
-.side .navItem {
-  flex: 1;
-}
-
-.addMini {
-  flex: none;
-  align-self: center;
-  margin-left: 10px;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-circle);
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
-  -webkit-tap-highlight-color: transparent;
-  transition: transform 0.1s ease;
-}
-
-.addMini svg {
-  width: 20px;
-  height: 20px;
-}
-
-.addMini:active {
-  transform: scale(0.94);
-}
-
-.addMini:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-shadow);
-}
-
 .fabWrapper {
   flex: 1;
   display: flex;
@@ -132,6 +86,39 @@
 /* AI variant of the centre FAB (Pro). */
 .fabAi {
   background: linear-gradient(145deg, #7c83f5 0%, var(--accent-dark) 100%);
+}
+
+/* Pro tier: the demoted "+" floating in the bottom-left corner, above the
+ * footer nav (mirrors the free-tier AI corner button on the opposite side). */
+.addCorner {
+  position: fixed;
+  /* Align to the left edge of the centred app column (390px) on wide screens,
+   * clamping to a 16px inset on phones where the column is full-width. */
+  left: max(16px, calc(50% - 179px));
+  bottom: calc(64px + 16px + env(safe-area-inset-bottom, 0px));
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-circle);
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 201;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.45);
+  transition: transform 0.1s ease;
+}
+
+.addCorner:active {
+  transform: scale(0.94);
+}
+
+.addCorner:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-shadow), 0 6px 18px rgba(99, 102, 241, 0.45);
 }
 
 /* Free tier: floating, highlighted AI upsell button in the bottom-right corner,
