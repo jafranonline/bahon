@@ -29,5 +29,9 @@ bucket_name = "bahon-user-data"
 
 # Plain (non-secret) vars.
 [vars]
-FROM_EMAIL = "Bahon <no-reply@bahon.jafran.online>"
+# Sender must be on a domain with SPF+DKIM set up for Cloudflare email.
+# The root jafran.online is configured (MX/SPF/DKIM via Email Routing); the
+# bahon.jafran.online subdomain is NOT and has DMARC p=reject, so mail from it
+# is rejected by receivers. Send from the root domain instead.
+FROM_EMAIL = "Bahon <no-reply@jafran.online>"
 APP_ORIGIN = "https://bahon.jafran.online"
