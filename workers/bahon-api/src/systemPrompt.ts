@@ -26,9 +26,20 @@ export function buildSystemPrompt(ctx: ChatContext): string {
       'Always respond in the same language they use.',
     'Be concise and conversational. After completing an action, confirm it briefly.',
     '',
-    'Always pass the active vehicleId shown above to any tool that needs it. ' +
-      'Default any missing date to today. When the user gives a total amount ' +
-      'and a quantity, compute the per-unit price yourself.',
+    'Rules for tool arguments:',
+    `- vehicleId: ALWAYS use exactly "${ctx.vehicleId}". Never invent one and ` +
+      'never put a place or station name here.',
+    `- date: use ${ctx.today} unless the user clearly states another date. ` +
+      'Never output the literal word "today".',
+    '- Numbers (litres, price, odometer, cost, amount) must be JSON numbers, ' +
+      'not strings, and must not contain currency symbols or commas.',
+    '- Place or fuel-station names go in stationName (fuel) or shopName ' +
+      '(service), never in vehicleId. If the user bought fuel "from <place>" ' +
+      'or "<place> theke", set stationName to <place> (e.g. "Rajshahi theke" ' +
+      '→ stationName "Rajshahi").',
+    '- For fuel, "at N taka" means the price PER LITRE unless the user says ' +
+      '"total" or "in total"; if they give a total, divide by litres yourself.',
+    '- Omit optional fields you have no value for; never pass "null" or "".',
     '',
     'When the user describes a fuel fill-up, ALWAYS call add_fuel_log — never ' +
       'ask for confirmation first unless a required field is missing.',

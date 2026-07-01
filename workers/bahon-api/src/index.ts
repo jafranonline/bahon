@@ -3,19 +3,17 @@
 // Phase 15 (TASK-059+) will refactor this hand-rolled router onto Hono and add
 // auth / sync / admin routes plus D1 + R2 bindings.
 
-import type Anthropic from '@anthropic-ai/sdk'
 import { handlePreflight, jsonResponse } from './cors'
 import { transcribe } from './transcribe'
-import { chatTurn, type ToolResultInput } from './chat'
+import { chatTurn, type ChatMessage, type ToolResultInput } from './chat'
 import type { ChatContext } from './systemPrompt'
 
 export interface Env {
   AI: Ai
-  ANTHROPIC_API_KEY: string
 }
 
 interface ChatRequestBody {
-  messages?: Anthropic.MessageParam[]
+  messages?: ChatMessage[]
   context?: ChatContext
   toolResults?: ToolResultInput[]
 }
@@ -70,14 +68,6 @@ async function handleChat(request: Request, env: Env): Promise<Response> {
   }
   if (!body.context) {
     return jsonResponse(request, { error: 'missing_context' }, 400)
-  }
-
-  if (!env.ANTHROPIC_API_KEY) {
-    return jsonResponse(
-      request,
-      { error: 'server_error', message: 'ANTHROPIC_API_KEY is not configured' },
-      500,
-    )
   }
 
   const result = await chatTurn(body.messages, body.context, body.toolResults, env)

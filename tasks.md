@@ -2081,7 +2081,7 @@ Import strategy: full replace (clear + insert). No merge. User picks the file de
 
 A conversational AI agent that lets the user do anything in the app using natural language — typed or spoken — including Banglish (romanized Bengali mixed with English). Example: "Rajshahi theke 500 takay 2 litre octane nilam ajke, r amar odo ekhon 45009km" is parsed into a complete fuel log.
 
-**Why Claude Haiku, not Llama:** Banglish is nuanced. Small Workers AI models fail at romanized Bengali number extraction, mixed script, and informal phrasing. `claude-haiku-4-5-20251001` handles it reliably at low cost.
+**Model (decided): Cloudflare Workers AI, `@cf/meta/llama-3.3-70b-instruct-fp8-fast`.** Per user decision, everything stays on Cloudflare — no external API keys. Banglish is nuanced and Llama's function-calling is sloppier than a frontier model, so the Worker adds a schema-driven normalizer (see TASK-056 notes) to clean up types, ids, dates, and station names. In live testing Llama handled the Banglish number math correctly (e.g. 500 taka ÷ 2 litre = 250/L).
 
 **Architecture overview:**
 ```
@@ -2097,18 +2097,18 @@ AgentSheet (frontend)
 AgentSheet shows reply + chat history
 ```
 
-**Why the agentic loop runs on the frontend:** The Worker has no access to Dexie (IndexedDB lives on the user's device). The Worker is a stateless proxy to the Anthropic API; the frontend orchestrates tool execution and re-submission.
+**Why the agentic loop runs on the frontend:** The Worker has no access to Dexie (IndexedDB lives on the user's device). The Worker is a stateless proxy to Workers AI; the frontend orchestrates tool execution and re-submission.
 
 **Design decisions:**
 - Worker lives in `workers/bahon-api/` in the repo — this is the **single consolidated backend** (Hono router). Phase 10 adds auth, sync, and admin routes onto this same Worker.
 - AI endpoints for now: `POST /api/transcribe` (audio → text) and `POST /api/chat` (messages + context → reply or tool calls)
-- Anthropic API key stored as a Worker secret (`ANTHROPIC_API_KEY`) — never in the frontend
-- Agent model: `claude-haiku-4-5-20251001` (fast, cheap, strong multilingual)
+- No external API keys — `/api/chat` runs entirely on Workers AI
+- Agent model: `@cf/meta/llama-3.3-70b-instruct-fp8-fast` (Workers AI, function-calling, multilingual) + a worker-side normalizer for data quality
 - STT: `@cf/openai/whisper` via Workers AI (Bengali support, free tier)
 - Agent FAB opens a full chat sheet (persistent session history for the session, not persisted to IndexedDB)
 - Both text input and mic button available in the chat sheet
 - Agent responds in the same language the user speaks in
-- **Pro gating (added in Phase 10 / TASK-063):** `/api/chat` and `/api/transcribe` are wrapped by `requireAuth` + `requirePro` middleware. In Phase 9 they are built open (no auth) for development; TASK-063 retrofits the gate. Until then the frontend AgentFAB is shown unconditionally; from TASK-064 it is gated on `tier === 'pro'`.
+- **Pro gating (added in Phase 15 / TASK-063):** `/api/chat` and `/api/transcribe` are wrapped by `requireAuth` + `requirePro` middleware. In Phase 14 they are built open (no auth) for development; TASK-063 retrofits the gate. Until then the frontend AgentFAB is shown unconditionally; from TASK-064 it is gated on `tier === 'pro'`.
 
 **Tool set (what Claude can invoke):**
 ```
@@ -2127,7 +2127,7 @@ list_recent_logs    — read recent logs of a type (frontend reads Dexie, return
 
 ---
 
-### TASK-056: Cloudflare Worker — AI agent backend (STT + Claude Haiku proxy)
+### TASK-056: Cloudflare Worker — AI agent backend (STT + Workers AI agent) ✅ DONE
 
 **PLAN**
 
@@ -2159,7 +2159,7 @@ Create `workers/bahon-api/` with two endpoints:
   }
   ```
 - Builds system prompt with: app description, today's date, active vehicle context, response language instruction, all tool schemas
-- Calls Claude Haiku via Anthropic SDK: `anthropic.messages.create({ model: "claude-haiku-4-5-20251001", tools: [...], messages: [...] })`
+- Calls Workers AI: `env.AI.run("@cf/meta/llama-3.3-70b-instruct-fp8-fast", { messages, tools })`, then normalizes tool-call args (see status note below)
 - If response has `tool_use` blocks → returns `{ toolCalls: [{ id, name, input }] }`
 - If response has `text` block → returns `{ reply: string }`
 - CORS: allow `https://bahon.jafran.online` and `http://localhost:4546`
@@ -2192,15 +2192,15 @@ Tool schemas for Claude (passed as `tools` array — NOT injected into system pr
 1. Create `workers/bahon-api/` with:
    - `src/index.ts` — routes `OPTIONS`/`POST /api/transcribe`/`POST /api/chat`
    - `src/transcribe.ts` — Whisper helper: `transcribe(audio: ArrayBuffer, lang: string): Promise<string>`
-   - `src/chat.ts` — Claude Haiku call: `chatTurn(messages, context, toolResults, env): Promise<{ reply?, toolCalls? }>`
-   - `src/tools.ts` — tool definitions array (typed with Anthropic SDK `Tool[]`)
+   - `src/chat.ts` — Workers AI call + arg normalizer: `chatTurn(messages, context, toolResults, env): Promise<{ reply?, toolCalls? }>`
+   - `src/tools.ts` — tool definitions array (`WorkerAITool[]`: `{ name, description, parameters }`)
    - `src/systemPrompt.ts` — builds system prompt string from context
    - `src/cors.ts` — CORS header helper, allowed origins list
    - `wrangler.toml` — `name = "bahon-api"`, `ai = { binding = "AI" }`, `compatibility_date`
    - `package.json` — deps: `@anthropic-ai/sdk`, `@cloudflare/workers-types`
    - `tsconfig.json`
-2. In `chat.ts`: import `Anthropic` from `@anthropic-ai/sdk`; construct client with `env.ANTHROPIC_API_KEY`; build messages array (inject tool results as `tool` role messages if present); call `messages.create`; parse response
-3. Store `ANTHROPIC_API_KEY` as a Worker secret via `wrangler secret put ANTHROPIC_API_KEY`
+2. In `chat.ts`: build the messages array (system prompt + history); first turn passes `tools`, results turn omits `tools` and asks for a text reply; call `env.AI.run`; parse `tool_calls`/`response`; normalize tool-call args against each tool's schema
+3. (No secret required — Workers AI uses the `AI` binding, no external key)
 4. Add `API_BASE_URL = ''` to `src/utils/constants.ts` (filled in after deploy)
 5. Deploy: `wrangler deploy` from `workers/bahon-api/`, update `API_BASE_URL`
 
@@ -2208,19 +2208,16 @@ Tool schemas for Claude (passed as `tools` array — NOT injected into system pr
 - [x] `wrangler deploy` succeeds — deployed to https://bahon-api.astory.workers.dev (2026-07-01)
 - [x] `POST /api/transcribe` with a real WebM audio file returns `{ transcript: "..." }`
   > Verified live with a WAV (Whisper decodes it server-side, same path as WebM): returned "I added 10 liters at 115 Taka, odometer 52,000."
-- [ ] `POST /api/chat` with message "I added 10L at 115tk, odo 52000" + valid context returns `{ toolCalls: [{ name: "add_fuel_log", input: { volumeLitres: 10, pricePerLitre: 115, odometer: 52000, ... } }] }`
-  > BLOCKED: needs `ANTHROPIC_API_KEY` secret set on the deployed Worker.
-- [ ] Banglish input "Rajshahi theke 500 takay 2 litre octane nilam ajke, odo 45009" returns correct `add_fuel_log` tool call with `stationName: "Rajshahi"`, `volumeLitres: 2`, `pricePerLitre: 250`, `odometer: 45009`
-  > BLOCKED: needs `ANTHROPIC_API_KEY` on the deployed Worker.
-- [ ] `POST /api/chat` with tool results included returns `{ reply: "..." }` (final text turn)
-  > BLOCKED: needs `ANTHROPIC_API_KEY` on the deployed Worker.
-- [ ] `navigate_to` intent → `{ toolCalls: [{ name: "navigate_to", input: { screen: "reminders" } }] }`
-  > BLOCKED: needs `ANTHROPIC_API_KEY` on the deployed Worker.
-- [x] Request without `ANTHROPIC_API_KEY` secret set → 500 with descriptive error (verified live)
+- [x] `POST /api/chat` with message "I added 10 litres at 115 taka per litre, odometer 52000" + valid context returns `{ toolCalls: [{ name: "add_fuel_log", input: { volumeLitres: 10, pricePerLitre: 115, odometer: 52000, vehicleId: "v1", date: today } }] }` (verified live)
+- [x] Banglish input "Rajshahi theke 500 takay 2 litre octane nilam ajke, odo 45009" returns correct `add_fuel_log` tool call with `stationName: "Rajshahi"`, `volumeLitres: 2`, `pricePerLitre: 250`, `odometer: 45009` (verified live)
+- [x] `POST /api/chat` with tool results included returns `{ reply: "..." }` (final text turn — verified live; replied in Banglish matching the user)
+- [x] `navigate_to` intent → `{ toolCalls: [{ name: "navigate_to", input: { screen: "reminders" } }] }` (verified live)
+- [x] ~~Request without `ANTHROPIC_API_KEY`~~ → **N/A: pivoted to Workers AI (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`); no external API key exists to be missing.** `/api/chat` needs no secret.
 - [x] CORS preflight `OPTIONS` from `http://localhost:4546` → 200 with correct headers (verified live)
 - [x] Missing `messages` body field → 400 (verified live)
 
-> **TASK-056 status (2026-07-01):** Deployed to https://bahon-api.astory.workers.dev. 5/9 tests verified live (deploy, transcribe, no-key→500, CORS, missing-messages). Remaining 4 are the `/api/chat` tool-calling tests — blocked only on setting the `ANTHROPIC_API_KEY` Worker secret (`wrangler secret put ANTHROPIC_API_KEY`).
+> **TASK-056 DONE (2026-07-01):** Deployed to https://bahon-api.astory.workers.dev. All tests pass live.
+> **Architecture change:** `/api/chat` uses **Cloudflare Workers AI** (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`) with function calling, NOT the external Anthropic API — per user decision to keep everything on Cloudflare with no external keys. `/api/transcribe` uses `@cf/openai/whisper`. Because Llama's function-calling is sloppier than a frontier model, `chat.ts` adds a schema-driven normalizer (coerces stringified numbers, forces `vehicleId` from context, defaults dates to today unless the user referenced a date, and recovers fuel-station names from "X theke"/"from X" phrasing). Llama handled the Banglish number math correctly (500÷2 = 250/L).
 
 ---
 
@@ -2376,7 +2373,7 @@ Adds user accounts, cross-device cloud sync, and a Pro subscription tier that ga
 | Routing | Hono on the existing `bahon-api` Worker | Tiny, typed, one Worker for everything |
 | Relational data | **D1** (SQLite) | users, subscriptions, refresh_tokens, sync metadata |
 | Blob storage | **R2** | one JSON snapshot per user at `users/{userId}/data.json` |
-| Secrets | Worker secrets | `JWT_SECRET`, `ANTHROPIC_API_KEY`, `ADMIN_PASSWORD_HASH` |
+| Secrets | Worker secrets | `JWT_SECRET`, `ADMIN_PASSWORD_HASH` (no AI key — Workers AI uses the `AI` binding) |
 
 ### Sync model (decided — client-merge snapshots, schema-agnostic backend)
 
@@ -2447,7 +2444,7 @@ CREATE INDEX idx_users_email ON users(email);
 6. Create R2 bucket: `wrangler r2 bucket create bahon-user-data`
 7. Refactor `src/index.ts` to use Hono: mount existing `/api/chat` + `/api/transcribe`; add CORS middleware (allowed origins: app + admin + localhost)
 8. Create `src/db.ts` — typed helpers over D1 (`getUserByEmail`, `getUserById`, `createUser`, `getSubscription`, `upsertSubscription`, refresh-token CRUD)
-9. Create `src/types.ts` — `Env` interface (DB, BUCKET, AI, JWT_SECRET, ANTHROPIC_API_KEY, ADMIN_*)
+9. Create `src/types.ts` — `Env` interface (DB, BUCKET, AI, JWT_SECRET, ADMIN_*)
 
 **TEST**
 - [ ] `wrangler d1 execute bahon-db --local --command "SELECT name FROM sqlite_master WHERE type='table'"` lists users, subscriptions, refresh_tokens
@@ -2696,7 +2693,7 @@ Build a minimal, separate React + Vite app in `admin/` that talks to `/api/admin
 Wire the whole thing together in production, verify the full lifecycle, and document the ops runbook (secrets, domains, manual upgrade process).
 
 **EXECUTE**
-1. Deploy `bahon-api` with all bindings (D1, R2, AI) and secrets (`JWT_SECRET`, `ANTHROPIC_API_KEY`, `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `ADMIN_JWT_SECRET`); apply D1 schema to remote
+1. Deploy `bahon-api` with all bindings (D1, R2, AI) and secrets (`JWT_SECRET`, `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH`, `ADMIN_JWT_SECRET`); apply D1 schema to remote
 2. Point the PWA's `API_BASE_URL` at the production API (custom domain `api.bahon.jafran.online`)
 3. Deploy the admin dashboard to Pages with its custom domain
 4. Document in `README.md` (or `docs/ops.md`): how to grant Pro manually, rotate secrets, the sync model, and the auth flow

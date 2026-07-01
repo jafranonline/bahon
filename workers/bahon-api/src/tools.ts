@@ -1,7 +1,15 @@
-// Anthropic tool definitions the agent can invoke.
+// Tool definitions the agent can invoke, in Cloudflare Workers AI format.
 // The frontend executes these against Dexie / the router and returns results.
 
-import type Anthropic from '@anthropic-ai/sdk'
+export interface WorkerAITool {
+  name: string
+  description: string
+  parameters: {
+    type: 'object'
+    properties: Record<string, unknown>
+    required?: string[]
+  }
+}
 
 const SERVICE_CATEGORIES = [
   'oil_change', 'oil_filter', 'air_filter', 'fuel_filter', 'spark_plug',
@@ -17,14 +25,14 @@ const EXPENSE_CATEGORIES = [
 
 const REPEAT_UNITS = ['daily', 'weekly', 'monthly', 'yearly', 'km']
 
-export const tools: Anthropic.Tool[] = [
+export const tools: WorkerAITool[] = [
   {
     name: 'add_fuel_log',
     description:
       'Record a fuel fill-up. Use whenever the user mentions buying fuel, ' +
       'litres, fuel price, or an odometer reading at a fill-up. Compute ' +
       'pricePerLitre from total spent ÷ litres if the user gives a total.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         vehicleId: { type: 'string' },
@@ -41,7 +49,7 @@ export const tools: Anthropic.Tool[] = [
   {
     name: 'add_service_log',
     description: 'Record a service or maintenance event (oil change, brakes, etc.).',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         vehicleId: { type: 'string' },
@@ -59,7 +67,7 @@ export const tools: Anthropic.Tool[] = [
   {
     name: 'add_expense',
     description: 'Record a miscellaneous vehicle expense (parking, toll, fine, etc.).',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         vehicleId: { type: 'string' },
@@ -75,7 +83,7 @@ export const tools: Anthropic.Tool[] = [
   {
     name: 'add_reminder',
     description: 'Create a maintenance reminder by date, odometer, or both.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         vehicleId: { type: 'string' },
@@ -93,7 +101,7 @@ export const tools: Anthropic.Tool[] = [
   {
     name: 'update_vehicle',
     description: "Update the active vehicle's name, odometer, colour, or plate.",
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         vehicleId: { type: 'string' },
@@ -108,7 +116,7 @@ export const tools: Anthropic.Tool[] = [
   {
     name: 'update_settings',
     description: 'Change app settings: language, theme, currency, or units.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         language: { type: 'string', enum: ['en', 'bn'] },
@@ -123,7 +131,7 @@ export const tools: Anthropic.Tool[] = [
   {
     name: 'navigate_to',
     description: 'Navigate the app to a screen.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         screen: {
@@ -139,7 +147,7 @@ export const tools: Anthropic.Tool[] = [
     description:
       'Read recent totals for the active vehicle. The frontend executes this ' +
       'and returns the data so you can answer questions about spending/usage.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         vehicleId: { type: 'string' },
@@ -153,7 +161,7 @@ export const tools: Anthropic.Tool[] = [
     description:
       'Read recent logs of a given type for the active vehicle. The frontend ' +
       'executes this and returns the data.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         vehicleId: { type: 'string' },
