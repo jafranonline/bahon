@@ -67,6 +67,13 @@ export async function executeToolCall(
   navigate: NavigateFunction,
 ): Promise<string> {
   const p = call.input
+  // Mutating tools need a real target vehicle. A write with an empty id would
+  // silently persist a row no screen can show (every view is vehicle-scoped),
+  // producing the "saved but not on the dashboard" symptom.
+  const MUTATING = ['add_fuel_log', 'add_service_log', 'add_expense', 'add_reminder', 'update_vehicle']
+  if (MUTATING.includes(call.name) && !vehicleId) {
+    return 'Error: no active vehicle is selected, so nothing was saved.'
+  }
   try {
     switch (call.name) {
       case 'add_fuel_log': {

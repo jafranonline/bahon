@@ -357,6 +357,7 @@
     "tool_status_saved": "Saved ✓",
     "tool_status_navigating": "Opening…",
     "tool_status_updated": "Updated ✓",
+    "tool_status_failed": "Couldn't save ✕",
     "tool_add_fuel_ok": "Fuel log saved",
     "tool_add_service_ok": "Service log saved",
     "tool_add_expense_ok": "Expense saved",

@@ -154,12 +154,16 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
         if (res.toolCalls && res.toolCalls.length > 0) {
           const results: { toolUseId: string; content: string }[] = []
           for (const call of res.toolCalls) {
+            const content = stringifyResult(await onToolCall(call))
+            // Reflect the ACTUAL outcome: only show "saved"/"updated" when the
+            // executor confirmed success. A failed write surfaces as a failure
+            // line instead of a misleading confirmation.
             const token = statusToken(call.name)
             if (token) {
-              setMessages((prev) => [...prev, newMessage('tool_status', token)])
+              const ok = !/^\s*error\b/i.test(content)
+              setMessages((prev) => [...prev, newMessage('tool_status', ok ? token : 'failed')])
             }
-            const result = await onToolCall(call)
-            results.push({ toolUseId: call.id, content: stringifyResult(result) })
+            results.push({ toolUseId: call.id, content })
           }
           toolResults = results
           continue

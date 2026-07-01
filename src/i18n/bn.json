@@ -356,6 +356,7 @@
     "tool_status_saved": "সেভ হয়েছে ✓",
     "tool_status_navigating": "খুলছি…",
     "tool_status_updated": "আপডেট হয়েছে ✓",
+    "tool_status_failed": "সংরক্ষণ করা যায়নি ✕",
     "tool_add_fuel_ok": "জ্বালানি লগ সেভ হয়েছে",
     "tool_add_service_ok": "সার্ভিস লগ সেভ হয়েছে",
     "tool_add_expense_ok": "খরচ সেভ হয়েছে",
