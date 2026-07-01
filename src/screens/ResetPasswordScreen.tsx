@@ -52,7 +52,7 @@ export function ResetPasswordScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={t('reset.title')} onBack={() => navigate('/auth', { replace: true })} />
+      <TopBar title={t('reset.title')} onBack={() => navigate('/auth', { replace: true })} showMenu={false} />
       <Screen>
         {!token ? (
           <p className={styles.intro}>{t('reset.missing_token')}</p>

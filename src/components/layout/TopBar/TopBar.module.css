@@ -45,6 +45,40 @@
   white-space: nowrap;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 6px 0 4px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.brandLogo {
+  display: flex;
+  color: var(--accent);
+}
+
+.brandName {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.brand:hover {
+  background: var(--surface-1);
+}
+
+.brand:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-shadow);
+}
+
 .iconBtn {
   display: flex;
   align-items: center;

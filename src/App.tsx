@@ -1,9 +1,30 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { LoadingScreen } from './components/layout/LoadingScreen/LoadingScreen'
+import { db } from '@db/database'
 import { useSettingsStore } from '@store/settingsStore'
 import { useAuthStore } from '@store/authStore'
+
+/**
+ * Opens the Dexie database before the app renders its data screens. Dexie
+ * otherwise opens lazily on the first query, so the first `useLiveQuery` races
+ * db.open()+upgrade against React's subscription — on slower/first loads the
+ * resolving emission can be missed, leaving the screen blank until an unrelated
+ * re-render (e.g. opening the AI sheet). Pre-opening removes that race.
+ * Resolves ready on failure too, so a blocked IndexedDB never hard-blocks the UI.
+ */
+function useDbReady(): boolean {
+  const [ready, setReady] = useState(() => db.isOpen())
+  useEffect(() => {
+    if (db.isOpen()) return
+    let active = true
+    const done = () => { if (active) setReady(true) }
+    db.open().then(done, done)
+    return () => { active = false }
+  }, [])
+  return ready
+}
 
 const HomeScreen = lazy(() => import('./screens/HomeScreen').then(m => ({ default: m.HomeScreen })))
 const StatsScreen = lazy(() => import('./screens/StatsScreen').then(m => ({ default: m.StatsScreen })))
@@ -45,6 +66,13 @@ export default function App() {
     const fallback = setTimeout(() => splash.remove(), 600)
     return () => clearTimeout(fallback)
   }, [])
+
+  const dbReady = useDbReady()
+
+  // Hold the routed screens until IndexedDB is open so their live queries
+  // resolve reliably on first render (see useDbReady). The splash/LoadingScreen
+  // covers the brief wait.
+  if (!dbReady) return <LoadingScreen />
 
   return (
     <BrowserRouter>

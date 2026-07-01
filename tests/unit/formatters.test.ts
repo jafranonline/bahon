@@ -82,7 +82,11 @@ describe('date', () => {
   })
 
   it('formatRelativeDate returns Today for today', () => {
-    const today = new Date().toISOString().slice(0, 10)
+    // Build today from LOCAL calendar parts — formatRelativeDate compares
+    // against local midnight, so a UTC-derived toISOString() date would be
+    // off-by-one in the pre-dawn hours of positive-offset timezones.
+    const d = new Date()
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     expect(formatRelativeDate(today)).toBe('Today')
   })
 })

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { BottomNav } from '@components/layout/BottomNav'
 import { Screen } from '@components/layout/Screen'
+import { LoadingScreen } from '@components/layout/LoadingScreen/LoadingScreen'
 import { LogRow } from '@components/composed/LogRow'
 import { useVehicles } from '@db/queries/useVehicles'
 import { useFuelLogs, useMonthlyFuelLogs } from '@db/queries/useFuelLogs'
@@ -14,7 +15,6 @@ import { useUIStore } from '@store/uiStore'
 import { useCurrency } from '@hooks/useCurrency'
 import { useTranslation } from '@hooks/useTranslation'
 import { useUnits } from '@hooks/useUnits'
-import { useShare } from '@hooks/useShare'
 import type { FuelLog, ServiceLog, Expense } from '@/types'
 import styles from './HomeScreen.module.css'
 
@@ -30,7 +30,6 @@ const VEHICLE_ICONS: Record<string, string> = {
 export function HomeScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { share } = useShare()
   const openMenu = useUIStore((s) => s.setDrawerOpen)
   const { format: formatMoney, symbol } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
@@ -218,7 +217,9 @@ export function HomeScreen() {
   )
 
   if (!vehiclesLoaded) {
-    return <div className={styles.root} />
+    // Data still resolving — show the spinner (not a blank screen) so a slow
+    // first query never looks like a broken page.
+    return <LoadingScreen />
   }
 
   if (vehicles.length === 0) {
@@ -226,22 +227,7 @@ export function HomeScreen() {
       <div className={styles.root}>
         <TopBar
           onMenu={() => openMenu(true)}
-          left={vehicleLeft}
-          onSettings={() => navigate('/settings')}
-          actions={
-            <button
-              className={styles.shareIconBtn}
-              onClick={() => void share()}
-              aria-label={t('settings.share_app')}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <circle cx="15.5" cy="3.5" r="2" stroke="currentColor" strokeWidth="1.6"/>
-                <circle cx="15.5" cy="16.5" r="2" stroke="currentColor" strokeWidth="1.6"/>
-                <circle cx="4.5" cy="10" r="2" stroke="currentColor" strokeWidth="1.6"/>
-                <path d="M6.3 9L13.7 5M6.3 11L13.7 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              </svg>
-            </button>
-          }
+          actions={vehicleLeft}
         />
         {pickerModal}
         <Screen paddingBottom="76px">
@@ -263,22 +249,7 @@ export function HomeScreen() {
     <div className={styles.root}>
       <TopBar
         onMenu={() => openMenu(true)}
-        left={vehicleLeft}
-        onSettings={() => navigate('/settings')}
-        actions={
-          <button
-            className={styles.shareIconBtn}
-            onClick={() => void share()}
-            aria-label={t('settings.share_app')}
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <circle cx="15.5" cy="3.5" r="2" stroke="currentColor" strokeWidth="1.6"/>
-              <circle cx="15.5" cy="16.5" r="2" stroke="currentColor" strokeWidth="1.6"/>
-              <circle cx="4.5" cy="10" r="2" stroke="currentColor" strokeWidth="1.6"/>
-              <path d="M6.3 9L13.7 5M6.3 11L13.7 15" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-            </svg>
-          </button>
-        }
+        actions={vehicleLeft}
       />
       {pickerModal}
 

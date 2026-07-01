@@ -40,7 +40,7 @@ export function VerifyEmailScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={t('verify.title')} onBack={() => navigate('/', { replace: true })} />
+      <TopBar title={t('verify.title')} onBack={() => navigate('/', { replace: true })} showMenu={false} />
       <Screen>
         <div className={styles.center}>
           <span className={styles.icon} aria-hidden="true">{icon}</span>
