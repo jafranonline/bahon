@@ -16,7 +16,7 @@ interface AgentSheetProps {
 export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentSheetProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { messages, status, liveMode, sendText, startVoice, stopVoice, startLive, stopLive } =
+  const { messages, status, liveMode, sendText, stopVoice, startLive, stopLive } =
     useAgent({ context, onToolCall })
   const [draft, setDraft] = useState('')
   const listEndRef = useRef<HTMLDivElement | null>(null)
@@ -44,8 +44,8 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
     }
   }, [open, stopLive, stopVoice])
 
-  const listening = status === 'listening'
   const busy = status === 'thinking' || status === 'transcribing'
+  const hasText = draft.trim().length > 0
 
   const liveStatusText =
     status === 'transcribing' ? t('agent.live_transcribing')
@@ -57,11 +57,6 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
     if (!draft.trim()) return
     sendText(draft)
     setDraft('')
-  }
-
-  const handleMic = () => {
-    if (listening) stopVoice()
-    else void startVoice()
   }
 
   return (
@@ -124,73 +119,59 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
           <div ref={listEndRef} />
         </div>
 
-        <div className={`${styles.liveBar} ${status === 'live_listening' ? styles.liveBarReady : ''}`}>
-          {liveMode ? (
-            <>
-              <span className={styles.liveIndicator} aria-hidden="true">
-                <span className={styles.liveDot} />
-              </span>
-              <span className={styles.liveStatus} role="status">{liveStatusText}</span>
-              <button
-                className={styles.liveStop}
-                onClick={stopLive}
-                type="button"
-              >
-                {t('agent.live_stop')}
-              </button>
-            </>
-          ) : (
-            <button
-              className={styles.liveStart}
-              onClick={() => void startLive()}
-              type="button"
-              disabled={busy}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M4 12h2M9 7v10M12 4v16M15 8v8M20 12h-2" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-              </svg>
-              {t('agent.live_start')}
+        {liveMode ? (
+          // Live (hands-free) mode active — the input is replaced by the live UI.
+          <div className={`${styles.liveBar} ${status === 'live_listening' ? styles.liveBarReady : ''}`}>
+            <span className={styles.liveIndicator} aria-hidden="true">
+              <span className={styles.liveDot} />
+            </span>
+            <span className={styles.liveStatus} role="status">{liveStatusText}</span>
+            <button className={styles.liveStop} onClick={stopLive} type="button">
+              {t('agent.live_stop')}
             </button>
-          )}
-        </div>
-
-        <div className={styles.composer}>
-          <input
-            className={styles.input}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSend()
-            }}
-            placeholder={listening ? t('agent.listening') : t('agent.placeholder')}
-            aria-label={t('agent.placeholder')}
-            disabled={busy}
-          />
-          <button
-            className={`${styles.mic} ${listening ? styles.micActive : ''}`}
-            onClick={handleMic}
-            aria-label={listening ? t('agent.stop') : t('agent.tap_to_speak')}
-            aria-pressed={listening}
-            type="button"
-            disabled={busy || liveMode}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.8" />
-              <path d="M6 11a6 6 0 0012 0M12 17v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            </svg>
-          </button>
-          <button
-            className={styles.send}
-            onClick={handleSend}
-            aria-label={t('agent.send')}
-            type="button"
-            disabled={busy || !draft.trim()}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 12l16-8-6 16-2.5-6.5L4 12z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-            </svg>
-          </button>
-        </div>
+          </div>
+        ) : (
+          <div className={styles.composer}>
+            <input
+              className={styles.input}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSend()
+              }}
+              placeholder={t('agent.placeholder')}
+              aria-label={t('agent.placeholder')}
+              disabled={busy}
+            />
+            {hasText ? (
+              // Text typed → show Send.
+              <button
+                className={styles.send}
+                onClick={handleSend}
+                aria-label={t('agent.send')}
+                type="button"
+                disabled={busy}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 12l16-8-6 16-2.5-6.5L4 12z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                </svg>
+              </button>
+            ) : (
+              // Empty → show the live-voice button.
+              <button
+                className={styles.send}
+                onClick={() => void startLive()}
+                aria-label={t('agent.live_start')}
+                type="button"
+                disabled={busy}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 12h2M9 7v10M12 4v16M15 8v8M20 12h-2" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+        )}
         </>
         )}
       </section>
