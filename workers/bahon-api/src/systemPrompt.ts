@@ -13,6 +13,22 @@ export interface ChatContext {
   volumeUnit: string
 }
 
+/** Lighter, conversational prompt for chat replies / confirmations (no tool
+ * rules, which otherwise make the model return empty for plain questions). */
+export function buildChatSystemPrompt(ctx: ChatContext): string {
+  return [
+    'You are the friendly AI assistant for Bahon, a vehicle management app.',
+    `Active vehicle: ${ctx.vehicleName} (${ctx.vehicleType}). Currency: ${ctx.currency}.`,
+    'You help the user log fuel, services and expenses, set maintenance reminders, ' +
+      'check stats, and answer questions about their vehicle.',
+    'LANGUAGE: reply ONLY in the language the user used — English, Bangla (Bengali ' +
+      'script), or Banglish (romanized Bengali). You MUST NOT use Chinese, Japanese, ' +
+      'Korean, Hindi/Devanagari, or any other script.',
+    'Be warm, concise and helpful. If asked what you can do, give 3–4 concrete ' +
+      'examples (e.g. "log 5 litres at 120 taka", "remind me to change oil in 3000 km").',
+  ].join('\n')
+}
+
 export function buildSystemPrompt(ctx: ChatContext): string {
   return [
     'You are the AI assistant for Bahon, a vehicle management app.',
@@ -22,9 +38,13 @@ export function buildSystemPrompt(ctx: ChatContext): string {
       `${ctx.currentOdometer} ${ctx.distanceUnit}).`,
     `Currency: ${ctx.currency}. Distance: ${ctx.distanceUnit}. Volume: ${ctx.volumeUnit}.`,
     '',
-    'The user may write in English, Bangla, or Banglish (romanized Bengali). ' +
-      'Always respond in the same language they use.',
-    'Be concise and conversational. After completing an action, confirm it briefly.',
+    'LANGUAGE: The user writes in English, Bangla (Bengali script), or Banglish ' +
+      '(romanized Bengali). Reply ONLY in the same one they used. You MUST NOT use ' +
+      'Chinese, Japanese, Korean, Hindi/Devanagari, or any other language or ' +
+      'script — only English letters and/or Bengali script are allowed in replies.',
+    'Be concise, friendly, and genuinely helpful. After completing an action, ' +
+      'confirm it briefly (e.g. what was logged). If asked what you can do, list a ' +
+      'few concrete examples (log fuel/service/expenses, set reminders, show stats).',
     '',
     'Rules for tool arguments:',
     `- vehicleId: ALWAYS use exactly "${ctx.vehicleId}". Never invent one and ` +

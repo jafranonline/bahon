@@ -43,7 +43,7 @@ export const tools: WorkerAITool[] = [
         stationName: { type: 'string' },
         notes: { type: 'string' },
       },
-      required: ['vehicleId', 'date', 'volumeLitres', 'pricePerLitre', 'odometer'],
+      required: ['vehicleId', 'volumeLitres', 'pricePerLitre'],
     },
   },
   {
@@ -61,7 +61,7 @@ export const tools: WorkerAITool[] = [
         shopName: { type: 'string' },
         notes: { type: 'string' },
       },
-      required: ['vehicleId', 'date', 'title', 'category', 'cost'],
+      required: ['vehicleId', 'title', 'cost'],
     },
   },
   {
@@ -77,7 +77,7 @@ export const tools: WorkerAITool[] = [
         amount: { type: 'number' },
         notes: { type: 'string' },
       },
-      required: ['vehicleId', 'date', 'title', 'category', 'amount'],
+      required: ['vehicleId', 'title', 'amount'],
     },
   },
   {

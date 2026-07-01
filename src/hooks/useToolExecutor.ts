@@ -72,11 +72,17 @@ export async function executeToolCall(
       case 'add_fuel_log': {
         const volumeLitres = num(p.volumeLitres)
         const pricePerLitre = num(p.pricePerLitre)
-        const odometer = num(p.odometer)
-        if (volumeLitres === undefined || pricePerLitre === undefined || odometer === undefined) {
-          return 'Error: fuel log needs litres, price per litre and odometer.'
+        // Only litres + price are required. Odometer is optional — default it to
+        // the vehicle's current/last-known reading so the log still saves.
+        if (volumeLitres === undefined || pricePerLitre === undefined) {
+          return 'Error: a fuel log needs at least the litres and the price.'
         }
         const prevOdo = await getLastOdometer(vehicleId)
+        let odometer = num(p.odometer)
+        if (odometer === undefined || odometer <= 0) {
+          const v = await db.vehicles.get(vehicleId)
+          odometer = v && v.odometer > 0 ? v.odometer : prevOdo
+        }
         const distance = prevOdo > 0 ? odometer - prevOdo : 0
         const hasDistance = distance > 0
         const entry: Omit<FuelLog, 'id' | 'createdAt'> = {

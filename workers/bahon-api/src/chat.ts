@@ -2,10 +2,11 @@
 
 import type { Env } from './types'
 import { tools, type WorkerAITool } from './tools'
-import { buildSystemPrompt, type ChatContext } from './systemPrompt'
+import { buildSystemPrompt, buildChatSystemPrompt, type ChatContext } from './systemPrompt'
 
-// Strongest Workers AI model with function-calling + decent multilingual.
-const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
+// Full-precision Llama 3.1 70B: reliable numbers + multilingual. The fp8 3.3
+// variant produced garbage (e.g. pricePerLitre 5007250) and stray CJK tokens.
+export const MODEL = '@cf/meta/llama-3.1-70b-instruct'
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'tool'
@@ -53,6 +54,7 @@ export async function chatTurn(
   context: ChatContext,
   toolResults: ToolResultInput[] | undefined,
   env: Env,
+  model: string = MODEL,
 ): Promise<ChatResult> {
   const history = messages
     .filter((m) => m.content.trim() !== '')
@@ -72,7 +74,7 @@ export async function chatTurn(
   if (toolResults && toolResults.length > 0) {
     const resultsText = toolResults.map((t) => t.content).join('\n')
     const aiMessages: AIMessage[] = [
-      { role: 'system', content: buildSystemPrompt(context) },
+      { role: 'system', content: buildChatSystemPrompt(context) },
       ...history,
       {
         role: 'user',
@@ -82,8 +84,8 @@ export async function chatTurn(
           'or answer their question using this data. Do not call any tools.',
       },
     ]
-    const result = await run(MODEL, { messages: aiMessages })
-    return { reply: (result.response ?? '').trim() }
+    const result = await run(model, { messages: aiMessages })
+    return { reply: stripArtifacts(result.response ?? '') }
   }
 
   // First turn: offer the tools and let the model decide.
@@ -91,7 +93,7 @@ export async function chatTurn(
     { role: 'system', content: buildSystemPrompt(context) },
     ...history,
   ]
-  const result = await run(MODEL, { messages: aiMessages, tools })
+  const result = await run(model, { messages: aiMessages, tools })
 
   const lastUserText = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
 
@@ -111,20 +113,53 @@ export async function chatTurn(
     )
   }
 
+  // Tool-calling models over-eagerly fire "soft" tools on greetings/questions
+  // (e.g. "how are you" → update_settings). Only keep those when the message
+  // actually expresses that intent; otherwise fall through to a chat reply.
+  toolCalls = toolCalls.filter((c) => {
+    if (c.name === 'update_settings') return SETTINGS_KW.test(lastUserText)
+    if (c.name === 'navigate_to') return NAV_KW.test(lastUserText)
+    if (c.name === 'list_recent_logs' || c.name === 'get_stats_summary') return READ_KW.test(lastUserText)
+    return true
+  })
+
   const text = (result.response ?? '').trim()
 
   if (toolCalls.length > 0) {
     return text ? { toolCalls, reply: text } : { toolCalls }
   }
-  // Drop raw function-calling failure artifacts Llama sometimes emits as text;
-  // the frontend shows a localized "didn't understand" message when reply is empty.
-  return { reply: ARTIFACT_RE.test(text) ? '' : text }
+
+  // No tool call. Drop raw function-calling artifacts. If that leaves nothing,
+  // the model was confused by the tools for a plain chat question — retry once
+  // WITHOUT tools so it actually answers instead of returning empty.
+  let reply = ARTIFACT_RE.test(text) ? '' : text
+  if (!reply) {
+    const chat = await run(model, {
+      messages: [{ role: 'system', content: buildChatSystemPrompt(context) }, ...history],
+    })
+    reply = stripArtifacts(chat.response ?? '')
+  }
+  return { reply }
+}
+
+/** Removes function-calling artifacts and any stray non-Latin/Bengali scripts
+ * (the fp8 model occasionally emitted CJK). */
+function stripArtifacts(text: string): string {
+  const t = text.trim()
+  if (ARTIFACT_RE.test(t)) return ''
+  // Drop CJK / other unexpected scripts token-by-token, keep Latin + Bengali.
+  return t.replace(/[　-鿿가-힯ऀ-ॿ]/g, '').replace(/\s{2,}/g, ' ').trim()
 }
 
 const ARTIFACT_RE =
   /your (request|function call)[^.]*(incomplete|not sufficient)|provide more details|specify the task you need|no function/i
 
-const NULLISH = new Set(['null', 'undefined', '', 'none', 'n/a'])
+// Intent keywords (English + Banglish + Bangla) that justify a "soft" tool call.
+const SETTINGS_KW = /\b(setting|settings|theme|dark|light|mode|language|bangla|bengali|english|currency|unit|units|km|mile|litre|gallon)\b|সেটিং|ভাষা|থিম|ডার্ক|লাইট|মুদ্রা|একক/i
+const NAV_KW = /\b(go|goto|open|take me|navigate|jao|jabo|kholo|khulo|niye|screen|page|tab|dashboard)\b|যাও|খোল|খুলো|পেজ|স্ক্রিন/i
+const READ_KW = /\b(show|list|recent|latest|last|history|how much|how many|total|spend|spent|summary|stat|stats|koto|ktoto|dekha|dekhao|khoroch|kharoch|hisab)\b|দেখা|দেখাও|কত|তালিকা|খরচ|হিসাব|সারাংশ/i
+
+const NULLISH = new Set(['null', 'undefined', '', 'none', 'n/a', 'nil', 'na'])
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 // Signals (English + Banglish + Bangla) that the user actually referred to a
