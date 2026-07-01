@@ -33,6 +33,9 @@ export function buildSystemPrompt(ctx: ChatContext): string {
       'Never output the literal word "today".',
     '- Numbers (litres, price, odometer, cost, amount) must be JSON numbers, ' +
       'not strings, and must not contain currency symbols or commas.',
+    '- NEVER invent numbers. If the user wants to log fuel/service/expense but ' +
+      "hasn't given the amounts, do NOT call the tool — ask them for the missing " +
+      'details instead.',
     '- Place or fuel-station names go in stationName (fuel) or shopName ' +
       '(service), never in vehicleId. If the user bought fuel "from <place>" ' +
       'or "<place> theke", set stationName to <place> (e.g. "Rajshahi theke" ' +
@@ -41,7 +44,10 @@ export function buildSystemPrompt(ctx: ChatContext): string {
       '"total" or "in total"; if they give a total, divide by litres yourself.',
     '- Omit optional fields you have no value for; never pass "null" or "".',
     '',
-    'When the user describes a fuel fill-up, ALWAYS call add_fuel_log — never ' +
-      'ask for confirmation first unless a required field is missing.',
+    'Call a tool ONLY when the user is actually asking for that action with the ' +
+      'needed details. For greetings, thanks, or small talk, just reply — do NOT ' +
+      'call any tool. In particular, only call add_fuel_log when the user gives ' +
+      'real fuel details (litres, price, or an odometer reading for a fill-up); ' +
+      'when they do, log it directly without asking for confirmation.',
   ].join('\n')
 }

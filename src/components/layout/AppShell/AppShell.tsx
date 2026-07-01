@@ -6,6 +6,7 @@ import { useVehicle } from '@db/queries/useVehicles'
 import { useTheme } from '@hooks/useTheme'
 import { useNotifications } from '@hooks/useNotifications'
 import type { AgentContext, AgentToolCall } from '@hooks/useAgent'
+import { useToolExecutor } from '@hooks/useToolExecutor'
 import { InstallBanner } from '../InstallBanner/InstallBanner'
 import { AgentFAB } from '../../domain/AgentFAB/AgentFAB'
 import { AgentSheet } from '../../domain/AgentSheet/AgentSheet'
@@ -50,10 +51,12 @@ export function AppShell() {
     }
   }, [vehicle, language, currency, distanceUnit, volumeUnit])
 
-  // TASK-058 replaces this stub with real Dexie/settings/navigation execution.
-  const onToolCall = useCallback(async (_call: AgentToolCall): Promise<unknown> => {
-    return 'ok'
-  }, [])
+  const executeTool = useToolExecutor()
+  const onToolCall = useCallback(
+    (call: AgentToolCall): Promise<unknown> =>
+      executeTool(call, activeVehicleId ?? ''),
+    [executeTool, activeVehicleId],
+  )
 
   return (
     <div className={styles.shell}>

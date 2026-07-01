@@ -353,6 +353,15 @@
     "error_no_mic": "Couldn't access the microphone.",
     "tool_status_saved": "Saved ✓",
     "tool_status_navigating": "Opening…",
-    "tool_status_updated": "Updated ✓"
+    "tool_status_updated": "Updated ✓",
+    "tool_add_fuel_ok": "Fuel log saved",
+    "tool_add_service_ok": "Service log saved",
+    "tool_add_expense_ok": "Expense saved",
+    "tool_add_reminder_ok": "Reminder set",
+    "tool_navigate_ok": "Done",
+    "tool_update_vehicle_ok": "Vehicle updated",
+    "tool_update_settings_ok": "Settings updated",
+    "tool_error": "Couldn't complete that",
+    "no_understand": "Sorry, I didn't catch that — could you rephrase?"
   }
 }

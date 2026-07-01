@@ -130,11 +130,15 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
         if (reply) {
           apiHistoryRef.current.push({ role: 'assistant', content: reply })
           setMessages((prev) => [...prev, newMessage('assistant', reply)])
+        } else {
+          // Model produced no usable reply (misfire / filtered artifact).
+          setMessages((prev) => [...prev, newMessage('assistant', 'agent.no_understand')])
         }
         setStatus('idle')
         return
       }
       // Ran out of rounds without a final reply.
+      setMessages((prev) => [...prev, newMessage('assistant', 'agent.no_understand')])
       setStatus('idle')
     } catch {
       fail('agent.error_generic')

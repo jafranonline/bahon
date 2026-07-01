@@ -95,19 +95,34 @@ export async function chatTurn(
 
   const lastUserText = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
 
-  const toolCalls: ToolCall[] = (result.tool_calls ?? []).map((tc, i) => ({
+  let toolCalls: ToolCall[] = (result.tool_calls ?? []).map((tc, i) => ({
     id: `call_${i}`,
     name: tc.name,
     input: normalizeArgs(tc.name, tc.arguments ?? {}, context, lastUserText),
   }))
+
+  // Guard against hallucinated logs: a fuel/service/expense entry with no
+  // numbers in the user's message means the model invented the amounts. Drop
+  // those so the frontend asks the user for details instead of saving garbage.
+  const hasDigit = /\d/.test(lastUserText)
+  if (!hasDigit) {
+    toolCalls = toolCalls.filter(
+      (c) => !['add_fuel_log', 'add_service_log', 'add_expense'].includes(c.name),
+    )
+  }
 
   const text = (result.response ?? '').trim()
 
   if (toolCalls.length > 0) {
     return text ? { toolCalls, reply: text } : { toolCalls }
   }
-  return { reply: text }
+  // Drop raw function-calling failure artifacts Llama sometimes emits as text;
+  // the frontend shows a localized "didn't understand" message when reply is empty.
+  return { reply: ARTIFACT_RE.test(text) ? '' : text }
 }
+
+const ARTIFACT_RE =
+  /your (request|function call)[^.]*(incomplete|not sufficient)|provide more details|specify the task you need|no function/i
 
 const NULLISH = new Set(['null', 'undefined', '', 'none', 'n/a'])
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/

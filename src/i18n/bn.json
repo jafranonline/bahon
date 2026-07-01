@@ -352,6 +352,15 @@
     "error_no_mic": "মাইক্রোফোন ব্যবহার করা যায়নি।",
     "tool_status_saved": "সেভ হয়েছে ✓",
     "tool_status_navigating": "খুলছি…",
-    "tool_status_updated": "আপডেট হয়েছে ✓"
+    "tool_status_updated": "আপডেট হয়েছে ✓",
+    "tool_add_fuel_ok": "জ্বালানি লগ সেভ হয়েছে",
+    "tool_add_service_ok": "সার্ভিস লগ সেভ হয়েছে",
+    "tool_add_expense_ok": "খরচ সেভ হয়েছে",
+    "tool_add_reminder_ok": "রিমাইন্ডার সেট হয়েছে",
+    "tool_navigate_ok": "হয়ে গেছে",
+    "tool_update_vehicle_ok": "গাড়ি আপডেট হয়েছে",
+    "tool_update_settings_ok": "সেটিংস আপডেট হয়েছে",
+    "tool_error": "কাজটি সম্পন্ন করা যায়নি",
+    "no_understand": "দুঃখিত, বুঝতে পারিনি — একটু অন্যভাবে বলুন?"
   }
 }
