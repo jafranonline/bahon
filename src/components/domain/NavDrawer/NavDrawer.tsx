@@ -20,6 +20,13 @@ const Icons = {
       <path d="M3 10.5L11 3l8 7.5V19a1 1 0 01-1 1H14v-5h-4v5H4a1 1 0 01-1-1V10.5z" />
     </svg>
   ),
+  vehicles: (
+    <svg width="22" height="22" viewBox="0 0 22 22" {...stroke}>
+      <path d="M4 14l1.5-4.2A2 2 0 017.4 8.5h7.2a2 2 0 011.9 1.3L18 14M4 14h14M4 14v2.2M18 14v2.2" />
+      <circle cx="7.2" cy="14" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="14.8" cy="14" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+  ),
   stats: (
     <svg width="22" height="22" viewBox="0 0 22 22" {...stroke}>
       <path d="M4 19V9M11 19V4M18 19v-7" />
@@ -98,11 +105,12 @@ export function NavDrawer() {
 
   const items: NavEntry[] = [
     { to: '/', label: t('nav.home'), icon: Icons.home },
+    { to: '/vehicles', label: t('nav.vehicles'), icon: Icons.vehicles },
     { to: '/stats', label: t('nav.stats'), icon: Icons.stats },
     { to: '/reminders', label: t('nav.reminders'), icon: Icons.reminders },
-    { to: '/documents', label: t('nav.documents'), icon: Icons.documents },
-    { to: '/compare', label: t('nav.compare'), icon: Icons.compare },
     { to: '/settings', label: t('settings.title'), icon: Icons.settings },
+  ]
+  const secondaryItems: NavEntry[] = [
     { to: '/about', label: t('settings.about'), icon: Icons.about },
   ]
 
@@ -160,6 +168,24 @@ export function NavDrawer() {
         <nav className={styles.menu}>
           {items.map((it) => {
             const active = it.to === '/' ? pathname === '/' : pathname.startsWith(it.to)
+            return (
+              <button
+                key={it.to}
+                type="button"
+                className={`${styles.item} ${active ? styles.itemActive : ''}`}
+                onClick={() => go(it.to)}
+                aria-current={active ? 'page' : undefined}
+              >
+                <span className={styles.itemIcon}>{it.icon}</span>
+                <span className={styles.itemLabel}>{it.label}</span>
+              </button>
+            )
+          })}
+
+          <span className={styles.separator} role="separator" />
+
+          {secondaryItems.map((it) => {
+            const active = pathname.startsWith(it.to)
             return (
               <button
                 key={it.to}

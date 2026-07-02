@@ -168,6 +168,19 @@ export function VehicleDetailScreen() {
           </div>
         </div>
 
+        {/* Documents (scoped to this vehicle) */}
+        <button
+          type="button"
+          className={styles.docsBtn}
+          onClick={() => { setActiveVehicle(vehicle.id); navigate('/documents') }}
+        >
+          <span className={styles.docsBtnIcon} aria-hidden="true">📄</span>
+          <span className={styles.docsBtnLabel}>Documents</span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M7 4l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
         {/* Log history tabs */}
         <div className={styles.tabBar}>
           {(['all', 'fuel', 'service', 'expense'] as LogTab[]).map(t => (

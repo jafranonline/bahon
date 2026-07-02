@@ -31,6 +31,7 @@ const StatsScreen = lazy(() => import('./screens/StatsScreen').then(m => ({ defa
 const LogFuelScreen = lazy(() => import('./screens/LogFuelScreen').then(m => ({ default: m.LogFuelScreen })))
 const LogServiceScreen = lazy(() => import('./screens/LogServiceScreen').then(m => ({ default: m.LogServiceScreen })))
 const LogExpenseScreen = lazy(() => import('./screens/LogExpenseScreen').then(m => ({ default: m.LogExpenseScreen })))
+const VehiclesScreen = lazy(() => import('./screens/VehiclesScreen').then(m => ({ default: m.VehiclesScreen })))
 const AddVehicleScreen = lazy(() => import('./screens/AddVehicleScreen').then(m => ({ default: m.AddVehicleScreen })))
 const VehicleDetailScreen = lazy(() => import('./screens/VehicleDetailScreen').then(m => ({ default: m.VehicleDetailScreen })))
 const RemindersScreen = lazy(() => import('./screens/RemindersScreen').then(m => ({ default: m.RemindersScreen })))
@@ -98,6 +99,7 @@ export default function App() {
             <Route path="/log/fuel" element={<LogFuelScreen />} />
             <Route path="/log/service" element={<LogServiceScreen />} />
             <Route path="/log/expense" element={<LogExpenseScreen />} />
+            <Route path="/vehicles" element={<VehiclesScreen />} />
             <Route path="/vehicles/add" element={<AddVehicleScreen />} />
             <Route path="/vehicles/:id" element={<VehicleDetailScreen />} />
             <Route path="/reminders" element={<RemindersScreen />} />

@@ -197,6 +197,12 @@
   flex: 1;
 }
 
+.separator {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 14px;
+}
+
 /* ── Footer ── */
 .footer {
   padding: 16px 20px calc(18px + env(safe-area-inset-bottom, 0px));

@@ -234,3 +234,31 @@
 .editBtn:hover {
   background: var(--surface-2);
 }
+
+/* ── Documents entry ── */
+.docsBtn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  color: var(--text-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.docsBtn:active { background: var(--surface-1); }
+
+.docsBtnIcon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+
+.docsBtnLabel {
+  flex: 1;
+  text-align: left;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.docsBtn svg { color: var(--text-muted); flex-shrink: 0; }
