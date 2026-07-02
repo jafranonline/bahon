@@ -44,8 +44,16 @@ export function TopBar({ title, subtitle, onBack, onMenu, actions, showMenu = tr
     </button>
   )
 
-  // Leading control: a back arrow on sub-pages, otherwise the nav-drawer toggle.
-  const leading = onBack ? backButton : showMenu ? menuButton : null
+  // Leading controls: the nav-drawer toggle sits at the very left (so the
+  // sidebar is reachable from every page, before the page title), followed by a
+  // back arrow on sub-pages. `showMenu` is false only on screens rendered
+  // outside the drawer (email verify/reset).
+  const leading = (
+    <>
+      {showMenu && menuButton}
+      {onBack && backButton}
+    </>
+  )
 
   return (
     <header className={styles.topbar}>
