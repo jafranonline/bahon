@@ -39,8 +39,10 @@
   --focus-shadow: 0 0 0 3px rgba(99, 102, 241, 0.28);
 
   /* ── Typography ──────────────────────────────── */
+  /* Hind Siliguri follows Inter in the body stack so Bangla text renders in
+   * the brand face instead of whatever Bangla font the OS falls back to. */
   --font-display: 'Hind Siliguri', sans-serif;
-  --font-body:    'Inter', system-ui, sans-serif;
+  --font-body:    'Inter', 'Hind Siliguri', system-ui, sans-serif;
 
   --text-xs:   13px;
   --text-sm:   14px;

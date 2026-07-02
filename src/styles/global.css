@@ -34,6 +34,9 @@ body {
   background: var(--surface-0);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Real 400–700 weights ship in fonts.css — never let the browser fake a
+   * bold/italic; synthesized strokes are what made headings look mushy. */
+  font-synthesis: none;
 }
 
 #root {
