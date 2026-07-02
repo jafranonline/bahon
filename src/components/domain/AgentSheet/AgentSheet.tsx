@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from '@hooks/useTranslation'
 import { useAuthStore } from '@store/authStore'
 import { useAgent, type AgentContext, type AgentToolCall } from '@hooks/useAgent'
+import { ConfirmDialog } from '@components/composed/ConfirmDialog'
 import { AgentMessage } from '../AgentMessage/AgentMessage'
 import styles from './AgentSheet.module.css'
 
@@ -119,6 +120,13 @@ export function AgentSheet({ open, onClose, context, onToolCall }: AgentSheetPro
     setDraft('')
   }
 
+  // Destructive tool calls (delete/clear) pause the agent loop and block on a
+  // Modal here instead of an inline chat card, so the user can't miss or
+  // accidentally scroll past a delete confirmation.
+  const pendingDestructive = messages.find(
+    (m) => m.role === 'confirm' && m.confirm?.kind === 'destructive' && !m.confirm.done,
+  )
+
   return (
     <>
       <div
@@ -177,7 +185,12 @@ export function AgentSheet({ open, onClose, context, onToolCall }: AgentSheetPro
             <p className={styles.empty}>{signedIn ? t('agent.empty_hint') : t('agent.gate_text')}</p>
           )}
           {messages.map((m) => (
-            <AgentMessage key={m.id} message={m} onConfirm={resolveConfirm} />
+            <AgentMessage
+              key={m.id}
+              message={m}
+              onConfirm={resolveConfirm}
+              onTypingTick={() => listEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' })}
+            />
           ))}
           {(status === 'thinking' || status === 'transcribing' || status === 'scanning') && (
             <div
@@ -299,6 +312,21 @@ export function AgentSheet({ open, onClose, context, onToolCall }: AgentSheetPro
           </div>
         )}
       </section>
+
+      {pendingDestructive?.confirm && (() => {
+        const { id: messageId, confirm } = pendingDestructive
+        return (
+          <ConfirmDialog
+            open
+            title={t(confirm.titleKey)}
+            confirmLabel={t('agent.confirm_delete')}
+            cancelLabel={t('agent.cancel')}
+            busy={busy}
+            onConfirm={() => resolveConfirm(messageId, confirm, true)}
+            onCancel={() => resolveConfirm(messageId, confirm, false)}
+          />
+        )
+      })()}
     </>
   )
 }

@@ -64,6 +64,10 @@ export interface AgentMessage {
   image?: string
   /** Present on `confirm` rows. */
   confirm?: PendingConfirm
+  /** True for a freshly arrived assistant reply — plays the typewriter effect
+   * once. False/absent for anything hydrated from persisted history, so
+   * reloading the chat doesn't replay old replies. */
+  animate?: boolean
 }
 
 /** AI credit window as reported by the API (1 credit ≈ 1 character). */
@@ -178,7 +182,14 @@ function newMessage(
   content: string,
   extra?: Partial<Pick<AgentMessage, 'image' | 'confirm'>>,
 ): AgentMessage {
-  return { id: crypto.randomUUID(), role, content, ts: Date.now(), ...extra }
+  return {
+    id: crypto.randomUUID(),
+    role,
+    content,
+    ts: Date.now(),
+    ...(role === 'assistant' ? { animate: true } : {}),
+    ...extra,
+  }
 }
 
 /** Short haptic pulse (no-op where unsupported) — a "your turn" cue for
@@ -323,7 +334,9 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
   const [messages, setMessages] = useState<AgentMessage[]>(() => {
     const persisted = loadPersistedChat()
     apiHistoryRef.current = persisted.apiHistory
-    return persisted.messages
+    // Hydrated history is never "new" — strip animate so a reload doesn't
+    // replay the typewriter effect on every past reply.
+    return persisted.messages.map((m) => (m.animate ? { ...m, animate: false } : m))
   })
   const [status, setStatus] = useState<AgentStatus>('idle')
   const [liveMode, setLiveMode] = useState(false)

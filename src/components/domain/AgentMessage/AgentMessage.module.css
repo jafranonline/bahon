@@ -124,12 +124,6 @@
   border-color: var(--accent);
 }
 
-.confirmBtnDanger {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: var(--surface-0);
-}
-
 .confirmDone {
   margin: 0;
   font-size: var(--text-xs);

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useTranslation } from '@hooks/useTranslation'
 import type { AgentMessage as AgentMessageType, PendingConfirm } from '@hooks/useAgent'
 import styles from './AgentMessage.module.css'
@@ -6,11 +7,48 @@ interface AgentMessageProps {
   message: AgentMessageType
   /** Resolve a confirm card. Only used for `confirm` rows. */
   onConfirm?: (messageId: string, confirm: PendingConfirm, approved: boolean) => void
+  /** Called on every reveal frame while a reply is typing, so the chat can
+   * keep the growing bubble scrolled into view. */
+  onTypingTick?: () => void
+}
+
+const REDUCED_MOTION = () =>
+  typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+/** Reveals `text` character-by-character over an adaptive duration (capped so
+ * long replies don't take forever). Runs once per mount — callers control
+ * replay by mounting a fresh instance (see `key` in the assistant bubble). */
+function useTypewriter(text: string, enabled: boolean, onTick?: () => void): string {
+  const [count, setCount] = useState(enabled && !REDUCED_MOTION() ? 0 : text.length)
+
+  useEffect(() => {
+    if (!enabled || REDUCED_MOTION()) return
+    let raf = 0
+    const duration = Math.min(Math.max(text.length * 14, 150), 2200)
+    const start = performance.now()
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1)
+      setCount(Math.round(progress * text.length))
+      onTick?.()
+      if (progress < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per mount by design
+  }, [])
+
+  return text.slice(0, count)
+}
+
+/** Assistant bubble text with the typewriter effect applied when `animate`. */
+function AssistantText({ text, animate, onTypingTick }: { text: string; animate: boolean; onTypingTick?: () => void }) {
+  const shown = useTypewriter(text, animate, onTypingTick)
+  return <span>{shown}</span>
 }
 
 /** Renders a single chat entry: a user/assistant bubble, a centred tool-status
  * line, or a Confirm/Cancel card for destructive or image-extracted actions. */
-export function AgentMessage({ message, onConfirm }: AgentMessageProps) {
+export function AgentMessage({ message, onConfirm, onTypingTick }: AgentMessageProps) {
   const { t } = useTranslation()
 
   if (message.role === 'tool_status') {
@@ -20,6 +58,11 @@ export function AgentMessage({ message, onConfirm }: AgentMessageProps) {
       </div>
     )
   }
+
+  // Destructive confirms are shown as a blocking Modal by AgentSheet instead of
+  // an inline bubble — a scrollable chat card is too easy to miss or dismiss
+  // by accident for a delete/clear-data action.
+  if (message.role === 'confirm' && message.confirm?.kind === 'destructive') return null
 
   if (message.role === 'confirm' && message.confirm) {
     const c = message.confirm
@@ -51,10 +94,10 @@ export function AgentMessage({ message, onConfirm }: AgentMessageProps) {
             </button>
             <button
               type="button"
-              className={`${styles.confirmBtn} ${c.kind === 'destructive' ? styles.confirmBtnDanger : ''}`}
+              className={styles.confirmBtn}
               onClick={() => onConfirm?.(message.id, c, true)}
             >
-              {t(c.kind === 'destructive' ? 'agent.confirm_delete' : 'agent.confirm_save')}
+              {t('agent.confirm_save')}
             </button>
           </div>
         )}
@@ -71,7 +114,18 @@ export function AgentMessage({ message, onConfirm }: AgentMessageProps) {
         {message.image && (
           <img className={styles.thumb} src={message.image} alt={t('agent.image_sent')} />
         )}
-        {text && <span>{text}</span>}
+        {text && (
+          isUser
+            ? <span>{text}</span>
+            : (
+              <AssistantText
+                key={message.id}
+                text={text}
+                animate={message.animate === true}
+                onTypingTick={onTypingTick}
+              />
+            )
+        )}
       </div>
     </div>
   )
