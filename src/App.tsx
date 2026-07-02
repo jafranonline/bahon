@@ -58,16 +58,26 @@ export default function App() {
     void useAuthStore.getState().loadMe()
   }, [])
 
+  const dbReady = useDbReady()
+
+  // Keep the instant-paint splash (from index.html) up until the DB is open and
+  // the app is about to render real content, so the initial load never flashes
+  // a bare white screen or spinner. An absolute fallback removes it even if
+  // readiness never flips, so the splash can't get stuck.
   useEffect(() => {
     const splash = document.getElementById('splash')
     if (!splash) return
-    splash.classList.add('hidden')
-    splash.addEventListener('transitionend', () => splash.remove(), { once: true })
-    const fallback = setTimeout(() => splash.remove(), 600)
+    const hide = () => {
+      splash.classList.add('hidden')
+      splash.addEventListener('transitionend', () => splash.remove(), { once: true })
+    }
+    const fallback = setTimeout(() => splash.remove(), 4000)
+    if (dbReady) {
+      hide()
+      return () => clearTimeout(fallback)
+    }
     return () => clearTimeout(fallback)
-  }, [])
-
-  const dbReady = useDbReady()
+  }, [dbReady])
 
   // Hold the routed screens until IndexedDB is open so their live queries
   // resolve reliably on first render (see useDbReady). The splash/LoadingScreen
