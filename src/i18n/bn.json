@@ -251,10 +251,18 @@
     "import_success": "ডেটা আমদানি হয়েছে। পুনরায় লোড হচ্ছে…",
     "import_error": "অবৈধ ব্যাকআপ ফাইল। আবার চেষ্টা করুন।",
     "feedback": "মতামত পাঠান",
+    "tab_general": "সাধারণ",
+    "tab_units": "একক",
+    "tab_data": "ডেটা",
+    "section_display": "প্রদর্শন",
+    "section_units": "একক ও মুদ্রা",
+    "section_backup": "ব্যাকআপ",
+    "section_app": "অ্যাপ",
+    "export_csv": "রপ্তানি (CSV)",
     "themes": {
       "light": "আলো",
       "dark": "অন্ধকার",
-      "system": "সিস্টেম ডিফল্ট"
+      "system": "সিস্টেম"
     },
     "languages": {
       "en": "English",

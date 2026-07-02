@@ -252,10 +252,18 @@
     "import_success": "Data imported. Reloading…",
     "import_error": "Invalid backup file. Please try again.",
     "feedback": "Send feedback",
+    "tab_general": "General",
+    "tab_units": "Units",
+    "tab_data": "Data",
+    "section_display": "Display",
+    "section_units": "Units & currency",
+    "section_backup": "Backup",
+    "section_app": "App",
+    "export_csv": "Export (CSV)",
     "themes": {
       "light": "Light",
       "dark": "Dark",
-      "system": "System default"
+      "system": "System"
     },
     "languages": {
       "en": "English",
