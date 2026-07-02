@@ -13,6 +13,7 @@ import { authRoutes } from './auth/routes'
 import { syncRoutes } from './sync/routes'
 import { adminRoutes } from './admin/routes'
 import { requireAuth } from './middleware/requireAuth'
+import { requirePro } from './middleware/requirePro'
 import { requireCredits, type CreditVars } from './middleware/requireCredits'
 import { debitCredits, getCreditState } from './credits'
 import { getSubscription } from './db'
@@ -57,7 +58,9 @@ app.get('/api/credits', requireAuth, async (c) => {
   return c.json({ credits })
 })
 
-app.post('/api/transcribe', requireAuth, requireCredits, async (c) => {
+// Voice (live/hands-free mode) is Pro-only; text chat and vision stay open to
+// every signed-in user, metered by credits.
+app.post('/api/transcribe', requireAuth, requirePro, requireCredits, async (c) => {
   const form = await c.req.formData()
   const audio = form.get('audio') as unknown as Blob | string | null
   const lang = String(form.get('lang') ?? 'en')
@@ -65,9 +68,10 @@ app.post('/api/transcribe', requireAuth, requireCredits, async (c) => {
     return c.json({ error: 'missing_audio' }, 400)
   }
   const transcript = await transcribe(await audio.arrayBuffer(), lang, c.env)
-  // Voice is metered by its transcript length (1 credit ≈ 1 character).
-  const balance = await debitCredits(c.env.DB, c.get('userId'), transcript.length)
-  return c.json({ transcript, credits: { ...c.get('credits'), balance } })
+  // Not debited here: the transcript is immediately resent as the next
+  // /api/chat message, which already bills it as input characters. Charging
+  // here too would make speaking a message cost ~2x what typing it costs.
+  return c.json({ transcript, credits: c.get('credits') })
 })
 
 app.post('/api/vision', requireAuth, requireCredits, async (c) => {

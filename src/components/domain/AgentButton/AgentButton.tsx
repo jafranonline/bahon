@@ -1,24 +1,22 @@
 import { useUIStore } from '@store/uiStore'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useSettingsStore } from '@store/settingsStore'
-import { useAuthStore } from '@store/authStore'
 import { useTranslation } from '@hooks/useTranslation'
 import styles from './AgentButton.module.css'
 
 /**
  * Header AI-assistant button — opens the shared AgentSheet. Used on screens that
  * have no BottomNav (the log/add forms) so the assistant is reachable there too.
- * Mirrors BottomNav's enable rule: needs an active vehicle; signed-in users can
- * hide it via settings, anonymous users always see it (as a sign-in prompt).
+ * Mirrors BottomNav's enable rule: needs an active vehicle and the "show AI
+ * assistant" setting on.
  */
 export function AgentButton() {
   const { t } = useTranslation()
   const setAgentOpen = useUIStore((s) => s.setAgentOpen)
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const showAgentButton = useSettingsStore((s) => s.showAgentButton ?? true)
-  const signedIn = useAuthStore((s) => s.status === 'authenticated')
 
-  const agentEnabled = Boolean(activeVehicleId) && (signedIn ? showAgentButton : true)
+  const agentEnabled = Boolean(activeVehicleId) && showAgentButton
   if (!agentEnabled) return null
 
   return (

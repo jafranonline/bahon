@@ -50,14 +50,14 @@
 .row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
+  justify-content: flex-start;
+  padding: 12px 18px;
   min-height: 56px;
   width: 100%;
   background: none;
   border: none;
   cursor: pointer;
-  gap: var(--gap-sm);
+  gap: var(--gap-md);
   color: var(--text-secondary);
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -67,11 +67,36 @@
   background: var(--surface-1);
 }
 
+.rowIconWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--bg-accent-subtle);
+  color: var(--text-accent);
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  text-align: left;
+}
+
 .rowLabel {
   font-size: var(--text-md);
   color: var(--text-primary);
   text-align: left;
   flex: 1;
+}
+
+.rowHint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .selectRow {
@@ -138,6 +163,119 @@
 .fuelPriceInput:focus {
   border-color: var(--border-accent);
   box-shadow: var(--focus-shadow);
+}
+
+.syncCard {
+  margin: 0 18px;
+  padding: var(--gap-lg);
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+}
+
+.syncHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+}
+
+.syncIconWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.syncIconOk {
+  background: var(--bg-success);
+  color: var(--text-success);
+}
+
+.syncIconError {
+  background: var(--bg-danger);
+  color: var(--text-danger);
+}
+
+.syncIconActive {
+  background: var(--bg-accent-subtle);
+  color: var(--text-accent);
+  animation: syncSpin 1.4s linear infinite;
+}
+
+@keyframes syncSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.syncInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.syncTitle {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.syncMeta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.progressTrack {
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  width: 40%;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  animation: syncProgress 1.1s ease-in-out infinite;
+}
+
+@keyframes syncProgress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+.syncLocked {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+}
+
+.syncCta {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.syncCta:active {
+  background: var(--accent-dark);
 }
 
 .version {

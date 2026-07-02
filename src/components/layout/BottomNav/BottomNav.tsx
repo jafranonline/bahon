@@ -42,12 +42,10 @@ export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount
   const showAgentButton = useSettingsStore((s) => s.showAgentButton ?? true)
   const signedIn = useAuthStore((s) => s.status === 'authenticated')
 
-  // The AI assistant is vehicle-scoped and available to every signed-in user
-  // (metered by credits server-side). Signed-in users can hide the button via
-  // settings; anonymous users always see it (as a sign-in prompt) so long as a
-  // vehicle is active.
+  // The AI assistant is vehicle-scoped and available to every user (anonymous
+  // users see it as a sign-in prompt). Anyone can hide the button via settings.
   const hasVehicle = Boolean(activeVehicleId)
-  const agentEnabled = hasVehicle && (signedIn ? showAgentButton : true)
+  const agentEnabled = hasVehicle && showAgentButton
   const centerAgent = agentEnabled && signedIn // AI owns the centre, "+" demoted left
   const cornerAgent = agentEnabled && !signedIn // "+" stays centre, AI floats corner
 

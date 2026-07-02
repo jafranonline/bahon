@@ -15,43 +15,10 @@
     <meta name="apple-mobile-web-app-title" content="Bahon" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>Bahon | বাহন</title>
-    <style>
-      /* Instant-paint splash: covers the initial JS/IndexedDB/chunk-load window
-         so the app never shows a bare white screen on first load. App.tsx hides
-         it (adds .hidden, then removes it) once React has mounted. */
-      #splash {
-        position: fixed; inset: 0; z-index: 99999;
-        background: linear-gradient(145deg, #6366F1 0%, #4338CA 100%);
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        gap: 24px;
-        transition: opacity 0.35s ease;
-      }
-      #splash.hidden { opacity: 0; pointer-events: none; }
-      #splash-logo { animation: splash-spin 1.6s ease-in-out infinite; }
-      @keyframes splash-spin {
-        0%, 100% { transform: rotate(0deg); }
-        50% { transform: rotate(8deg); }
-      }
-      #splash-title {
-        color: #fff; font-family: system-ui, sans-serif;
-        font-size: 28px; font-weight: 700; letter-spacing: 0.04em;
-        opacity: 0.95; margin: 0;
-      }
-      #splash-sub {
-        color: rgba(255,255,255,0.65); font-family: system-ui, sans-serif;
-        font-size: 14px; font-weight: 400; letter-spacing: 0.08em;
-        margin: -18px 0 0; text-transform: uppercase;
-      }
-      #splash-badge {
-        position: absolute; bottom: 32px;
-        color: rgba(255,255,255,0.4); font-family: system-ui, sans-serif;
-        font-size: 12px; font-weight: 500; letter-spacing: 0.05em;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        #splash-logo { animation: none; }
-      }
-    </style>
+    <!-- Same-origin file, not an inline <style> block: the CSP in
+         public/_headers is style-src 'self' with no 'unsafe-inline', which
+         silently drops inline <style> tags. -->
+    <link rel="stylesheet" href="/splash.css" />
   </head>
   <body>
     <div id="splash" aria-hidden="true">

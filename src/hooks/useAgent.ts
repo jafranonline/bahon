@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { apiFetch } from '@api/client'
 import { createVAD, type VADHandle } from '@utils/vad'
+import { useAuthStore } from '@store/authStore'
 
 export interface AgentContext {
   vehicleId: string
@@ -327,6 +328,8 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
   const [status, setStatus] = useState<AgentStatus>('idle')
   const [liveMode, setLiveMode] = useState(false)
   const [credits, setCredits] = useState<CreditInfo | null>(null)
+  // Voice (live/hands-free mode) is Pro-only; text chat stays free+pro.
+  const isPro = useAuthStore((s) => s.entitlements?.pro ?? false)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -603,6 +606,10 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
 
   const startVoice = useCallback(async () => {
     if (!context) return
+    if (!isPro) {
+      fail('agent.pro_required')
+      return
+    }
     if (!navigator.onLine) {
       fail('agent.error_offline')
       return
@@ -644,7 +651,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
     } catch {
       fail('agent.error_no_mic')
     }
-  }, [context, fail, failNoCredits, sendText])
+  }, [context, isPro, fail, failNoCredits, sendText])
 
   const stopVoice = useCallback(() => {
     const recorder = mediaRecorderRef.current
@@ -733,6 +740,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
   const startLive = useCallback(async () => {
     const context = contextRef.current
     if (!context || liveModeRef.current) return
+    if (!isPro) { fail('agent.pro_required'); return }
     if (!navigator.onLine) { fail('agent.error_offline'); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -768,7 +776,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
       setLiveMode(false)
       fail('agent.error_no_mic')
     }
-  }, [fail, armIdleTimer, clearIdleTimer])
+  }, [isPro, fail, armIdleTimer, clearIdleTimer])
 
   const reset = useCallback(() => {
     stopVoice()

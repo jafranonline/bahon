@@ -1,10 +1,12 @@
 // AI usage credits — single source of truth for granting, rolling, and
 // debiting the per-user credit balance that meters every AI endpoint.
 //
-// Model: 1 credit ≈ 1 character of AI traffic (voice transcript characters,
-// chat input characters, reply characters, vision extract characters).
-//   Free users  → one-time grant (default 500) valid for 30 days.
-//   Pro users   → a daily grant (default 500) that resets every UTC day.
+// Model: 1 credit ≈ 1 character of AI traffic (chat input characters, reply
+// characters, vision extract characters). Voice is not billed separately at
+// /api/transcribe — the transcript is resent as the next chat message, which
+// bills it as input characters, so speaking and typing cost the same.
+//   Free users  → one-time grant (default 5000) valid for 30 days.
+//   Pro users   → a daily grant (default 10000) that resets every UTC day.
 // Limits are configurable via wrangler [vars] without a code change:
 //   FREE_AI_CREDITS, FREE_AI_CREDITS_VALIDITY_DAYS, PRO_AI_DAILY_CREDITS.
 
@@ -40,7 +42,7 @@ function intVar(value: string | undefined, fallback: number): number {
 }
 
 export function freeCredits(env: Env): number {
-  return intVar(env.FREE_AI_CREDITS, 500)
+  return intVar(env.FREE_AI_CREDITS, 5000)
 }
 
 export function freeValidityDays(env: Env): number {
@@ -48,7 +50,7 @@ export function freeValidityDays(env: Env): number {
 }
 
 export function proDailyCredits(env: Env): number {
-  return intVar(env.PRO_AI_DAILY_CREDITS, 500)
+  return intVar(env.PRO_AI_DAILY_CREDITS, 10000)
 }
 
 function nextUtcMidnight(now: Date): string {

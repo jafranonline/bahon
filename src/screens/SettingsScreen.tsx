@@ -6,6 +6,7 @@ import { Screen } from '@components/layout/Screen'
 import { Select } from '@components/primitives/Select'
 import { SegmentedControl } from '@components/primitives/SegmentedControl'
 import { Toggle } from '@components/primitives/Toggle'
+import { Button } from '@components/primitives/Button'
 import { useSettingsStore } from '@store/settingsStore'
 import { useAuthStore } from '@store/authStore'
 import { useSyncStore } from '@store/syncStore'
@@ -47,6 +48,16 @@ const EFFICIENCY_OPTIONS: { value: EfficiencyUnit; label: string }[] = [
   { value: 'MPG', label: 'MPG' },
 ]
 
+function formatLastSynced(iso: string | null, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  if (!iso) return t('sync.never')
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (minutes < 1) return t('sync.just_now')
+  if (minutes < 60) return t('sync.minutes_ago', { count: minutes })
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return t('sync.hours_ago', { count: hours })
+  return new Date(iso).toLocaleString()
+}
+
 export function SettingsScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -67,7 +78,7 @@ export function SettingsScreen() {
   const showAgentButton = useSettingsStore((s) => s.showAgentButton ?? true)
   const update = useSettingsStore((s) => s.update)
 
-  const { exportAsCSV, exportAsJSON, importFromJSON } = useExport()
+  const { exportAsJSON, importFromJSON } = useExport()
   const reminderCount = useReminderCount()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -86,12 +97,6 @@ export function SettingsScreen() {
   function setLanguage(lang: Language) {
     update({ language: lang })
     void i18n.changeLanguage(lang)
-  }
-
-  async function handleExport() {
-    await exportAsCSV('fuel')
-    await exportAsCSV('service')
-    await exportAsCSV('expenses')
   }
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -150,21 +155,17 @@ export function SettingsScreen() {
               </div>
             </div>
 
-            {signedIn && (
-              <>
-                <p className={styles.sectionLabel}>{t('agent.title')}</p>
-                <div className={styles.section}>
-                  <div className={styles.tabRow}>
-                    <span className={styles.rowLabel}>{t('settings.show_agent_button')}</span>
-                    <Toggle
-                      checked={showAgentButton}
-                      onChange={(v) => update({ showAgentButton: v })}
-                      aria-label={t('settings.show_agent_button')}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+            <p className={styles.sectionLabel}>{t('agent.title')}</p>
+            <div className={styles.section}>
+              <div className={styles.tabRow}>
+                <span className={styles.rowLabel}>{t('settings.show_agent_button')}</span>
+                <Toggle
+                  checked={showAgentButton}
+                  onChange={(v) => update({ showAgentButton: v })}
+                  aria-label={t('settings.show_agent_button')}
+                />
+              </div>
+            </div>
           </>
         )}
 
@@ -220,55 +221,101 @@ export function SettingsScreen() {
 
         {tab === 'data' && (
           <>
-            {signedIn && isPro && (
-              <>
-                <p className={styles.sectionLabel}>{t('sync.title')}</p>
-                <div className={styles.section}>
+            <p className={styles.sectionLabel}>{t('sync.title')}</p>
+            <div className={styles.syncCard}>
+              {signedIn && isPro ? (
+                <>
+                  <div className={styles.syncHeader}>
+                    <div
+                      className={`${styles.syncIconWrap} ${
+                        syncStatus === 'error'
+                          ? styles.syncIconError
+                          : syncStatus === 'syncing'
+                            ? styles.syncIconActive
+                            : lastSyncedAt
+                              ? styles.syncIconOk
+                              : ''
+                      }`}
+                      aria-hidden="true"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path
+                          d="M14.5 15.5H6a3.5 3.5 0 0 1-.5-6.96A4.5 4.5 0 0 1 14 7.05 3.5 3.5 0 0 1 14.5 15.5Z"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                    <div className={styles.syncInfo}>
+                      <span className={styles.syncTitle}>
+                        {syncStatus === 'syncing'
+                          ? t('sync.syncing')
+                          : syncStatus === 'error'
+                            ? t('sync.error')
+                            : t('sync.synced')}
+                      </span>
+                      <span className={styles.syncMeta}>
+                        {t('sync.last_synced')}: {formatLastSynced(lastSyncedAt, t)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className={styles.progressTrack}>
+                    {syncStatus === 'syncing' && <div className={styles.progressBar} />}
+                  </div>
+
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    loading={syncStatus === 'syncing'}
+                    onClick={() => void syncNow()}
+                  >
+                    {t('sync.sync_now')}
+                  </Button>
+                </>
+              ) : (
+                <div className={styles.syncLocked}>
+                  <div className={styles.syncIconWrap} aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <rect x="5" y="9" width="10" height="7.5" rx="1.75" stroke="currentColor" strokeWidth="1.6" />
+                      <path d="M7 9V6.75a3 3 0 0 1 6 0V9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <div className={styles.syncInfo}>
+                    <span className={styles.syncTitle}>
+                      {signedIn ? t('sync.pro_required') : t('sync.sign_in_required')}
+                    </span>
+                  </div>
                   <button
                     type="button"
-                    className={styles.row}
-                    onClick={() => void syncNow()}
-                    disabled={syncStatus === 'syncing'}
+                    className={styles.syncCta}
+                    onClick={() => navigate(signedIn ? '/account' : '/auth')}
                   >
-                    <span className={styles.rowLabel}>
-                      {syncStatus === 'syncing' ? t('sync.syncing') : t('sync.sync_now')}
-                    </span>
-                    <span className={styles.rowValue}>
-                      {syncStatus === 'error'
-                        ? t('sync.error')
-                        : lastSyncedAt
-                          ? new Date(lastSyncedAt).toLocaleString()
-                          : t('sync.never')}
-                    </span>
+                    {signedIn ? t('sync.upgrade_cta') : t('sync.sign_in_cta')}
                   </button>
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
             <p className={styles.sectionLabel}>{t('settings.section_backup')}</p>
             <div className={styles.section}>
               <button
                 type="button"
                 className={styles.row}
-                onClick={() => void handleExport()}
-              >
-                <span className={styles.rowLabel}>{t('settings.export_csv')}</span>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                  <path d="M9 3v9M5 8l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M3 14h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
-              </button>
-              <div className={styles.divider} />
-              <button
-                type="button"
-                className={styles.row}
                 onClick={() => void exportAsJSON()}
               >
-                <span className={styles.rowLabel}>{t('settings.export_json')}</span>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                  <path d="M9 3v9M5 8l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M3 14h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
+                <span className={styles.rowIconWrap} aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M9 3v9M5 8l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 14h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span className={styles.rowText}>
+                  <span className={styles.rowLabel}>{t('settings.export_json')}</span>
+                  <span className={styles.rowHint}>{t('settings.export_json_hint')}</span>
+                </span>
               </button>
               <div className={styles.divider} />
               <button
@@ -276,11 +323,16 @@ export function SettingsScreen() {
                 className={styles.row}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <span className={styles.rowLabel}>{t('settings.import_json')}</span>
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                  <path d="M9 15V6M5 10l4-4 4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M3 14h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-                </svg>
+                <span className={styles.rowIconWrap} aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M9 15V6M5 10l4-4 4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 14h12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <span className={styles.rowText}>
+                  <span className={styles.rowLabel}>{t('settings.import_json')}</span>
+                  <span className={styles.rowHint}>{t('settings.import_json_hint')}</span>
+                </span>
               </button>
               <input
                 ref={fileInputRef}
