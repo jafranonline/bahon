@@ -440,6 +440,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
 
         if (res.toolCalls && res.toolCalls.length > 0) {
           const results: { toolUseId: string; content: string }[] = []
+          const asks: string[] = []
           for (const call of res.toolCalls) {
             // Destructive tools pause the loop and ask the user first.
             if (CONFIRM_REQUIRED.has(call.name)) {
@@ -453,6 +454,14 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
               return
             }
             const content = stringifyResult(await onToolCall(call))
+            // "ask:" = the executor needs a detail from the USER (e.g. fuel
+            // price). Collect it to show directly — feeding it to the model as
+            // a "completed" result made it wrongly confirm success, so the
+            // user's question was never surfaced.
+            if (content.startsWith('ask:')) {
+              asks.push(content.slice(4).trim())
+              continue
+            }
             // Reflect the ACTUAL outcome: only show a status when the executor
             // confirmed "ok". Needs-info (e.g. missing litres) and read results
             // show no status line; a real failure shows the failure line.
@@ -462,6 +471,15 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
               else if (isError(content)) setMessages((prev) => [...prev, newMessage('tool_status', 'failed')])
             }
             results.push({ toolUseId: call.id, content })
+          }
+          if (asks.length > 0) {
+            // End the turn on the question — the saved entries already showed
+            // their status chips, and the user's answer continues the thread.
+            const question = [...new Set(asks)].join('\n')
+            apiHistoryRef.current.push({ role: 'assistant', content: question })
+            setMessages((prev) => [...prev, newMessage('assistant', question)])
+            setStatus('idle')
+            return
           }
           toolResults = results
           continue
@@ -537,7 +555,13 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
       try {
         const content = stringifyResult(await onToolCall(confirm.call))
         const token = statusToken(confirm.call.name)
-        if (token && isOk(content)) {
+        if (content.startsWith('ask:')) {
+          // Executor needs a missing detail (e.g. no price on the receipt and
+          // none saved) — ask the user instead of reporting a failure.
+          const question = content.slice(4).trim()
+          apiHistoryRef.current.push({ role: 'assistant', content: question })
+          setMessages((prev) => [...prev, newMessage('assistant', question)])
+        } else if (token && isOk(content)) {
           setMessages((prev) => [...prev, newMessage('tool_status', token)])
         } else {
           setMessages((prev) => [

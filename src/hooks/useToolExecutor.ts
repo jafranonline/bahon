@@ -97,8 +97,25 @@ export async function executeToolCall(
           num(p.totalCost),
           lockedPrice,
         )
-        if ('ask' in resolved) return resolved.ask
+        // "ask:" marks a needs-info question — useAgent shows it to the user
+        // directly instead of round-tripping it through the model (which would
+        // read it as a completed action and wrongly confirm success).
+        if ('ask' in resolved) return `ask:${resolved.ask}`
         const { volumeLitres, pricePerLitre, totalCost } = resolved
+        // Learn the price: when the user actually stated it (explicit price, or
+        // derivable from litres+total), save it as this fuel type's price so
+        // future bare "N taka" logs resolve without asking again.
+        const statedPrice =
+          num(p.pricePerLitre) ??
+          (num(p.volumeLitres) !== undefined && num(p.totalCost) !== undefined
+            ? pricePerLitre
+            : undefined)
+        if (vehicleForFuel && statedPrice && statedPrice > 0 && statedPrice !== lockedPrice) {
+          const prices = useSettingsStore.getState().fuelPrices ?? {}
+          useSettingsStore.getState().update({
+            fuelPrices: { ...prices, [vehicleForFuel.fuelType as FuelType]: round(statedPrice, 2) },
+          })
+        }
         const prevOdo = await getLastOdometer(vehicleId)
         let odometer = num(p.odometer)
         if (odometer === undefined || odometer <= 0) {

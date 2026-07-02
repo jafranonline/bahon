@@ -115,9 +115,11 @@ export async function chatTurn(
       {
         role: 'user',
         content:
-          `The requested action(s) were completed with these results:\n${resultsText}\n\n` +
-          'Reply to the user briefly in their language — confirm what was done, ' +
-          'or answer their question using this data. Do not call any tools.',
+          `The requested action(s) finished with these results:\n${resultsText}\n\n` +
+          'Reply to the user briefly in their language. Confirm ONLY what a ' +
+          'result shows actually succeeded ("ok"); if a result is an error or ' +
+          'a question, relay that instead of claiming success. Answer data ' +
+          'questions using the results. Do not call any tools.',
       },
     ]
     const result = await run(model, { messages: aiMessages })
@@ -189,6 +191,21 @@ export async function chatTurn(
     })
     // Drop any call we couldn't resolve a name for (malformed model output).
     .filter((tc) => tc.name !== '')
+
+  // The model sometimes emits the same call several times in one response
+  // (observed: 3x add_reminder for one request). Executing every copy writes
+  // duplicate records, so collapse exact repeats — and for reminders, repeats
+  // of the same title regardless of the other fields.
+  const seen = new Set<string>()
+  toolCalls = toolCalls.filter((c) => {
+    const key =
+      c.name === 'add_reminder'
+        ? `add_reminder:${String((c.input as { title?: unknown }).title ?? '')}`
+        : `${c.name}:${JSON.stringify(c.input)}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
 
   // Guard against hallucinated logs: a fuel/service/expense entry with no
   // numbers in the user's message means the model invented the amounts. Drop

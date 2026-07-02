@@ -82,6 +82,12 @@ export function buildSystemPrompt(ctx: ChatContext): string {
       'total". A bare "N taka of fuel" is a TOTAL — pass it as totalCost. Place ' +
       'or station names go in stationName (fuel) / shopName (service), never in ' +
       'vehicleId (e.g. "Rajshahi theke" → stationName "Rajshahi").',
+    '- If ONE message reports SEVERAL separate purchases or events (e.g. ' +
+      '"petrol for 200 AND octane for 1000"), call the tool once PER item in ' +
+      'the same response — never merge them into one entry and never drop one. ' +
+      'Put the fuel variant (petrol/octane/diesel) in notes.',
+    '- Each requested action gets exactly ONE tool call — never repeat the ' +
+      'same call twice.',
     '- Omit optional fields you have no value for; never pass "null" or "".',
     '',
     'Deleting or clearing data is allowed — call delete_recent_log, ' +
