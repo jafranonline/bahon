@@ -55,6 +55,13 @@ const Icons = {
       <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1Z" />
     </svg>
   ),
+  help: (
+    <svg width="22" height="22" viewBox="0 0 22 22" {...stroke}>
+      <circle cx="11" cy="11" r="8" />
+      <path d="M8.5 8.5a2.5 2.5 0 014.9.8c0 1.7-2.4 2-2.4 3.5" />
+      <circle cx="11" cy="15.3" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  ),
   about: (
     <svg width="22" height="22" viewBox="0 0 22 22" {...stroke}>
       <circle cx="11" cy="11" r="8" />
@@ -111,6 +118,7 @@ export function NavDrawer() {
     { to: '/settings', label: t('settings.title'), icon: Icons.settings },
   ]
   const secondaryItems: NavEntry[] = [
+    { to: '/help', label: t('help.title'), icon: Icons.help },
     { to: '/about', label: t('settings.about'), icon: Icons.about },
   ]
 

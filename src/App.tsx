@@ -37,6 +37,7 @@ const VehicleDetailScreen = lazy(() => import('./screens/VehicleDetailScreen').t
 const RemindersScreen = lazy(() => import('./screens/RemindersScreen').then(m => ({ default: m.RemindersScreen })))
 const AddReminderScreen = lazy(() => import('./screens/AddReminderScreen').then(m => ({ default: m.AddReminderScreen })))
 const AboutScreen = lazy(() => import('./screens/AboutScreen').then(m => ({ default: m.AboutScreen })))
+const HelpScreen = lazy(() => import('./screens/HelpScreen').then(m => ({ default: m.HelpScreen })))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen').then(m => ({ default: m.SettingsScreen })))
 const CompareScreen = lazy(() => import('./screens/CompareScreen').then(m => ({ default: m.CompareScreen })))
 const DocumentsScreen = lazy(() => import('./screens/DocumentsScreen').then(m => ({ default: m.DocumentsScreen })))
@@ -104,6 +105,7 @@ export default function App() {
             <Route path="/vehicles/:id" element={<VehicleDetailScreen />} />
             <Route path="/reminders" element={<RemindersScreen />} />
             <Route path="/reminders/add" element={<AddReminderScreen />} />
+            <Route path="/help" element={<HelpScreen />} />
             <Route path="/about" element={<AboutScreen />} />
             <Route path="/settings" element={<SettingsScreen />} />
             <Route path="/compare" element={<CompareScreen />} />

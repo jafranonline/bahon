@@ -298,6 +298,13 @@ export function SettingsDrawer() {
         {/* Storage info */}
         <Row label="Storage" trailing={<span className={styles.currentVal}>On device</span>} />
 
+        {/* Help */}
+        <Row
+          label={t('help.title')}
+          trailing={<span className={styles.currentVal}>›</span>}
+          onClick={() => { setDrawerOpen(false); navigate('/help') }}
+        />
+
         {/* About */}
         <Row
           label={t('settings.about')}

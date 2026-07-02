@@ -1,0 +1,118 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.intro {
+  padding: 4px 2px 4px;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 24px;
+}
+
+.item {
+  background: var(--surface-2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-primary);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.trigger:active {
+  background: var(--surface-1);
+}
+
+.triggerIcon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--accent-bg);
+  color: var(--text-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.triggerTitle {
+  flex: 1;
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  display: flex;
+  transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.panel {
+  padding: 0 16px 16px 62px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.panel ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panel li {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.panel li strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.footer {
+  padding: 4px 2px 24px;
+  text-align: center;
+}
+
+.feedbackLink {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-accent);
+  text-decoration: none;
+}
