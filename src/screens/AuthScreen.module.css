@@ -73,6 +73,23 @@
   color: var(--text-accent);
 }
 
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  margin: 2px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 .forgotLink {
   align-self: center;
   background: none;

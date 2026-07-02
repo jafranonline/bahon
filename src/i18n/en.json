@@ -448,7 +448,9 @@
     "forgot_sent": "If an account exists for {{email}}, a password reset link is on its way. Check your inbox.",
     "back_to_login": "Back to login",
     "show_password": "Show password",
-    "hide_password": "Hide password"
+    "hide_password": "Hide password",
+    "or": "or",
+    "err_google": "Google sign-in didn't work. Please try again."
   },
   "account": {
     "title": "Account",

@@ -42,3 +42,6 @@ APP_ORIGIN = "https://bahon.jafran.online"
 FREE_AI_CREDITS = "500"                # one-time grant for free accounts
 FREE_AI_CREDITS_VALIDITY_DAYS = "30"   # free grant validity
 PRO_AI_DAILY_CREDITS = "500"           # per-day grant for Pro accounts
+# Google Sign-In OAuth client id (not a secret) — must match GOOGLE_CLIENT_ID
+# in src/utils/constants.ts on the frontend. Empty disables Google sign-in.
+GOOGLE_CLIENT_ID = "127323447815-3u91gkabe3ki335kp863nsufs7i3okml.apps.googleusercontent.com"

@@ -6,6 +6,7 @@ import { Input } from '@components/primitives/Input'
 import { Button } from '@components/primitives/Button'
 import { useTranslation } from '@hooks/useTranslation'
 import { useAuthStore } from '@store/authStore'
+import { GoogleSignInButton } from '../components/domain/GoogleSignInButton/GoogleSignInButton'
 import styles from './AuthScreen.module.css'
 
 type Mode = 'login' | 'register'
@@ -15,6 +16,7 @@ export function AuthScreen() {
   const { t } = useTranslation()
   const login = useAuthStore((s) => s.login)
   const register = useAuthStore((s) => s.register)
+  const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle)
   const forgotPassword = useAuthStore((s) => s.forgotPassword)
 
   const [mode, setMode] = useState<Mode>('login')
@@ -73,6 +75,20 @@ export function AuthScreen() {
       navigate('/account', { replace: true })
     } catch (e) {
       setError(errorText(e instanceof Error ? e.message : 'auth.err_generic'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const submitGoogle = async (credential: string) => {
+    setError(null)
+    setBusy(true)
+    try {
+      // One flow for both: the server logs in, links, or creates the account.
+      await loginWithGoogle(credential)
+      navigate('/account', { replace: true })
+    } catch {
+      setError(t('auth.err_google'))
     } finally {
       setBusy(false)
     }
@@ -199,6 +215,10 @@ export function AuthScreen() {
               {t('auth.forgot_link')}
             </button>
           )}
+          <div className={styles.divider} aria-hidden="true">
+            <span>{t('auth.or')}</span>
+          </div>
+          <GoogleSignInButton onCredential={(cred) => { void submitGoogle(cred) }} />
         </div>
       </Screen>
     </div>

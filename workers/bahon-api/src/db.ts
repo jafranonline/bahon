@@ -52,16 +52,58 @@ export interface NewUser {
   passwordHash: string | null
   passwordSalt: string | null
   displayName?: string | null
+  oauthProvider?: string | null
+  oauthSub?: string | null
+  emailVerified?: boolean
 }
 
 export async function createUser(db: D1Database, u: NewUser): Promise<void> {
   const now = new Date().toISOString()
   await db
     .prepare(
-      `INSERT INTO users (id, email, password_hash, password_salt, display_name, created_at, updated_at, data_version)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
+      `INSERT INTO users (id, email, password_hash, password_salt, display_name, oauth_provider, oauth_sub, email_verified_at, created_at, updated_at, data_version)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
     )
-    .bind(u.id, u.email.toLowerCase(), u.passwordHash, u.passwordSalt, u.displayName ?? null, now, now)
+    .bind(
+      u.id,
+      u.email.toLowerCase(),
+      u.passwordHash,
+      u.passwordSalt,
+      u.displayName ?? null,
+      u.oauthProvider ?? null,
+      u.oauthSub ?? null,
+      u.emailVerified ? now : null,
+      now,
+      now,
+    )
+    .run()
+}
+
+export async function getUserByOauth(
+  db: D1Database,
+  provider: string,
+  sub: string,
+): Promise<UserRow | null> {
+  return db
+    .prepare('SELECT * FROM users WHERE oauth_provider = ? AND oauth_sub = ?')
+    .bind(provider, sub)
+    .first<UserRow>()
+}
+
+/** Connect an OAuth identity to an existing (email/password) account. */
+export async function linkOauthToUser(
+  db: D1Database,
+  userId: string,
+  provider: string,
+  sub: string,
+): Promise<void> {
+  const now = new Date().toISOString()
+  await db
+    .prepare(
+      `UPDATE users SET oauth_provider = ?, oauth_sub = ?,
+         email_verified_at = COALESCE(email_verified_at, ?), updated_at = ? WHERE id = ?`,
+    )
+    .bind(provider, sub, now, now, userId)
     .run()
 }
 

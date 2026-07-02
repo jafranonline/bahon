@@ -25,6 +25,7 @@ interface AuthState {
   status: AuthStatus
   register: (email: string, password: string, displayName?: string) => Promise<void>
   login: (email: string, password: string) => Promise<void>
+  loginWithGoogle: (credential: string) => Promise<void>
   logout: () => Promise<void>
   refresh: () => Promise<boolean>
   loadMe: () => Promise<void>
@@ -95,6 +96,28 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password) => {
         set({ status: 'authenticating' })
         const res = await postJSON('/api/auth/login', { email, password })
+        if (!res.ok) {
+          set({ status: 'anonymous' })
+          throw new Error(await errorMessage(res))
+        }
+        const data = (await res.json()) as {
+          accessToken: string
+          refreshToken: string
+          user: AuthUser
+        }
+        set({
+          user: data.user,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          status: 'authenticated',
+        })
+        await get().loadMe()
+      },
+
+      loginWithGoogle: async (credential) => {
+        set({ status: 'authenticating' })
+        // The server signs in, links, or creates the account as appropriate.
+        const res = await postJSON('/api/auth/google', { credential })
         if (!res.ok) {
           set({ status: 'anonymous' })
           throw new Error(await errorMessage(res))

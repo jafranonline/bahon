@@ -12,10 +12,13 @@ import {
   sendPasswordResetEmail,
   sendEmailChangeEmail,
 } from '../email'
+import { verifyGoogleIdToken } from './google'
 import {
   getUserByEmail,
   getUserById,
   createUser,
+  getUserByOauth,
+  linkOauthToUser,
   getSubscription,
   upsertSubscription,
   createRefreshToken,
@@ -314,6 +317,62 @@ authRoutes.post('/login', async (c) => {
     (await verifyPassword(password, user.password_hash, user.password_salt))
   // Generic message either way — no user enumeration.
   if (!ok || !user) return c.json({ error: 'invalid_credentials' }, 401)
+
+  const tokens = await issueTokens(c.env, user.id)
+  return c.json({ ...tokens, user: publicUser(user) })
+})
+
+/**
+ * Google Sign-In. Accepts a Google ID token (GIS credential). Signs in the
+ * matching account, links Google to an existing email account, or creates a
+ * new account — one button serves login and registration.
+ */
+authRoutes.post('/google', async (c) => {
+  let body: AuthBody & { credential?: unknown }
+  try {
+    body = await c.req.json()
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400)
+  }
+  const credential = typeof body.credential === 'string' ? body.credential : ''
+  if (!credential) return c.json({ error: 'invalid_token' }, 400)
+  if (!c.env.GOOGLE_CLIENT_ID) return c.json({ error: 'not_configured' }, 501)
+
+  const identity = await verifyGoogleIdToken(credential, c.env.GOOGLE_CLIENT_ID)
+  if (!identity) return c.json({ error: 'invalid_token' }, 401)
+
+  let user = await getUserByOauth(c.env.DB, 'google', identity.sub)
+  if (!user) {
+    // Connect to an existing email/password account with the same address —
+    // only if Google attests the address (otherwise account takeover risk).
+    const byEmail = identity.emailVerified
+      ? await getUserByEmail(c.env.DB, identity.email)
+      : null
+    if (byEmail) {
+      await linkOauthToUser(c.env.DB, byEmail.id, 'google', identity.sub)
+      user = await getUserById(c.env.DB, byEmail.id)
+    } else {
+      const id = crypto.randomUUID()
+      await createUser(c.env.DB, {
+        id,
+        email: identity.email,
+        passwordHash: null,
+        passwordSalt: null,
+        displayName: identity.name,
+        oauthProvider: 'google',
+        oauthSub: identity.sub,
+        emailVerified: identity.emailVerified,
+      })
+      await upsertSubscription(c.env.DB, id, {
+        tier: 'free',
+        status: 'active',
+        source: 'manual',
+        startedAt: new Date().toISOString(),
+      })
+      user = await getUserById(c.env.DB, id)
+    }
+  }
+  if (!user) return c.json({ error: 'not_found' }, 404)
 
   const tokens = await issueTokens(c.env, user.id)
   return c.json({ ...tokens, user: publicUser(user) })

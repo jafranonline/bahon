@@ -31,6 +31,8 @@ export interface Env {
   FREE_AI_CREDITS?: string // one-time grant for free users (default 500)
   FREE_AI_CREDITS_VALIDITY_DAYS?: string // free grant validity in days (default 30)
   PRO_AI_DAILY_CREDITS?: string // daily grant for Pro users (default 500)
+  // Google Sign-In OAuth client id (expected audience of Google ID tokens).
+  GOOGLE_CLIENT_ID: string
   // Secrets (set via `wrangler secret put`), populated in later tasks.
   JWT_SECRET: string
   ADMIN_USERNAME: string
