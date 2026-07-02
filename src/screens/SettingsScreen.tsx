@@ -100,29 +100,6 @@ export function SettingsScreen() {
       <TopBar title={t('settings.title')} onBack={() => navigate(-1)} />
       <Screen padding="0" gap="0">
 
-        <p className={styles.sectionLabel}>{t('account.title')}</p>
-        <div className={styles.section}>
-          <button
-            type="button"
-            className={styles.row}
-            onClick={() => navigate(signedIn ? '/account' : '/auth')}
-          >
-            <span className={styles.rowLabel}>
-              {signedIn ? authUser.email : t('auth.sign_in')}
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {signedIn && (
-                <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-sm)' }}>
-                  {entitlements?.pro ? t('account.pro') : t('account.free')}
-                </span>
-              )}
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                <path d="M7 4l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-          </button>
-        </div>
-
         {signedIn && isPro && (
           <>
             <p className={styles.sectionLabel}>{t('sync.title')}</p>

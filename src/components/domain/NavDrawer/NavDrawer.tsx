@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useUIStore } from '@store/uiStore'
+import { useAuthStore } from '@store/authStore'
 import { useTranslation } from '@hooks/useTranslation'
 import { APP_VERSION } from '@utils/constants'
 import styles from './NavDrawer.module.css'
@@ -53,6 +54,12 @@ const Icons = {
       <path d="M11 10v4.5M11 7.2v.2" />
     </svg>
   ),
+  account: (
+    <svg width="22" height="22" viewBox="0 0 22 22" {...stroke}>
+      <circle cx="11" cy="7.5" r="3.5" />
+      <path d="M4.5 18a6.5 6.5 0 0113 0" />
+    </svg>
+  ),
 }
 
 interface NavEntry {
@@ -69,6 +76,11 @@ export function NavDrawer() {
   const { pathname } = useLocation()
   const open = useUIStore((s) => s.drawerOpen)
   const setOpen = useUIStore((s) => s.setDrawerOpen)
+
+  const authStatus = useAuthStore((s) => s.status)
+  const authUser = useAuthStore((s) => s.user)
+  const entitlements = useAuthStore((s) => s.entitlements)
+  const signedIn = authStatus === 'authenticated' && authUser != null
 
   useEffect(() => {
     if (!open) return
@@ -123,6 +135,27 @@ export function NavDrawer() {
             <span className={styles.tagline}>{t('app.tagline')}</span>
           </span>
         </div>
+
+        <button
+          type="button"
+          className={styles.account}
+          onClick={() => go(signedIn ? '/account' : '/auth')}
+        >
+          <span className={styles.accountAvatar} aria-hidden="true">{Icons.account}</span>
+          <span className={styles.accountText}>
+            <span className={styles.accountLabel}>
+              {signedIn ? authUser.email : t('auth.sign_in')}
+            </span>
+            <span className={styles.accountSub}>
+              {signedIn
+                ? (entitlements?.pro ? t('account.pro') : t('account.free'))
+                : t('account.title')}
+            </span>
+          </span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+            <path d="M7 4l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
 
         <nav className={styles.menu}>
           {items.map((it) => {
