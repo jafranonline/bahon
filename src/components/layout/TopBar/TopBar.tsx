@@ -69,8 +69,9 @@ export function TopBar({ title, subtitle, onBack, onMenu, actions, showMenu = tr
             </div>
           </>
         ) : (
-          // Untitled pages (Home) carry the Bahon brand.
+          // Untitled pages (Home) carry the Bahon brand — toggle still first.
           <>
+            {leading}
             <button
               className={styles.brand}
               onClick={() => navigate('/')}
@@ -80,7 +81,6 @@ export function TopBar({ title, subtitle, onBack, onMenu, actions, showMenu = tr
               <span className={styles.brandLogo} aria-hidden="true"><BrandLogo /></span>
               <span className={styles.brandName}>Bahon</span>
             </button>
-            {leading}
           </>
         )}
       </div>
