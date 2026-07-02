@@ -37,6 +37,18 @@ export class BahonDatabase extends Dexie {
       documents: 'id, vehicleId, type, expiryDate, createdAt',
       tombstones: 'id, entity, deletedAt',
     })
+    // v4: compound [vehicleId+date] indexes so per-vehicle date queries
+    // (home summary, stats ranges, recent activity) read an index range
+    // instead of loading and filtering/sorting every row in JS.
+    this.version(4).stores({
+      vehicles: 'id, type, createdAt',
+      fuelLogs: 'id, vehicleId, date, createdAt, [vehicleId+date]',
+      serviceLogs: 'id, vehicleId, date, category, createdAt, [vehicleId+date]',
+      expenses: 'id, vehicleId, date, category, createdAt, [vehicleId+date]',
+      reminders: 'id, vehicleId, isActive, nextDueDate',
+      documents: 'id, vehicleId, type, expiryDate, createdAt',
+      tombstones: 'id, entity, deletedAt',
+    })
   }
 }
 

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Doughnut } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -19,8 +20,18 @@ interface DonutChartProps {
   ariaLabel?: string
 }
 
+const options = {
+  cutout: '70%',
+  plugins: {
+    tooltip: { enabled: true },
+    legend: { display: false },
+  },
+  responsive: false,
+  animation: { duration: 400 },
+} as const
+
 export function DonutChart({ data, size = 100, ariaLabel = 'Expense breakdown' }: DonutChartProps) {
-  const chartData = {
+  const chartData = useMemo(() => ({
     labels: data.map((d) => d.label),
     datasets: [
       {
@@ -30,17 +41,7 @@ export function DonutChart({ data, size = 100, ariaLabel = 'Expense breakdown' }
         hoverOffset: 4,
       },
     ],
-  }
-
-  const options = {
-    cutout: '70%',
-    plugins: {
-      tooltip: { enabled: true },
-      legend: { display: false },
-    },
-    responsive: false,
-    animation: { duration: 400 },
-  } as const
+  }), [data])
 
   return (
     <div

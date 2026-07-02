@@ -7,9 +7,9 @@ import { LoadingScreen } from '@components/layout/LoadingScreen/LoadingScreen'
 import { VehicleSelector } from '@components/domain/VehicleSelector/VehicleSelector'
 import { LogRow } from '@components/composed/LogRow'
 import { useVehicles } from '@db/queries/useVehicles'
-import { useFuelLogs, useMonthlyFuelLogs } from '@db/queries/useFuelLogs'
-import { useServiceLogs, useMonthlyServiceLogs } from '@db/queries/useServiceLogs'
-import { useExpenses, useMonthlyExpenses } from '@db/queries/useExpenses'
+import { useRecentFuelLogs, useMonthlyFuelLogs } from '@db/queries/useFuelLogs'
+import { useRecentServiceLogs, useMonthlyServiceLogs } from '@db/queries/useServiceLogs'
+import { useRecentExpenses, useMonthlyExpenses } from '@db/queries/useExpenses'
 import { useReminders } from '@db/queries/useReminders'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useUIStore } from '@store/uiStore'
@@ -53,9 +53,12 @@ export function HomeScreen() {
   const prevServiceLogs = useMonthlyServiceLogs(vehicleId, prevYear, prevMonth)
   const prevExpenses    = useMonthlyExpenses(vehicleId, prevYear, prevMonth)
 
-  const allFuelLogs    = useFuelLogs(vehicleId)
-  const allServiceLogs = useServiceLogs(vehicleId)
-  const allExpenses    = useExpenses(vehicleId)
+  // Only the 5 newest of each type are needed for "Recent activity" — a
+  // limited index read keeps the home screen from loading the entire log
+  // history into memory.
+  const recentFuelLogs    = useRecentFuelLogs(vehicleId, 5)
+  const recentServiceLogs = useRecentServiceLogs(vehicleId, 5)
+  const recentExpenses    = useRecentExpenses(vehicleId, 5)
   const reminders      = useReminders(vehicleId)
 
   const fuelTotal    = useMemo(() => fuelLogs.reduce((s, l) => s + l.totalCost, 0), [fuelLogs])
@@ -118,13 +121,13 @@ export function HomeScreen() {
 
   const recentLogs = useMemo((): LogEntry[] => {
     const merged: LogEntry[] = [
-      ...allFuelLogs.map((log) => ({ kind: 'fuel' as const, log })),
-      ...allServiceLogs.map((log) => ({ kind: 'service' as const, log })),
-      ...allExpenses.map((log) => ({ kind: 'expense' as const, log })),
+      ...recentFuelLogs.map((log) => ({ kind: 'fuel' as const, log })),
+      ...recentServiceLogs.map((log) => ({ kind: 'service' as const, log })),
+      ...recentExpenses.map((log) => ({ kind: 'expense' as const, log })),
     ]
     merged.sort((a, b) => b.log.date.localeCompare(a.log.date))
     return merged.slice(0, 5)
-  }, [allFuelLogs, allServiceLogs, allExpenses])
+  }, [recentFuelLogs, recentServiceLogs, recentExpenses])
 
   const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' })
 

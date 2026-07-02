@@ -1,22 +1,39 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import Dexie from 'dexie'
 import { db } from '@db/database'
 import { softDeleteTrack } from '@db/tombstones'
 import type { FuelLog } from '@/types'
 
 export function useFuelLogs(vehicleId: string) {
   return useLiveQuery(
-    () => db.fuelLogs.where('vehicleId').equals(vehicleId).reverse().sortBy('date'),
+    () => db.fuelLogs
+      .where('[vehicleId+date]')
+      .between([vehicleId, Dexie.minKey], [vehicleId, Dexie.maxKey])
+      .reverse()
+      .toArray(),
     [vehicleId]
+  ) ?? []
+}
+
+export function useRecentFuelLogs(vehicleId: string, limit: number) {
+  return useLiveQuery(
+    () => db.fuelLogs
+      .where('[vehicleId+date]')
+      .between([vehicleId, Dexie.minKey], [vehicleId, Dexie.maxKey])
+      .reverse()
+      .limit(limit)
+      .toArray(),
+    [vehicleId, limit]
   ) ?? []
 }
 
 export function useFuelLogsByDateRange(vehicleId: string, from: string, to: string) {
   return useLiveQuery(
     () => db.fuelLogs
-      .where('vehicleId').equals(vehicleId)
-      .and(log => log.date >= from && log.date <= to)
+      .where('[vehicleId+date]')
+      .between([vehicleId, from], [vehicleId, to], true, true)
       .reverse()
-      .sortBy('date'),
+      .toArray(),
     [vehicleId, from, to]
   ) ?? []
 }
@@ -26,8 +43,8 @@ export function useMonthlyFuelLogs(vehicleId: string, year: number, month: numbe
   const to = `${year}-${String(month).padStart(2, '0')}-31`
   return useLiveQuery(
     () => db.fuelLogs
-      .where('vehicleId').equals(vehicleId)
-      .and(log => log.date >= from && log.date <= to)
+      .where('[vehicleId+date]')
+      .between([vehicleId, from], [vehicleId, to], true, true)
       .toArray(),
     [vehicleId, year, month]
   ) ?? []

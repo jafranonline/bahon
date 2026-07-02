@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Bar } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -7,6 +8,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
+import { useChartTheme } from '../useChartTheme'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend)
 
@@ -23,7 +25,9 @@ interface StackedBarChartProps {
 }
 
 export function StackedBarChart({ labels, series, ariaLabel = 'Monthly cost breakdown' }: StackedBarChartProps) {
-  const data = {
+  const theme = useChartTheme()
+
+  const data = useMemo(() => ({
     labels,
     datasets: series.map((s) => ({
       label: s.label,
@@ -32,9 +36,9 @@ export function StackedBarChart({ labels, series, ariaLabel = 'Monthly cost brea
       borderRadius: 4,
       borderSkipped: false,
     })),
-  }
+  }), [labels, series])
 
-  const options = {
+  const options = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -42,10 +46,10 @@ export function StackedBarChart({ labels, series, ariaLabel = 'Monthly cost brea
       tooltip: { mode: 'index' as const, intersect: false },
     },
     scales: {
-      x: { stacked: true, grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 11 } } },
-      y: { stacked: true, grid: { color: 'var(--border)' }, ticks: { color: 'var(--text-muted)', font: { size: 11 } } },
+      x: { stacked: true, grid: { display: false }, ticks: { color: theme.textMuted, font: { size: 11 } } },
+      y: { stacked: true, grid: { color: theme.border }, ticks: { color: theme.textMuted, font: { size: 11 } } },
     },
-  }
+  }), [theme])
 
   return (
     <div role="img" aria-label={ariaLabel} style={{ position: 'relative', height: 180 }}>

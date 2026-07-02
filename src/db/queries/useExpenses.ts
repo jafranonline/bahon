@@ -1,12 +1,29 @@
 import { useLiveQuery } from 'dexie-react-hooks'
+import Dexie from 'dexie'
 import { db } from '@db/database'
 import { softDeleteTrack } from '@db/tombstones'
 import type { Expense } from '@/types'
 
 export function useExpenses(vehicleId: string) {
   return useLiveQuery(
-    () => db.expenses.where('vehicleId').equals(vehicleId).reverse().sortBy('date'),
+    () => db.expenses
+      .where('[vehicleId+date]')
+      .between([vehicleId, Dexie.minKey], [vehicleId, Dexie.maxKey])
+      .reverse()
+      .toArray(),
     [vehicleId]
+  ) ?? []
+}
+
+export function useRecentExpenses(vehicleId: string, limit: number) {
+  return useLiveQuery(
+    () => db.expenses
+      .where('[vehicleId+date]')
+      .between([vehicleId, Dexie.minKey], [vehicleId, Dexie.maxKey])
+      .reverse()
+      .limit(limit)
+      .toArray(),
+    [vehicleId, limit]
   ) ?? []
 }
 
@@ -15,8 +32,8 @@ export function useMonthlyExpenses(vehicleId: string, year: number, month: numbe
   const to = `${year}-${String(month).padStart(2, '0')}-31`
   return useLiveQuery(
     () => db.expenses
-      .where('vehicleId').equals(vehicleId)
-      .and(exp => exp.date >= from && exp.date <= to)
+      .where('[vehicleId+date]')
+      .between([vehicleId, from], [vehicleId, to], true, true)
       .toArray(),
     [vehicleId, year, month]
   ) ?? []
