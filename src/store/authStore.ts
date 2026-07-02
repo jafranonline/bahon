@@ -155,25 +155,32 @@ export const useAuthStore = create<AuthState>()(
       },
 
       loadMe: async () => {
-        let token = get().accessToken
-        if (!token) {
-          const ok = await get().refresh()
-          if (!ok) return
-          token = get().accessToken
-        }
-        let res = await fetch(`${API_BASE_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (res.status === 401) {
-          const ok = await get().refresh()
-          if (!ok) return
-          res = await fetch(`${API_BASE_URL}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${get().accessToken}` },
+        // Network errors must NOT drop the (optimistically restored) session —
+        // an offline reload keeps the persisted account UI. Only an explicit
+        // 401 on the refresh token ends the session (inside refresh()).
+        try {
+          let token = get().accessToken
+          if (!token) {
+            const ok = await get().refresh()
+            if (!ok) return
+            token = get().accessToken
+          }
+          let res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
           })
+          if (res.status === 401) {
+            const ok = await get().refresh()
+            if (!ok) return
+            res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+              headers: { Authorization: `Bearer ${get().accessToken}` },
+            })
+          }
+          if (!res.ok) return
+          const data = (await res.json()) as { user: AuthUser; entitlements: Entitlements }
+          set({ user: data.user, entitlements: data.entitlements, status: 'authenticated' })
+        } catch {
+          /* offline / transient — revalidate on the next launch or sync */
         }
-        if (!res.ok) return
-        const data = (await res.json()) as { user: AuthUser; entitlements: Entitlements }
-        set({ user: data.user, entitlements: data.entitlements, status: 'authenticated' })
       },
 
       forgotPassword: async (email) => {
@@ -202,8 +209,26 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'bahon-auth',
-      // Persist only the refresh token; access token stays in memory.
-      partialize: (state) => ({ refreshToken: state.refreshToken }),
+      // Persist the session identity (not the short-lived access token), so a
+      // reload — or an offline launch — restores the signed-in UI instantly
+      // instead of flashing the logged-out state while loadMe() round-trips.
+      partialize: (state) => ({
+        refreshToken: state.refreshToken,
+        user: state.user,
+        entitlements: state.entitlements,
+      }),
+      // Hydrate as authenticated when a session was persisted; loadMe()
+      // revalidates in the background and refresh() drops the session on a
+      // real 401. localStorage hydration is synchronous, so the very first
+      // render already sees the restored status (no logged-out flash).
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AuthState>
+        return {
+          ...current,
+          ...p,
+          status: p.refreshToken && p.user ? 'authenticated' : 'anonymous',
+        }
+      },
     },
   ),
 )
