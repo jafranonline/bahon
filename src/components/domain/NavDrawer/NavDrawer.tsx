@@ -145,9 +145,7 @@ export function NavDrawer() {
             </svg>
           </span>
           <span className={styles.brandText}>
-            <span className={styles.appName}>
-              Bahon<span className={styles.appNameBn}>বাহন</span>
-            </span>
+            <span className={styles.appName}>Bahon</span>
             <span className={styles.tagline}>{t('app.tagline')}</span>
           </span>
         </div>
@@ -160,13 +158,15 @@ export function NavDrawer() {
           <span className={styles.accountAvatar} aria-hidden="true">{Icons.account}</span>
           <span className={styles.accountText}>
             <span className={styles.accountLabel}>
-              {signedIn ? authUser.email : t('auth.sign_in')}
+              {signedIn ? (authUser.displayName || authUser.email) : t('auth.sign_in')}
             </span>
-            <span className={styles.accountSub}>
-              {signedIn
-                ? (entitlements?.pro ? t('account.pro') : t('account.free'))
-                : t('account.title')}
-            </span>
+            {signedIn ? (
+              <span className={`${styles.planChip} ${entitlements?.pro ? styles.planChipPro : ''}`}>
+                {entitlements?.pro ? t('account.pro') : t('account.free')}
+              </span>
+            ) : (
+              <span className={styles.accountSub}>{t('account.title')}</span>
+            )}
           </span>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
             <path d="M7 4l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
