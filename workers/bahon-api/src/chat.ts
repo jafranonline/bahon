@@ -10,6 +10,11 @@ import { buildSystemPrompt, buildChatSystemPrompt, type ChatContext } from './sy
 // tool-calling, and image extraction (see vision.ts).
 export const MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct'
 
+// Output cap for every chat run. Replies are one-liners and tool-call JSON is
+// small, so 512 is generous — this bounds cost (and credits) if the model
+// rambles or a jailbreak tries to make it generate an essay.
+const MAX_REPLY_TOKENS = 512
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'tool'
   content: string
@@ -96,7 +101,7 @@ export async function chatTurn(
   // Call through a locally-typed reference to keep our authoring types clean.
   const run = env.AI.run.bind(env.AI) as (
     model: string,
-    inputs: { messages: AIMessage[]; tools?: OpenAITool[] },
+    inputs: { messages: AIMessage[]; tools?: OpenAITool[]; max_tokens?: number },
   ) => Promise<AIChatOutput>
 
   // Results turn: the frontend already executed the tool(s). Feed the results
@@ -122,7 +127,7 @@ export async function chatTurn(
           'questions using the results. Do not call any tools.',
       },
     ]
-    const result = await run(model, { messages: aiMessages })
+    const result = await run(model, { messages: aiMessages, max_tokens: MAX_REPLY_TOKENS })
     return { reply: stripArtifacts(result.response ?? '') }
   }
 
@@ -148,6 +153,7 @@ export async function chatTurn(
         { role: 'system', content: buildChatSystemPrompt(context) },
         ...history,
       ],
+      max_tokens: MAX_REPLY_TOKENS,
     })
     return { reply: stripArtifacts(chat.response ?? '') }
   }
@@ -177,7 +183,7 @@ export async function chatTurn(
     { role: 'system', content: buildSystemPrompt(context) },
     ...history,
   ]
-  const result = await run(model, { messages: aiMessages, tools: openaiTools })
+  const result = await run(model, { messages: aiMessages, tools: openaiTools, max_tokens: MAX_REPLY_TOKENS })
 
   let toolCalls: ToolCall[] = (result.tool_calls ?? [])
     .map((tc, i) => {
@@ -240,6 +246,7 @@ export async function chatTurn(
   if (!reply) {
     const chat = await run(model, {
       messages: [{ role: 'system', content: buildChatSystemPrompt(context) }, ...history],
+      max_tokens: MAX_REPLY_TOKENS,
     })
     reply = stripArtifacts(chat.response ?? '')
   }

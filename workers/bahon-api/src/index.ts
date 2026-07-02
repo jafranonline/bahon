@@ -25,6 +25,60 @@ interface ChatRequestBody {
   toolResults?: ToolResultInput[]
 }
 
+// Hard server-side input limits. The prompt's scope fence handles content;
+// these bound cost and abuse regardless of what the client sends: a modified
+// client can't stuff megabytes of "history" or junk roles into the model.
+const MAX_MESSAGES = 20
+const MAX_MESSAGE_CHARS = 1500
+const MAX_TOOL_RESULTS = 10
+const MAX_TOOL_RESULT_CHARS = 4000
+const MAX_CONTEXT_CHARS = 80
+
+function sanitizeMessages(raw: ChatMessage[]): ChatMessage[] {
+  return raw
+    .filter(
+      (m): m is ChatMessage =>
+        !!m &&
+        (m.role === 'user' || m.role === 'assistant') &&
+        typeof m.content === 'string' &&
+        m.content.trim() !== '',
+    )
+    .slice(-MAX_MESSAGES)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_CHARS) }))
+}
+
+function sanitizeToolResults(raw: ToolResultInput[] | undefined): ToolResultInput[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined
+  return raw.slice(0, MAX_TOOL_RESULTS).map((t) => ({
+    toolUseId: String(t?.toolUseId ?? '').slice(0, 64),
+    content: String(t?.content ?? '').slice(0, MAX_TOOL_RESULT_CHARS),
+  }))
+}
+
+/** Clamps every context field to a sane length/type so a tampered client
+ * can't smuggle instructions or junk into the system prompt. */
+function sanitizeContext(raw: ChatContext): ChatContext {
+  const text = (v: unknown): string =>
+    typeof v === 'string' ? v.replace(/[\r\n]+/g, ' ').slice(0, MAX_CONTEXT_CHARS) : ''
+  const numeric = (v: unknown): number =>
+    typeof v === 'number' && Number.isFinite(v) ? v : 0
+  return {
+    vehicleId: text(raw.vehicleId),
+    vehicleName: text(raw.vehicleName),
+    vehicleType: text(raw.vehicleType),
+    fuelType: text(raw.fuelType),
+    currentOdometer: numeric(raw.currentOdometer),
+    fuelPrice: numeric(raw.fuelPrice),
+    today: /^\d{4}-\d{2}-\d{2}$/.test(String(raw.today))
+      ? String(raw.today)
+      : new Date().toISOString().slice(0, 10),
+    language: text(raw.language),
+    currency: text(raw.currency),
+    distanceUnit: text(raw.distanceUnit),
+    volumeUnit: text(raw.volumeUnit),
+  }
+}
+
 const app = new Hono<{ Bindings: Env; Variables: CreditVars }>()
 
 app.use(
@@ -101,13 +155,22 @@ app.post('/api/chat', requireAuth, requireCredits, async (c) => {
   if (!body.context) {
     return c.json({ error: 'missing_context' }, 400)
   }
-  const result = await chatTurn(body.messages, body.context, body.toolResults, c.env)
+  const messages = sanitizeMessages(body.messages)
+  if (messages.length === 0) {
+    return c.json({ error: 'missing_messages' }, 400)
+  }
+  const result = await chatTurn(
+    messages,
+    sanitizeContext(body.context),
+    sanitizeToolResults(body.toolResults),
+    c.env,
+  )
   // Chat is metered by new input + output characters: the user's latest
   // message (only on the first round — tool-result rounds resend history),
   // plus the reply and any tool-call payloads the model produced.
   const inputChars = body.toolResults
     ? 0
-    : [...body.messages].reverse().find((m) => m.role === 'user')?.content.length ?? 0
+    : [...messages].reverse().find((m) => m.role === 'user')?.content.length ?? 0
   const outputChars =
     (result.reply?.length ?? 0) +
     (result.toolCalls ? JSON.stringify(result.toolCalls).length : 0)

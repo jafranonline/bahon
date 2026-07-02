@@ -259,6 +259,7 @@ export function AgentSheet({ open, onClose, context, onToolCall }: AgentSheetPro
               aria-label={t('agent.placeholder')}
               disabled={busy}
               type="text"
+              maxLength={500}
               name="agent-message"
               enterKeyHint="send"
               autoComplete="off"
