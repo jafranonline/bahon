@@ -1,20 +1,24 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useSettingsStore } from '@store/settingsStore'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useVehicle, useVehicles } from '@db/queries/useVehicles'
 import { useTheme } from '@hooks/useTheme'
 import { useNotifications } from '@hooks/useNotifications'
-import type { AgentContext, AgentToolCall } from '@hooks/useAgent'
-import { useToolExecutor } from '@hooks/useToolExecutor'
+import type { AgentContext } from '@hooks/useAgent'
 import { useAuthStore } from '@store/authStore'
 import { useUIStore } from '@store/uiStore'
 import { syncNow } from '@/sync/syncEngine'
 import { InstallBanner } from '../InstallBanner/InstallBanner'
 import { NavDrawer } from '../../domain/NavDrawer/NavDrawer'
-import { AgentSheet } from '../../domain/AgentSheet/AgentSheet'
 import i18n from '@i18n/config'
 import styles from './AppShell.module.css'
+
+// The agent stack (sheet UI, useAgent, tool executor, VAD) is a sizeable chunk
+// that most sessions never use — load it on first open of the AI sheet.
+const AgentSheetHost = lazy(() =>
+  import('../../domain/AgentSheet/AgentSheetHost').then((m) => ({ default: m.AgentSheetHost })),
+)
 
 export function AppShell() {
   useTheme()
@@ -31,8 +35,13 @@ export function AppShell() {
     }
   }, [language])
 
+  // Request once on mount — calling this during render fired a new
+  // Notification.requestPermission() on every AppShell re-render.
   const { requestPermission } = useNotifications()
-  void requestPermission()
+  useEffect(() => {
+    void requestPermission()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const isPro = useAuthStore((s) => s.entitlements?.pro ?? false)
 
@@ -68,6 +77,12 @@ export function AppShell() {
   // shared via uiStore so any nav-bearing screen can trigger it.
   const agentOpen = useUIStore((s) => s.agentOpen)
   const setAgentOpen = useUIStore((s) => s.setAgentOpen)
+  // Mount the lazy sheet on first open and keep it mounted afterwards, so
+  // close/reopen preserves in-flight agent state (mic, pending replies).
+  const [agentMounted, setAgentMounted] = useState(false)
+  useEffect(() => {
+    if (agentOpen) setAgentMounted(true)
+  }, [agentOpen])
 
   const agentContext = useMemo<AgentContext | null>(() => {
     if (!vehicle) return null
@@ -86,24 +101,21 @@ export function AppShell() {
     }
   }, [vehicle, language, currency, distanceUnit, volumeUnit, fuelPrices])
 
-  const executeTool = useToolExecutor()
-  const onToolCall = useCallback(
-    (call: AgentToolCall): Promise<unknown> =>
-      executeTool(call, activeVehicleId ?? ''),
-    [executeTool, activeVehicleId],
-  )
-
   return (
     <div className={styles.shell}>
       <Outlet />
       <InstallBanner />
       <NavDrawer />
-      <AgentSheet
-        open={agentOpen}
-        onClose={() => setAgentOpen(false)}
-        context={agentContext}
-        onToolCall={onToolCall}
-      />
+      {agentMounted && (
+        <Suspense fallback={null}>
+          <AgentSheetHost
+            open={agentOpen}
+            onClose={() => setAgentOpen(false)}
+            context={agentContext}
+            activeVehicleId={activeVehicleId ?? null}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }

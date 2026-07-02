@@ -233,8 +233,11 @@ export async function executeToolCall(
         return JSON.stringify(await statsSummary(vehicleId, str(p.period) ?? 'month'))
 
       case 'list_recent_logs':
+        // Cap the row count: the result is fed back to the model as input
+        // tokens (and billed as credits), so a hallucinated limit like 100
+        // must not dump the whole history into the prompt.
         return JSON.stringify(
-          await recentLogs(vehicleId, str(p.type) ?? 'fuel', num(p.limit) ?? 5),
+          await recentLogs(vehicleId, str(p.type) ?? 'fuel', Math.min(num(p.limit) ?? 5, 20)),
         )
 
       case 'compare_periods':

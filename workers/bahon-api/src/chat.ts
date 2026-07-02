@@ -99,18 +99,19 @@ export async function chatTurn(
     inputs: { messages: AIMessage[]; tools?: OpenAITool[] },
   ) => Promise<AIChatOutput>
 
-  // Llama 4 Scout expects OpenAI-style tool definitions ({ type, function })
-  // rather than the flat { name, description, parameters } the 3.1 model took.
-  const openaiTools: OpenAITool[] = tools.map((t) => ({ type: 'function', function: t }))
-
   // Results turn: the frontend already executed the tool(s). Feed the results
   // back WITHOUT tools so the model must produce a text reply (a confirmation,
   // or an answer built from read-tool data) instead of re-calling the tool.
+  // Only the exchange that triggered the tool matters for this reply, so send
+  // just the tail from the last user turn — resending the full history here
+  // roughly doubled the input tokens of every tool action for no benefit.
   if (toolResults && toolResults.length > 0) {
+    const lastUserIdx = history.map((m) => m.role).lastIndexOf('user')
+    const tail = lastUserIdx >= 0 ? history.slice(lastUserIdx) : history
     const resultsText = toolResults.map((t) => t.content).join('\n')
     const aiMessages: AIMessage[] = [
       { role: 'system', content: buildChatSystemPrompt(context) },
-      ...history,
+      ...tail,
       {
         role: 'user',
         content:
@@ -148,6 +149,27 @@ export async function chatTurn(
     })
     return { reply: stripArtifacts(chat.response ?? '') }
   }
+
+  // Send only the tool schemas the message's intent can actually use. The
+  // post-filters below already discard update_settings / navigate_to / read
+  // calls whose keywords didn't match, so omitting those schemas up front is
+  // behavior-preserving — it just stops paying their tokens on every turn.
+  // Llama 4 Scout expects OpenAI-style definitions ({ type, function }).
+  const SOFT_TOOLS: Record<string, RegExp> = {
+    update_settings: SETTINGS_KW,
+    navigate_to: NAV_KW,
+    get_stats_summary: READ_KW,
+    list_recent_logs: READ_KW,
+    compare_periods: READ_KW,
+    get_vehicle_overview: READ_KW,
+  }
+  const wantsWrite = hasDigit || ACTION_KW.test(lastUserText)
+  const openaiTools: OpenAITool[] = tools
+    .filter((t) => {
+      const kw = SOFT_TOOLS[t.name]
+      return kw ? kw.test(lastUserText) : wantsWrite
+    })
+    .map((t) => ({ type: 'function', function: t }))
 
   const aiMessages: AIMessage[] = [
     { role: 'system', content: buildSystemPrompt(context) },
