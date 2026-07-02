@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { TopBar } from '@components/layout/TopBar'
 import { VehicleSelector } from '@components/domain/VehicleSelector/VehicleSelector'
+import { AgentButton } from '@components/domain/AgentButton/AgentButton'
 import { Screen } from '@components/layout/Screen'
 import { BottomNav } from '@components/layout/BottomNav'
 import { useVehicleStore } from '@store/vehicleStore'
@@ -205,7 +206,12 @@ export function RemindersScreen() {
       <TopBar
         title={t('reminder.title')}
         onMenu={() => openMenu(true)}
-        actions={<VehicleSelector />}
+        actions={
+          <>
+            <AgentButton />
+            <VehicleSelector />
+          </>
+        }
       />
       <Screen paddingBottom="76px">
         {sorted.length > 0 && (
