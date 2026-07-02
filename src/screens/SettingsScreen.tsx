@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
+import { BottomNav } from '@components/layout/BottomNav'
 import { Screen } from '@components/layout/Screen'
 import { Select } from '@components/primitives/Select'
 import { SegmentedControl } from '@components/primitives/SegmentedControl'
@@ -10,6 +11,7 @@ import { useAuthStore } from '@store/authStore'
 import { useSyncStore } from '@store/syncStore'
 import { syncNow } from '@/sync/syncEngine'
 import { useExport } from '@hooks/useExport'
+import { useReminderCount } from '@hooks/useReminderCount'
 import { useTranslation } from '@hooks/useTranslation'
 import { APP_VERSION } from '@utils/constants'
 import i18n from '@i18n/config'
@@ -66,6 +68,7 @@ export function SettingsScreen() {
   const update = useSettingsStore((s) => s.update)
 
   const { exportAsCSV, exportAsJSON, importFromJSON } = useExport()
+  const reminderCount = useReminderCount()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const TAB_OPTIONS: { value: SettingsTab; label: string }[] = [
@@ -106,7 +109,7 @@ export function SettingsScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={t('settings.title')} onBack={() => navigate(-1)} />
+      <TopBar title={t('settings.title')} />
 
       <div className={styles.tabBar}>
         <SegmentedControl
@@ -117,7 +120,7 @@ export function SettingsScreen() {
         />
       </div>
 
-      <Screen padding="0" gap="0">
+      <Screen padding="0" paddingBottom="76px" gap="0">
 
         {tab === 'general' && (
           <>
@@ -162,20 +165,6 @@ export function SettingsScreen() {
                 </div>
               </>
             )}
-
-            <p className={styles.sectionLabel}>{t('settings.section_app')}</p>
-            <div className={styles.section}>
-              <button
-                type="button"
-                className={styles.row}
-                onClick={() => navigate('/about')}
-              >
-                <span className={styles.rowLabel}>{t('settings.about')}</span>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
           </>
         )}
 
@@ -308,6 +297,13 @@ export function SettingsScreen() {
         <p className={styles.version}>Bahon · v{APP_VERSION}</p>
 
       </Screen>
+
+      <BottomNav
+        onHome={() => navigate('/')}
+        onAdd={() => navigate('/log/fuel')}
+        onReminders={() => navigate('/reminders')}
+        reminderCount={reminderCount}
+      />
     </div>
   )
 }
