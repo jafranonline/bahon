@@ -21,6 +21,14 @@ export function AccountScreen() {
 
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
+  const updateProfile = useAuthStore((s) => s.updateProfile)
+
+  // Edit-profile (display name) inline form.
+  const [nameOpen, setNameOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [nameState, setNameState] = useState<'idle' | 'saving' | 'error'>('idle')
+  const [nameError, setNameError] = useState<string | null>(null)
+
   // Change-email inline form.
   const [emailOpen, setEmailOpen] = useState(false)
   const [newEmail, setNewEmail] = useState('')
@@ -48,6 +56,26 @@ export function AccountScreen() {
       setResendState('sent')
     } catch {
       setResendState('error')
+    }
+  }
+
+  const openNameForm = () => {
+    setName(user?.displayName ?? '')
+    setNameError(null)
+    setNameOpen((o) => !o)
+  }
+
+  const handleSaveName = async () => {
+    if (!name.trim()) return
+    setNameState('saving')
+    setNameError(null)
+    try {
+      await updateProfile(name.trim())
+      setNameOpen(false)
+      setNameState('idle')
+    } catch {
+      setNameState('error')
+      setNameError(t('account.generic_error'))
     }
   }
 
@@ -147,6 +175,54 @@ export function AccountScreen() {
             </a>
           </div>
         )}
+
+        {/* Profile */}
+        <p className={styles.sectionLabel}>{t('account.profile')}</p>
+        <div className={styles.section}>
+          <button
+            type="button"
+            className={styles.actionRow}
+            onClick={openNameForm}
+            aria-expanded={nameOpen}
+          >
+            <span className={styles.actionText}>
+              <span className={styles.actionTitle}>{t('account.edit_name')}</span>
+              <span className={styles.actionDesc}>
+                {user.displayName || t('account.edit_name_desc')}
+              </span>
+            </span>
+            <span className={`${styles.chevron} ${nameOpen ? styles.chevronOpen : ''}`}>{chevron}</span>
+          </button>
+
+          {nameOpen && (
+            <div className={styles.form}>
+              <Input
+                label={t('account.name')}
+                value={name}
+                onChange={setName}
+                placeholder={t('account.name_placeholder')}
+                id="account-display-name"
+                autoComplete="name"
+              />
+              {nameError && <p className={styles.errorMsg} role="alert">{nameError}</p>}
+              <div className={styles.formActions}>
+                <Button
+                  variant="secondary"
+                  onClick={() => { setNameOpen(false); setNameState('idle'); setNameError(null) }}
+                >
+                  {t('account.cancel')}
+                </Button>
+                <Button
+                  onClick={() => void handleSaveName()}
+                  loading={nameState === 'saving'}
+                  disabled={!name.trim()}
+                >
+                  {t('account.save')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Security */}
         <p className={styles.sectionLabel}>{t('account.security')}</p>

@@ -31,6 +31,7 @@ import {
   setUserEmailVerified,
   updateUserPassword,
   updateUserEmail,
+  updateUserDisplayName,
   revokeAllRefreshTokens,
   type UserRow,
   type EmailTokenPurpose,
@@ -260,6 +261,27 @@ authRoutes.post('/reset-password', async (c) => {
   // A verified reset also proves ownership of the address.
   await setUserEmailVerified(c.env.DB, row.user_id)
   return c.json({ ok: true })
+})
+
+// ---- Profile (authenticated) ----
+
+/** Update the display name shown in the app. */
+authRoutes.patch('/profile', requireAuth, async (c) => {
+  let body: AuthBody
+  try {
+    body = await c.req.json<AuthBody>()
+  } catch {
+    return c.json({ error: 'invalid_json' }, 400)
+  }
+  const userId = c.get('userId')
+  const displayName = typeof body.displayName === 'string' ? body.displayName.trim() : ''
+  if (!displayName) return c.json({ error: 'invalid_name' }, 400)
+  if (displayName.length > 80) return c.json({ error: 'invalid_name' }, 400)
+
+  await updateUserDisplayName(c.env.DB, userId, displayName)
+  const user = await getUserById(c.env.DB, userId)
+  if (!user) return c.json({ error: 'not_found' }, 404)
+  return c.json({ user: publicUser(user) })
 })
 
 // ---- Email change (authenticated) ----

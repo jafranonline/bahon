@@ -334,6 +334,17 @@ export async function updateUserPassword(
     .run()
 }
 
+export async function updateUserDisplayName(
+  db: D1Database,
+  userId: string,
+  displayName: string | null,
+): Promise<void> {
+  await db
+    .prepare('UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?')
+    .bind(displayName, new Date().toISOString(), userId)
+    .run()
+}
+
 export async function updateUserEmail(
   db: D1Database,
   userId: string,

@@ -30,6 +30,7 @@ interface AuthState {
   refresh: () => Promise<boolean>
   loadMe: () => Promise<void>
   getAccessToken: () => string | null
+  updateProfile: (displayName: string) => Promise<void>
   // Email verification & password recovery.
   forgotPassword: (email: string) => Promise<void>
   resetPassword: (token: string, newPassword: string) => Promise<void>
@@ -204,6 +205,17 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           /* offline / transient — revalidate on the next launch or sync */
         }
+      },
+
+      updateProfile: async (displayName) => {
+        const res = await apiFetch('/api/auth/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ displayName }),
+        })
+        if (!res.ok) throw new Error(await errorMessage(res))
+        const data = (await res.json()) as { user: AuthUser }
+        set({ user: data.user })
       },
 
       forgotPassword: async (email) => {
