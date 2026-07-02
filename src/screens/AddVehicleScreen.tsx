@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
+import { AgentButton } from '@components/domain/AgentButton/AgentButton'
 import { Screen } from '@components/layout/Screen'
 import { Chip } from '@components/primitives/Chip'
 import { Input } from '@components/primitives/Input'
@@ -93,7 +94,7 @@ export function AddVehicleScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={isEdit ? 'Edit Vehicle' : 'Add Vehicle'} onBack={() => navigate(-1)} />
+      <TopBar title={isEdit ? 'Edit Vehicle' : 'Add Vehicle'} onBack={() => navigate(-1)} actions={<AgentButton />} />
       <Screen>
         <div>
           <p className={styles.sectionLabel}>Vehicle type</p>
