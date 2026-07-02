@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { BottomNav } from '@components/layout/BottomNav'
-import { Button } from '@components/primitives/Button'
+import { ConfirmDialog } from '@components/composed/ConfirmDialog'
 import { useVehicleStore } from '@store/vehicleStore'
 import { useUIStore } from '@store/uiStore'
 import { useReminderCount } from '@hooks/useReminderCount'
@@ -70,15 +70,14 @@ export function DocumentsScreen() {
     <div className={styles.root}>
       <TopBar title="Documents" onMenu={() => openMenu(true)} />
       <Screen paddingBottom="76px">
-        {confirmDelete && (
-          <div className={styles.confirmCard}>
-            <p className={styles.confirmText}>Delete this document? This cannot be undone.</p>
-            <div className={styles.confirmActions}>
-              <Button onClick={() => setConfirmDelete(null)} fullWidth>Cancel</Button>
-              <Button onClick={handleDelete} fullWidth>Yes, delete</Button>
-            </div>
-          </div>
-        )}
+        <ConfirmDialog
+          open={confirmDelete !== null}
+          title="Delete this document? This cannot be undone."
+          confirmLabel="Yes, delete"
+          cancelLabel="Cancel"
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(null)}
+        />
 
         {docs.length === 0 ? (
           <div className={styles.empty}>

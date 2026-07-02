@@ -10,6 +10,7 @@ import { useUIStore } from '@store/uiStore'
 import { useVehicle } from '@db/queries/useVehicles'
 import { useReminders, dismissReminder, deleteReminder } from '@db/queries/useReminders'
 import { useUnits } from '@hooks/useUnits'
+import { ConfirmDialog } from '@components/composed/ConfirmDialog'
 import type { Reminder, DistanceUnit } from '@/types'
 import styles from './RemindersScreen.module.css'
 
@@ -63,16 +64,13 @@ function getUrgency(r: Reminder, currentOdo?: number): Urgency {
 interface ReminderCardProps {
   reminder: Reminder
   onDismiss: () => void
-  onDelete: () => void
   onEdit: () => void
-  confirmingDelete: boolean
   onRequestDelete: () => void
-  onCancelDelete: () => void
   currentOdo?: number
   distanceUnit: DistanceUnit
 }
 
-function ReminderCard({ reminder, onDismiss, onDelete, onEdit, confirmingDelete, onRequestDelete, onCancelDelete, currentOdo, distanceUnit }: ReminderCardProps) {
+function ReminderCard({ reminder, onDismiss, onEdit, onRequestDelete, currentOdo, distanceUnit }: ReminderCardProps) {
   const { t } = useTranslation()
   const urgency = getUrgency(reminder, currentOdo)
   const due = getEffectiveDueDate(reminder)
@@ -136,32 +134,24 @@ function ReminderCard({ reminder, onDismiss, onDelete, onEdit, confirmingDelete,
             )}
           </div>
 
-          {confirmingDelete ? (
-            <div className={styles.cardActions}>
-              <span className={styles.deleteConfirmText}>{t('reminder.delete_confirm_text')}</span>
-              <button type="button" className={styles.cancelDeleteBtn} onClick={onCancelDelete}>{t('common.cancel')}</button>
-              <button type="button" className={styles.confirmDeleteBtn} onClick={onDelete}>{t('common.delete')}</button>
-            </div>
-          ) : (
-            <div className={styles.cardActions}>
-              <button
-                type="button"
-                className={styles.deleteBtn}
-                onClick={onRequestDelete}
-                aria-label={`${t('reminder.delete')}: ${reminder.title}`}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                  <path d="M2 3.5h10M5.5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M5.5 6v4.5M8.5 6v4.5M3 3.5l.7 7.3a.5.5 0 0 0 .5.45h5.6a.5.5 0 0 0 .5-.45L11 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-              <button type="button" className={styles.editBtn} onClick={onEdit} aria-label={`${t('common.edit')}: ${reminder.title}`}>
-                {t('common.edit')}
-              </button>
-              <button type="button" className={styles.dismissBtn} onClick={onDismiss} aria-label={`${t('reminder.dismiss')}: ${reminder.title}`}>
-                {reminder.type === 'repeat' ? t('reminder.mark_done') : t('reminder.dismiss')}
-              </button>
-            </div>
-          )}
+          <div className={styles.cardActions}>
+            <button
+              type="button"
+              className={styles.deleteBtn}
+              onClick={onRequestDelete}
+              aria-label={`${t('reminder.delete')}: ${reminder.title}`}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <path d="M2 3.5h10M5.5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M5.5 6v4.5M8.5 6v4.5M3 3.5l.7 7.3a.5.5 0 0 0 .5.45h5.6a.5.5 0 0 0 .5-.45L11 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <button type="button" className={styles.editBtn} onClick={onEdit} aria-label={`${t('common.edit')}: ${reminder.title}`}>
+              {t('common.edit')}
+            </button>
+            <button type="button" className={styles.dismissBtn} onClick={onDismiss} aria-label={`${t('reminder.dismiss')}: ${reminder.title}`}>
+              {reminder.type === 'repeat' ? t('reminder.mark_done') : t('reminder.dismiss')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -200,6 +190,8 @@ export function RemindersScreen() {
     await deleteReminder(id)
   }
 
+  const confirmingReminder = sorted.find((r) => r.id === confirmingDeleteId)
+
   return (
     <div className={styles.root}>
       <TopBar
@@ -234,17 +226,26 @@ export function RemindersScreen() {
                 key={r.id}
                 reminder={r}
                 onDismiss={() => handleDismiss(r.id)}
-                onDelete={() => { handleDelete(r.id); setConfirmingDeleteId(null) }}
                 onEdit={() => navigate('/reminders/add', { state: { editReminder: r } })}
-                confirmingDelete={confirmingDeleteId === r.id}
                 onRequestDelete={() => setConfirmingDeleteId(r.id)}
-                onCancelDelete={() => setConfirmingDeleteId(null)}
                 currentOdo={currentOdo}
                 distanceUnit={distanceUnit}
               />
             ))}
           </div>
         )}
+
+        <ConfirmDialog
+          open={confirmingReminder !== undefined}
+          title={t('reminder.delete_confirm_text')}
+          confirmLabel={t('common.delete')}
+          cancelLabel={t('common.cancel')}
+          onConfirm={() => {
+            if (confirmingDeleteId) handleDelete(confirmingDeleteId)
+            setConfirmingDeleteId(null)
+          }}
+          onCancel={() => setConfirmingDeleteId(null)}
+        />
       </Screen>
 
       <BottomNav

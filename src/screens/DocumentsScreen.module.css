@@ -133,26 +133,6 @@
   background: var(--surface-2);
 }
 
-.confirmCard {
-  background: var(--surface-1);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.confirmText {
-  font-size: var(--text-sm);
-  color: var(--text-primary);
-  text-align: center;
-}
-
-.confirmActions {
-  display: flex;
-  gap: 10px;
-}
-
 .addBtn {
   display: flex;
   align-items: center;

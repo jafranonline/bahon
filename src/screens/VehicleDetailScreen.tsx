@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
-import { Button } from '@components/primitives/Button'
+import { ConfirmDialog } from '@components/composed/ConfirmDialog'
 import { useVehicle, deleteVehicle } from '@db/queries/useVehicles'
 import { useFuelLogs, deleteFuelLog } from '@db/queries/useFuelLogs'
 import { useServiceLogs, deleteServiceLog } from '@db/queries/useServiceLogs'
@@ -196,15 +196,14 @@ export function VehicleDetailScreen() {
           ))}
         </div>
 
-        {confirmDeleteLog && (
-          <div className={styles.confirmCard}>
-            <p className={styles.confirmText}>Delete this log entry? This cannot be undone.</p>
-            <div className={styles.confirmActions}>
-              <Button onClick={() => setConfirmDeleteLog(null)} fullWidth>Cancel</Button>
-              <Button onClick={handleDeleteLog} fullWidth>Yes, delete</Button>
-            </div>
-          </div>
-        )}
+        <ConfirmDialog
+          open={confirmDeleteLog !== null}
+          title="Delete this log entry? This cannot be undone."
+          confirmLabel="Yes, delete"
+          cancelLabel="Cancel"
+          onConfirm={handleDeleteLog}
+          onCancel={() => setConfirmDeleteLog(null)}
+        />
 
         {filteredLogs.length === 0 ? (
           <p className={styles.empty}>No {tab === 'all' ? '' : tab + ' '}logs yet.</p>
@@ -295,30 +294,23 @@ export function VehicleDetailScreen() {
         )}
 
         {/* Delete section */}
-        {confirmDelete ? (
-          <div className={styles.confirmCard}>
-            <p className={styles.confirmText}>
-              Delete <strong>{vehicle.name}</strong> and all its logs? This cannot be undone.
-            </p>
-            <div className={styles.confirmActions}>
-              <Button onClick={() => setConfirmDelete(false)} fullWidth>
-                Cancel
-              </Button>
-              <Button onClick={handleDelete} loading={deleting} fullWidth>
-                Yes, delete
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className={styles.deleteBtn}
-            onClick={() => setConfirmDelete(true)}
-            aria-label={`Delete vehicle ${vehicle.name}`}
-          >
-            Delete vehicle
-          </button>
-        )}
+        <button
+          type="button"
+          className={styles.deleteBtn}
+          onClick={() => setConfirmDelete(true)}
+          aria-label={`Delete vehicle ${vehicle.name}`}
+        >
+          Delete vehicle
+        </button>
+        <ConfirmDialog
+          open={confirmDelete}
+          title={`Delete ${vehicle.name} and all its logs? This cannot be undone.`}
+          confirmLabel="Yes, delete"
+          cancelLabel="Cancel"
+          busy={deleting}
+          onConfirm={handleDelete}
+          onCancel={() => setConfirmDelete(false)}
+        />
       </Screen>
     </div>
   )

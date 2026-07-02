@@ -1,0 +1,11 @@
+.text {
+  margin: 0 0 18px;
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
