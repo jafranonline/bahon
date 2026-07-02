@@ -137,13 +137,14 @@ export function NavDrawer() {
         aria-label={t('nav.menu')}
       >
         <div className={styles.brand}>
-          <span className={styles.logo} aria-hidden="true">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-              <path d="M4 15l1.5-4.5A2 2 0 017.4 9h9.2a2 2 0 011.9 1.5L20 15M4 15h16M4 15v2.5M20 15v2.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="7.5" cy="15" r="1.6" fill="currentColor" />
-              <circle cx="16.5" cy="15" r="1.6" fill="currentColor" />
-            </svg>
-          </span>
+          <img
+            className={styles.logo}
+            src="/icons/icon-192.png"
+            alt=""
+            width={38}
+            height={38}
+            aria-hidden="true"
+          />
           <span className={styles.brandText}>
             <span className={styles.appName}>Bahon</span>
             <span className={styles.tagline}>{t('app.tagline')}</span>
