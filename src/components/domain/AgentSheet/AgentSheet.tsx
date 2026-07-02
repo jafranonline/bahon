@@ -54,10 +54,15 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
   const inputRef = useRef<HTMLInputElement | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
 
-  // Auto-scroll to the newest message / typing indicator.
+  // Auto-scroll to the newest message / typing indicator — only while the sheet
+  // is open. When closed, the sheet is translated fully off-screen (~88dvh
+  // below), so scrollIntoView would scroll the whole app shell up to reveal it,
+  // shoving the home content off the top of the viewport (blank screen on load).
+  // `block: 'nearest'` also keeps the scroll inside the message list.
   useEffect(() => {
-    listEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, status])
+    if (!open) return
+    listEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }, [open, messages, status])
 
   // Close on Escape.
   useEffect(() => {
