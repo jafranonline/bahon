@@ -133,7 +133,17 @@ export function HomeScreen() {
 
   const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' })
 
-  const vehicleLeft = (
+  const vehicleLeft = vehicles.length === 0 ? (
+    <button
+      type="button"
+      className={styles.addVehicleHeaderBtn}
+      onClick={() => navigate('/vehicles/add')}
+      aria-label={t('home.add_vehicle')}
+    >
+      <span className={styles.addVehicleHeaderIcon} aria-hidden="true">＋</span>
+      <span className={styles.vehicleHeaderName}>{t('home.add_vehicle')}</span>
+    </button>
+  ) : (
     <button
       type="button"
       className={styles.vehicleHeaderBtn}
@@ -146,11 +156,9 @@ export function HomeScreen() {
       <span className={styles.vehicleHeaderName}>
         {activeVehicle?.name ?? t('home.no_vehicles_title')}
       </span>
-      {vehicles.length > 0 && (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-          <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
     </button>
   )
 

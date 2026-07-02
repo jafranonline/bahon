@@ -44,6 +44,34 @@
 
 .vehicleHeaderBtn:active { background: var(--surface-2); }
 
+/* Header CTA shown in place of the vehicle pill when no vehicles exist yet. */
+.addVehicleHeaderBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px 7px 11px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  color: #fff;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.addVehicleHeaderBtn:active { background: var(--accent-dark); }
+
+.addVehicleHeaderBtn .vehicleHeaderName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.addVehicleHeaderIcon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
 .vehicleHeaderIcon { font-size: 18px; line-height: 1; flex-shrink: 0; }
 
 .vehicleHeaderName {
