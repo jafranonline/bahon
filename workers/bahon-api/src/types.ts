@@ -27,6 +27,10 @@ export interface Env {
   // Plain vars (wrangler [vars]).
   FROM_EMAIL: string // e.g. "Bahon <no-reply@bahon.jafran.online>"
   APP_ORIGIN: string // frontend base URL for email links, e.g. https://bahon.jafran.online
+  // AI credit limits — optional overrides (defaults live in credits.ts).
+  FREE_AI_CREDITS?: string // one-time grant for free users (default 500)
+  FREE_AI_CREDITS_VALIDITY_DAYS?: string // free grant validity in days (default 30)
+  PRO_AI_DAILY_CREDITS?: string // daily grant for Pro users (default 500)
   // Secrets (set via `wrangler secret put`), populated in later tasks.
   JWT_SECRET: string
   ADMIN_USERNAME: string

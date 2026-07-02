@@ -150,7 +150,7 @@ export function SettingsScreen() {
               </div>
             </div>
 
-            {isPro && (
+            {signedIn && (
               <>
                 <p className={styles.sectionLabel}>{t('agent.title')}</p>
                 <div className={styles.section}>

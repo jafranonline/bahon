@@ -13,7 +13,10 @@ import { authRoutes } from './auth/routes'
 import { syncRoutes } from './sync/routes'
 import { adminRoutes } from './admin/routes'
 import { requireAuth } from './middleware/requireAuth'
-import { requirePro } from './middleware/requirePro'
+import { requireCredits, type CreditVars } from './middleware/requireCredits'
+import { debitCredits, getCreditState } from './credits'
+import { getSubscription } from './db'
+import { isProActive } from './subscription'
 
 interface ChatRequestBody {
   messages?: ChatMessage[]
@@ -21,7 +24,7 @@ interface ChatRequestBody {
   toolResults?: ToolResultInput[]
 }
 
-const app = new Hono<{ Bindings: Env }>()
+const app = new Hono<{ Bindings: Env; Variables: CreditVars }>()
 
 app.use(
   '*',
@@ -45,7 +48,16 @@ app.route('/api/auth', authRoutes)
 app.route('/api/sync', syncRoutes)
 app.route('/api/admin', adminRoutes)
 
-app.post('/api/transcribe', requireAuth, requirePro, async (c) => {
+// Remaining AI credits for the signed-in user (read-only; grants the free /
+// daily window as a side effect so the client always sees a live balance).
+app.get('/api/credits', requireAuth, async (c) => {
+  const userId = c.get('userId')
+  const sub = await getSubscription(c.env.DB, userId)
+  const credits = await getCreditState(c.env.DB, c.env, userId, isProActive(sub))
+  return c.json({ credits })
+})
+
+app.post('/api/transcribe', requireAuth, requireCredits, async (c) => {
   const form = await c.req.formData()
   const audio = form.get('audio') as unknown as Blob | string | null
   const lang = String(form.get('lang') ?? 'en')
@@ -53,10 +65,12 @@ app.post('/api/transcribe', requireAuth, requirePro, async (c) => {
     return c.json({ error: 'missing_audio' }, 400)
   }
   const transcript = await transcribe(await audio.arrayBuffer(), lang, c.env)
-  return c.json({ transcript })
+  // Voice is metered by its transcript length (1 credit ≈ 1 character).
+  const balance = await debitCredits(c.env.DB, c.get('userId'), transcript.length)
+  return c.json({ transcript, credits: { ...c.get('credits'), balance } })
 })
 
-app.post('/api/vision', requireAuth, requirePro, async (c) => {
+app.post('/api/vision', requireAuth, requireCredits, async (c) => {
   const form = await c.req.formData()
   const image = form.get('image') as unknown as Blob | string | null
   const hint = String(form.get('hint') ?? 'auto') as VisionHint
@@ -65,10 +79,12 @@ app.post('/api/vision', requireAuth, requirePro, async (c) => {
   }
   const mime = (image as Blob).type || 'image/jpeg'
   const extract = await extractFromImage(await image.arrayBuffer(), mime, hint, c.env)
-  return c.json({ extract })
+  // Image scans are metered by the extracted data's length.
+  const balance = await debitCredits(c.env.DB, c.get('userId'), JSON.stringify(extract ?? '').length)
+  return c.json({ extract, credits: { ...c.get('credits'), balance } })
 })
 
-app.post('/api/chat', requireAuth, requirePro, async (c) => {
+app.post('/api/chat', requireAuth, requireCredits, async (c) => {
   let body: ChatRequestBody
   try {
     body = await c.req.json<ChatRequestBody>()
@@ -82,7 +98,17 @@ app.post('/api/chat', requireAuth, requirePro, async (c) => {
     return c.json({ error: 'missing_context' }, 400)
   }
   const result = await chatTurn(body.messages, body.context, body.toolResults, c.env)
-  return c.json(result)
+  // Chat is metered by new input + output characters: the user's latest
+  // message (only on the first round — tool-result rounds resend history),
+  // plus the reply and any tool-call payloads the model produced.
+  const inputChars = body.toolResults
+    ? 0
+    : [...body.messages].reverse().find((m) => m.role === 'user')?.content.length ?? 0
+  const outputChars =
+    (result.reply?.length ?? 0) +
+    (result.toolCalls ? JSON.stringify(result.toolCalls).length : 0)
+  const balance = await debitCredits(c.env.DB, c.get('userId'), inputChars + outputChars)
+  return c.json({ ...result, credits: { ...c.get('credits'), balance } })
 })
 
 app.onError((err, c) =>

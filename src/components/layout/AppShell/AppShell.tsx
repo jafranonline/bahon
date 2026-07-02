@@ -103,7 +103,6 @@ export function AppShell() {
         onClose={() => setAgentOpen(false)}
         context={agentContext}
         onToolCall={onToolCall}
-        isPro={isPro}
       />
     </div>
   )

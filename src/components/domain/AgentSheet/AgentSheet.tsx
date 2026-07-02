@@ -30,17 +30,19 @@ interface AgentSheetProps {
   onClose: () => void
   context: AgentContext | null
   onToolCall: (call: AgentToolCall) => Promise<unknown>
-  isPro: boolean
 }
 
-export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentSheetProps) {
+export function AgentSheet({ open, onClose, context, onToolCall }: AgentSheetProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  // The AI runs on server-metered credits — any signed-in user can chat.
   const signedIn = useAuthStore((s) => s.status === 'authenticated')
   const {
     messages,
     status,
     liveMode,
+    credits,
+    refreshCredits,
     sendText,
     sendImage,
     resolveConfirm,
@@ -82,6 +84,12 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
     }
   }, [open, stopLive, stopVoice])
 
+  // Show a live credit balance whenever the sheet opens (also triggers the
+  // first free/daily grant server-side).
+  useEffect(() => {
+    if (open && signedIn) void refreshCredits()
+  }, [open, signedIn, refreshCredits])
+
   const busy = status === 'thinking' || status === 'transcribing' || status === 'scanning'
   const hasText = draft.trim().length > 0
 
@@ -94,10 +102,10 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
   // Keep the composer focused for uninterrupted typing: on open, and again once
   // a send finishes (the input is disabled while busy, so re-focus when idle).
   useEffect(() => {
-    if (open && isPro && !liveMode && !busy) {
+    if (open && signedIn && !liveMode && !busy) {
       inputRef.current?.focus()
     }
-  }, [open, isPro, liveMode, busy])
+  }, [open, signedIn, liveMode, busy])
 
   const liveStatusText =
     status === 'transcribing' ? t('agent.live_transcribing')
@@ -132,12 +140,14 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
               <span className={styles.name}>{t('agent.agent_name')}</span>
               <span className={styles.presence}>
                 <span className={styles.presenceDot} aria-hidden="true" />
-                {t('agent.online')}
+                {signedIn && credits != null
+                  ? t('agent.credits_left', { count: credits.balance })
+                  : t('agent.online')}
               </span>
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {isPro && messages.length > 0 && (
+            {signedIn && messages.length > 0 && (
               <button
                 className={styles.close}
                 onClick={reset}
@@ -164,7 +174,7 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
 
         <div className={styles.messages}>
           {messages.length === 0 && (
-            <p className={styles.empty}>{isPro ? t('agent.empty_hint') : t('agent.gate_text')}</p>
+            <p className={styles.empty}>{signedIn ? t('agent.empty_hint') : t('agent.gate_text')}</p>
           )}
           {messages.map((m) => (
             <AgentMessage key={m.id} message={m} onConfirm={resolveConfirm} />
@@ -183,9 +193,9 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
           <div ref={listEndRef} />
         </div>
 
-        {!isPro ? (
-          // Free tier: the chat modal is shown but locked — prompt to sign in
-          // (if anonymous) or upgrade (if signed in without Pro).
+        {!signedIn ? (
+          // Anonymous: the chat modal is shown but locked — an account is
+          // required so credits can be metered server-side.
           <div className={styles.lockedBar}>
             <span className={styles.lockIcon} aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -196,9 +206,9 @@ export function AgentSheet({ open, onClose, context, onToolCall, isPro }: AgentS
             <button
               className={styles.lockedCta}
               type="button"
-              onClick={() => { onClose(); navigate(signedIn ? '/account' : '/auth') }}
+              onClick={() => { onClose(); navigate('/auth') }}
             >
-              {signedIn ? t('agent.locked_upgrade') : t('agent.locked_signin')}
+              {t('agent.locked_signin')}
             </button>
           </div>
         ) : liveMode ? (

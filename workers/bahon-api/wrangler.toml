@@ -36,3 +36,9 @@ bucket_name = "bahon-user-data"
 # SPF/DKIM being configured — see ops docs.
 FROM_EMAIL = "Bahon <no-reply@bahon.jafran.online>"
 APP_ORIGIN = "https://bahon.jafran.online"
+# AI credit limits (1 credit ≈ 1 character of AI input/output). These are the
+# defaults from src/credits.ts, restated here so they can be tuned without a
+# code change.
+FREE_AI_CREDITS = "500"                # one-time grant for free accounts
+FREE_AI_CREDITS_VALIDITY_DAYS = "30"   # free grant validity
+PRO_AI_DAILY_CREDITS = "500"           # per-day grant for Pro accounts

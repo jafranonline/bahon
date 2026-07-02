@@ -40,14 +40,16 @@ export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount
   const setAgentOpen = useUIStore((s) => s.setAgentOpen)
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
   const showAgentButton = useSettingsStore((s) => s.showAgentButton ?? true)
-  const isPro = useAuthStore((s) => s.entitlements?.pro ?? false)
+  const signedIn = useAuthStore((s) => s.status === 'authenticated')
 
-  // The AI assistant is vehicle-scoped. Pro users can hide it via settings;
-  // free users always see it (as an upsell) so long as a vehicle is active.
+  // The AI assistant is vehicle-scoped and available to every signed-in user
+  // (metered by credits server-side). Signed-in users can hide the button via
+  // settings; anonymous users always see it (as a sign-in prompt) so long as a
+  // vehicle is active.
   const hasVehicle = Boolean(activeVehicleId)
-  const agentEnabled = hasVehicle && (isPro ? showAgentButton : true)
-  const proCenterAgent = agentEnabled && isPro // AI owns the centre, "+" demoted left
-  const freeCornerAgent = agentEnabled && !isPro // "+" stays centre, AI floats corner
+  const agentEnabled = hasVehicle && (signedIn ? showAgentButton : true)
+  const centerAgent = agentEnabled && signedIn // AI owns the centre, "+" demoted left
+  const cornerAgent = agentEnabled && !signedIn // "+" stays centre, AI floats corner
 
   const openAgent = () => setAgentOpen(true)
 
@@ -67,7 +69,7 @@ export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount
         </button>
 
         <div className={styles.fabWrapper}>
-          {proCenterAgent ? (
+          {centerAgent ? (
             <button
               className={`${styles.fab} ${styles.fabAi}`}
               onClick={openAgent}
@@ -109,9 +111,9 @@ export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount
         </button>
       </nav>
 
-      {/* Pro tier: the AI owns the nav centre, so "+" floats in the bottom-left
-       * corner, above the footer. */}
-      {proCenterAgent && (
+      {/* Signed in: the AI owns the nav centre, so "+" floats in the
+       * bottom-left corner, above the footer. */}
+      {centerAgent && (
         <button
           className={styles.addCorner}
           onClick={onAdd}
@@ -122,9 +124,9 @@ export function BottomNav({ activeTab, onHome, onAdd, onReminders, reminderCount
         </button>
       )}
 
-      {/* Free tier: highlighted AI button floating in the bottom-right corner,
-       * above the nav — an upsell entry point into the assistant. */}
-      {freeCornerAgent && (
+      {/* Anonymous: highlighted AI button floating in the bottom-right corner,
+       * above the nav — a sign-in entry point into the assistant. */}
+      {cornerAgent && (
         <button
           className={styles.agentCorner}
           onClick={openAgent}

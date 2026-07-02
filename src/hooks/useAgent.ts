@@ -65,10 +65,19 @@ export interface AgentMessage {
   confirm?: PendingConfirm
 }
 
+/** AI credit window as reported by the API (1 credit ≈ 1 character). */
+export interface CreditInfo {
+  plan: 'free' | 'pro'
+  balance: number
+  granted: number
+  expiresAt: string | null
+}
+
 interface ChatResponse {
   reply?: string
   toolCalls?: AgentToolCall[]
   error?: string
+  credits?: CreditInfo
 }
 
 interface UseAgentOptions {
@@ -317,6 +326,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
   })
   const [status, setStatus] = useState<AgentStatus>('idle')
   const [liveMode, setLiveMode] = useState(false)
+  const [credits, setCredits] = useState<CreditInfo | null>(null)
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -343,6 +353,41 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
     setMessages((prev) => [...prev, newMessage('assistant', messageKey)])
   }, [])
 
+  /** Handles a 402 no-credits response: records the drained window and fails
+   * with the plan-appropriate message. Returns true when it was a 402. */
+  const failNoCredits = useCallback(
+    async (res: Response): Promise<boolean> => {
+      if (res.status !== 402) return false
+      let plan: CreditInfo['plan'] = 'free'
+      try {
+        const body = (await res.json()) as { credits?: CreditInfo }
+        if (body.credits) {
+          setCredits(body.credits)
+          plan = body.credits.plan
+        }
+      } catch {
+        /* body optional */
+      }
+      fail(plan === 'pro' ? 'agent.no_credits_pro' : 'agent.no_credits_free')
+      return true
+    },
+    [fail],
+  )
+
+  /** Fetches the live credit balance (also issues the first free/daily grant
+   * server-side). Called when the sheet opens for a signed-in user. */
+  const refreshCredits = useCallback(async (): Promise<void> => {
+    if (!navigator.onLine) return
+    try {
+      const res = await apiFetch('/api/credits')
+      if (!res.ok) return
+      const body = (await res.json()) as { credits?: CreditInfo }
+      if (body.credits) setCredits(body.credits)
+    } catch {
+      /* non-fatal — the balance just stays unknown */
+    }
+  }, [])
+
   const postChat = useCallback(
     async (
       toolResults?: { toolUseId: string; content: string }[],
@@ -362,8 +407,23 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
       })
       if (res.status === 403) throw new Error('pro_required')
       if (res.status === 401) throw new Error('login_required')
+      if (res.status === 402) {
+        let plan: CreditInfo['plan'] = 'free'
+        try {
+          const body = (await res.json()) as { credits?: CreditInfo }
+          if (body.credits) {
+            setCredits(body.credits)
+            plan = body.credits.plan
+          }
+        } catch {
+          /* body optional */
+        }
+        throw new Error(`no_credits_${plan}`)
+      }
       if (!res.ok) throw new Error(`chat_${res.status}`)
-      return (await res.json()) as ChatResponse
+      const data = (await res.json()) as ChatResponse
+      if (data.credits) setCredits(data.credits)
+      return data
     },
     [context],
   )
@@ -422,6 +482,8 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
       const code = err instanceof Error ? err.message : ''
       if (code === 'pro_required') fail('agent.pro_required')
       else if (code === 'login_required') fail('agent.login_required')
+      else if (code === 'no_credits_pro') fail('agent.no_credits_pro')
+      else if (code === 'no_credits_free') fail('agent.no_credits_free')
       else fail('agent.error_generic')
     }
   }, [postChat, onToolCall, fail])
@@ -517,8 +579,13 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
         const res = await apiFetch('/api/vision', { method: 'POST', body: form })
         if (res.status === 403) return fail('agent.pro_required')
         if (res.status === 401) return fail('agent.login_required')
+        if (await failNoCredits(res)) return
         if (!res.ok) throw new Error(`vision_${res.status}`)
-        const { extract } = (await res.json()) as { extract?: VisionExtract }
+        const { extract, credits: cr } = (await res.json()) as {
+          extract?: VisionExtract
+          credits?: CreditInfo
+        }
+        if (cr) setCredits(cr)
         const confirm = buildConfirmFromExtract(extract, ctx)
         if (!confirm) {
           setMessages((prev) => [...prev, newMessage('assistant', 'agent.image_no_data')])
@@ -531,7 +598,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
         fail('agent.error_generic')
       }
     },
-    [fail],
+    [fail, failNoCredits],
   )
 
   const startVoice = useCallback(async () => {
@@ -558,8 +625,13 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
           const res = await apiFetch('/api/transcribe', { method: 'POST', body: form })
           if (res.status === 403) return fail('agent.pro_required')
           if (res.status === 401) return fail('agent.login_required')
+          if (await failNoCredits(res)) return
           if (!res.ok) throw new Error(`transcribe_${res.status}`)
-          const { transcript } = (await res.json()) as { transcript?: string }
+          const { transcript, credits: cr } = (await res.json()) as {
+            transcript?: string
+            credits?: CreditInfo
+          }
+          if (cr) setCredits(cr)
           if (transcript && transcript.trim()) sendText(transcript.trim())
           else setStatus('idle')
         } catch {
@@ -572,7 +644,7 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
     } catch {
       fail('agent.error_no_mic')
     }
-  }, [context, fail, sendText])
+  }, [context, fail, failNoCredits, sendText])
 
   const stopVoice = useCallback(() => {
     const recorder = mediaRecorderRef.current
@@ -642,15 +714,20 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
       const res = await apiFetch('/api/transcribe', { method: 'POST', body: form })
       if (res.status === 403) { fail('agent.pro_required'); stopLive(); return }
       if (res.status === 401) { fail('agent.login_required'); stopLive(); return }
+      if (await failNoCredits(res)) { stopLive(); return }
       if (!res.ok) throw new Error(`transcribe_${res.status}`)
-      const { transcript } = (await res.json()) as { transcript?: string }
+      const { transcript, credits: cr } = (await res.json()) as {
+        transcript?: string
+        credits?: CreditInfo
+      }
+      if (cr) setCredits(cr)
       if (transcript && transcript.trim()) await sendText(transcript.trim())
       resumeListening()
     } catch {
       fail('agent.error_generic')
       stopLive()
     }
-  }, [fail, sendText, resumeListening, stopLive])
+  }, [fail, failNoCredits, sendText, resumeListening, stopLive])
   handleUtteranceRef.current = handleUtterance
 
   const startLive = useCallback(async () => {
@@ -720,6 +797,8 @@ export function useAgent({ context, onToolCall }: UseAgentOptions) {
     messages,
     status,
     liveMode,
+    credits,
+    refreshCredits,
     sendText,
     sendImage,
     resolveConfirm,
