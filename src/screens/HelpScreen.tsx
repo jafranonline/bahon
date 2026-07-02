@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
+import { Input } from '@components/primitives/Input'
 import { useTranslation } from '@hooks/useTranslation'
 import { FEEDBACK_FORM_URL } from '@utils/constants'
 import styles from './HelpScreen.module.css'
@@ -91,8 +92,28 @@ const TOPICS: Topic[] = [
 export function HelpScreen() {
   const { t } = useTranslation()
   const [openId, setOpenId] = useState<string | null>('start')
+  const [query, setQuery] = useState('')
 
   const toggle = (id: string) => setOpenId((cur) => (cur === id ? null : id))
+
+  const topicsWithText = useMemo(
+    () =>
+      TOPICS.map((topic) => {
+        const list = topic.listKey
+          ? (t(topic.listKey, { returnObjects: true }) as string[])
+          : null
+        const searchText = [t(topic.titleKey), t(topic.bodyKey), ...(list ?? [])]
+          .join(' ')
+          .toLowerCase()
+        return { topic, list, searchText }
+      }),
+    [t],
+  )
+
+  const trimmedQuery = query.trim().toLowerCase()
+  const filtered = trimmedQuery
+    ? topicsWithText.filter(({ searchText }) => searchText.includes(trimmedQuery))
+    : topicsWithText
 
   return (
     <div className={styles.root}>
@@ -100,12 +121,22 @@ export function HelpScreen() {
       <Screen>
         <p className={styles.intro}>{t('help.intro')}</p>
 
+        <div className={styles.search}>
+          <Input
+            type="text"
+            value={query}
+            onChange={setQuery}
+            placeholder={t('help.search_placeholder')}
+            aria-label={t('help.search_placeholder')}
+          />
+        </div>
+
+        {filtered.length === 0 ? (
+          <p className={styles.noResults}>{t('help.no_results', { query })}</p>
+        ) : (
         <div className={styles.list}>
-          {TOPICS.map((topic) => {
-            const open = openId === topic.id
-            const list = topic.listKey
-              ? (t(topic.listKey, { returnObjects: true }) as string[])
-              : null
+          {filtered.map(({ topic, list }) => {
+            const open = trimmedQuery ? true : openId === topic.id
             return (
               <div key={topic.id} className={styles.item}>
                 <button
@@ -139,9 +170,10 @@ export function HelpScreen() {
             )
           })}
         </div>
+        )}
 
-        {FEEDBACK_FORM_URL && (
-          <div className={styles.footer}>
+        <div className={styles.footer}>
+          {FEEDBACK_FORM_URL && (
             <a
               href={FEEDBACK_FORM_URL}
               target="_blank"
@@ -150,8 +182,11 @@ export function HelpScreen() {
             >
               {t('help.still_need_help')}
             </a>
-          </div>
-        )}
+          )}
+          <a href="mailto:mail@jafran.online" className={styles.contactLink}>
+            {t('help.contact')}
+          </a>
+        </div>
       </Screen>
     </div>
   )

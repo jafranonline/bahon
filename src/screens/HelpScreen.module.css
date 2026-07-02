@@ -11,6 +11,17 @@
   line-height: 1.5;
 }
 
+.search {
+  padding: 4px 2px 14px;
+}
+
+.noResults {
+  padding: 24px 2px;
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -107,6 +118,10 @@
 
 .footer {
   padding: 4px 2px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   text-align: center;
 }
 
@@ -114,5 +129,11 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-accent);
+  text-decoration: none;
+}
+
+.contactLink {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
   text-decoration: none;
 }

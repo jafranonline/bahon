@@ -217,7 +217,7 @@ export function VehicleDetailScreen() {
                   <div key={l.id ?? i} className={styles.logItem}>
                     <span className={styles.logIcon}>⛽</span>
                     <div className={styles.logMeta}>
-                      <span className={styles.logTitle}>Fuel — {l.volumeLitres.toFixed(1)} L</span>
+                      <span className={styles.logTitle}>Fuel: {l.volumeLitres.toFixed(1)} L</span>
                       <span className={styles.logDate}>{l.date}</span>
                     </div>
                     <span className={styles.logAmount}>{format(l.totalCost)}</span>

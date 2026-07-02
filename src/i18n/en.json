@@ -271,25 +271,25 @@
   },
   "help": {
     "title": "Help",
-    "intro": "A quick guide to everything Bahon can do — tap a topic to expand it.",
+    "intro": "A quick guide to everything Bahon can do. Tap a topic to expand it.",
     "start_title": "Getting started",
-    "start_body": "Bahon tracks every vehicle you own — fuel, service, expenses, reminders, and documents — all stored only on this device.",
+    "start_body": "Bahon tracks every vehicle you own: fuel, service, expenses, reminders, and documents, all stored only on this device.",
     "start_list": [
       "Add your first vehicle from the Vehicles tab, or the prompt on Home.",
       "Switch between vehicles any time using the vehicle picker at the top of Home.",
       "The Home screen shows your active vehicle's latest stats and quick actions to log something new.",
-      "Everything works fully offline — no internet connection is needed."
+      "Everything works fully offline, no internet connection is needed."
     ],
     "logging_title": "Logging fuel, service & expenses",
     "logging_body": "Use the + button on Home to add a new entry for the active vehicle.",
     "logging_list": [
-      "Fuel log: enter odometer, volume and price — Bahon calculates cost, mileage (km/L, L/100km or MPG) automatically.",
+      "Fuel log: enter odometer, volume and price. Bahon calculates cost, mileage (km/L, L/100km or MPG) automatically.",
       "Service log: record the service type, odometer, cost and notes to build a full maintenance history.",
       "Expense log: track tolls, parking, fines, or any other vehicle cost outside fuel and service.",
-      "All figures are entered in your chosen units and currency — change them any time in Settings."
+      "All figures are entered in your chosen units and currency. Change them any time in Settings."
     ],
     "reminders_title": "Reminders",
-    "reminders_body": "Set reminders for services or renewals by date, by odometer distance, or both — Bahon tells you what's coming up and what's overdue.",
+    "reminders_body": "Set reminders for services or renewals by date, by odometer distance, or both. Bahon tells you what's coming up and what's overdue.",
     "reminders_list": [
       "Reminders are colour-coded: red means overdue or urgent, amber means upcoming soon, green means you're on track.",
       "Repeat reminders (like every oil change) automatically move to the next due date or distance once you mark them done."
@@ -299,22 +299,25 @@
     "stats_title": "Stats & Compare",
     "stats_body": "The Stats tab charts your spending and fuel efficiency over time for the active vehicle. The Compare tab lets you put two vehicles side by side to see which one costs less to run.",
     "ai_title": "AI assistant",
-    "ai_body": "Tap the AI button (bottom-right on most screens) to open the assistant — it can log entries, answer questions about your data, and read photos, all in your own words.",
+    "ai_body": "Tap the AI button (bottom-right on most screens) to open the assistant. It can log entries, answer questions about your data, and read photos, all in your own words.",
     "ai_list": [
       "Type or say things like \"add 5 litres of petrol at 125 taka, odometer 12500\" and it fills in and saves the entry for you.",
       "Ask questions like \"how much did I spend on fuel last month?\" and get an instant answer from your own data.",
-      "Snap a photo of a fuel receipt, odometer, or a document — the assistant reads the numbers and shows you a card to confirm before saving.",
+      "Snap a photo of a fuel receipt, odometer, or a document. The assistant reads the numbers and shows you a card to confirm before saving.",
       "Hands-free voice mode (Pro) lets you talk to the assistant continuously while driving or refuelling, without tapping anything.",
-      "Destructive actions (deleting a log or vehicle) always show a confirmation card first — nothing is removed without your approval.",
+      "Destructive actions (deleting a log or vehicle) always show a confirmation card first. Nothing is removed without your approval.",
       "Free accounts get a one-time AI credit allowance; Pro accounts get a larger daily allowance."
     ],
     "account_title": "Account & Pro",
-    "account_body": "Signing in (with email or Google) unlocks the AI assistant and, on Pro, cloud sync across your devices and hands-free voice mode. Without an account, Bahon still works fully — your data just stays on this device only.",
+    "account_body": "Signing in (with email or Google) unlocks the AI assistant and, on Pro, cloud sync across your devices and hands-free voice mode. Without an account, Bahon still works fully, your data just stays on this device only.",
     "settings_title": "Settings",
-    "settings_body": "Change language, currency, distance/volume units, and theme, or lock in a default fuel price to speed up logging — all from the Settings screen.",
+    "settings_body": "Change language, currency, distance/volume units, and theme, or lock in a default fuel price to speed up logging, all from the Settings screen.",
     "offline_title": "Works offline, always",
     "offline_body": "Bahon is built offline-first: every screen, log, and reminder works with no internet connection. AI features need a connection when you use them, but the rest of the app never does.",
-    "still_need_help": "Still need help? Send us feedback →"
+    "still_need_help": "Still need help? Send us feedback →",
+    "contact": "Or email us at mail@jafran.online",
+    "search_placeholder": "Search help topics",
+    "no_results": "No help topics match \"{{query}}\"."
   },
   "about": {
     "title": "About",
@@ -428,15 +431,15 @@
     "tool_update_vehicle_ok": "Vehicle updated",
     "tool_update_settings_ok": "Settings updated",
     "tool_error": "Couldn't complete that",
-    "no_understand": "Sorry, I didn't catch that — could you rephrase?",
+    "no_understand": "Sorry, I didn't catch that, could you rephrase?",
     "pro_required": "Live voice is a Pro feature. Upgrade for hands-free voice chat.",
     "login_required": "Please sign in to use the AI assistant.",
     "gate_title": "Bahon AI needs an account",
-    "gate_text": "Sign in to use the AI assistant with free credits — add logs by chat and scan receipts. Live voice is a Pro feature.",
+    "gate_text": "Sign in to use the AI assistant with free credits: add logs by chat and scan receipts. Live voice is a Pro feature.",
     "gate_cta": "Sign in",
     "credits_left": "{{count}} credits",
     "no_credits_free": "Your free AI credits are used up. Upgrade to Pro for a daily allowance.",
-    "no_credits_pro": "Today's AI allowance is used up — it resets tomorrow.",
+    "no_credits_pro": "Today's AI allowance is used up, it resets tomorrow.",
     "live_start": "Live voice",
     "live_stop": "Stop",
     "live_listening": "Listening… speak now",
@@ -504,7 +507,7 @@
     "pro": "Pro",
     "free": "Free",
     "pro_active": "Pro is active",
-    "pro_lifetime": "Lifetime access — no expiry.",
+    "pro_lifetime": "Lifetime access, no expiry.",
     "expires_on": "Renews/expires on {{date}}.",
     "upgrade_title": "Upgrade to Pro",
     "upgrade_text": "Pro unlocks cloud sync across devices and a daily AI credit allowance.",
