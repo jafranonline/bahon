@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { Screen } from '@components/layout/Screen'
 import { useTranslation } from '@hooks/useTranslation'
@@ -14,13 +13,32 @@ const DEVELOPER = {
 }
 
 export function AboutScreen() {
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const { share, copied } = useShare()
 
   return (
     <div className={styles.root}>
-      <TopBar title={t('about.title')} onBack={() => navigate(-1)} />
+      <TopBar
+        title={t('about.title')}
+        actions={
+          <button
+            type="button"
+            className={styles.headerShareBtn}
+            onClick={() => void share()}
+            aria-label={t('common.share')}
+          >
+            {copied ? (
+              <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <path d="M4 11.5l4.5 4.5L18 6.5" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <path d="M15 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7 14a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM15 20a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM9.2 12.7l5.6 3.1M14.8 6.2L9.2 9.3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </button>
+        }
+      />
       <Screen>
         <div className={styles.content}>
 

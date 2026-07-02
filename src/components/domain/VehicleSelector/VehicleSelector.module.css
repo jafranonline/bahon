@@ -1,0 +1,144 @@
+/* ── Header pill ── */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 6px;
+  background: var(--surface-1);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  color: var(--text-primary);
+  max-width: 190px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pill:active { background: var(--surface-2); }
+
+.icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+
+.name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Add-vehicle CTA (no vehicles yet) ── */
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px 7px 11px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  color: #fff;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.addBtn:active { background: var(--accent-dark); }
+.addBtn .name { font-size: var(--text-sm); font-weight: 600; }
+.addIcon { font-size: 18px; line-height: 1; flex-shrink: 0; }
+
+/* ── Picker overlay ── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 900;
+  animation: selFadeIn 0.18s ease forwards;
+}
+
+@keyframes selFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: var(--surface-0);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  width: min(340px, calc(100vw - 40px));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: selPopIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes selPopIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.title { font-size: var(--text-md); font-weight: 700; color: var(--text-primary); }
+
+.close {
+  width: 32px; height: 32px;
+  border: none; background: var(--surface-2); border-radius: var(--radius-circle);
+  color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  touch-action: manipulation;
+}
+
+.close:active { background: var(--border); }
+
+.list { list-style: none; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+.row { display: flex; align-items: center; border-bottom: 1px solid var(--border); }
+.row:last-child { border-bottom: none; }
+
+.item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; flex: 1;
+  border: none; background: none; cursor: pointer;
+  touch-action: manipulation; color: var(--text-primary);
+}
+.item:active { background: var(--surface-1); }
+.itemActive { color: var(--text-accent); background: var(--bg-accent); }
+.itemActive:active { background: var(--bg-accent); }
+.itemIcon { font-size: 22px; flex-shrink: 0; }
+.itemName { flex: 1; font-size: var(--text-md); font-weight: 500; text-align: left; }
+
+.detailBtn {
+  flex-shrink: 0; padding: 0 16px; height: 100%; min-height: 56px;
+  border: none; border-left: 1px solid var(--border);
+  background: none; color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center;
+}
+.detailBtn:active { background: var(--surface-1); color: var(--text-primary); }
+
+.addItem {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; width: 100%;
+  border: none; background: none; border-top: 1px solid var(--border);
+  cursor: pointer; touch-action: manipulation; color: var(--text-accent);
+}
+.addItem:active { background: var(--bg-accent); }
+
+.compareItem {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; width: 100%;
+  border: none; background: none; border-top: 1px solid var(--border);
+  cursor: pointer; touch-action: manipulation; color: var(--text-secondary);
+}
+.compareItem:active { background: var(--surface-1); }

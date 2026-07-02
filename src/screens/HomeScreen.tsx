@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { BottomNav } from '@components/layout/BottomNav'
 import { Screen } from '@components/layout/Screen'
 import { LoadingScreen } from '@components/layout/LoadingScreen/LoadingScreen'
+import { VehicleSelector } from '@components/domain/VehicleSelector/VehicleSelector'
 import { LogRow } from '@components/composed/LogRow'
 import { useVehicles } from '@db/queries/useVehicles'
 import { useFuelLogs, useMonthlyFuelLogs } from '@db/queries/useFuelLogs'
@@ -23,23 +24,17 @@ type LogEntry =
   | { kind: 'service'; log: ServiceLog }
   | { kind: 'expense'; log: Expense }
 
-const VEHICLE_ICONS: Record<string, string> = {
-  car: '🚗', motorcycle: '🏍️', truck: '🚛', bus: '🚌', cng: '🛺', bicycle: '🚲', other: '🚘',
-}
-
 export function HomeScreen() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const openMenu = useUIStore((s) => s.setDrawerOpen)
   const { format: formatMoney, symbol } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
-  const [vehiclePicker, setVehiclePicker] = useState(false)
 
   const vehiclesResult = useVehicles()
   const vehicles = vehiclesResult ?? []
   const vehiclesLoaded = vehiclesResult !== undefined
   const activeVehicleId = useVehicleStore((s) => s.activeVehicleId)
-  const setActiveVehicle = useVehicleStore((s) => s.setActiveVehicle)
 
   const vehicleId = activeVehicleId ?? vehicles[0]?.id ?? ''
   const activeVehicle = vehicles.find((v) => v.id === vehicleId)
@@ -133,97 +128,6 @@ export function HomeScreen() {
 
   const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' })
 
-  const vehicleLeft = vehicles.length === 0 ? (
-    <button
-      type="button"
-      className={styles.addVehicleHeaderBtn}
-      onClick={() => navigate('/vehicles/add')}
-      aria-label={t('home.add_vehicle')}
-    >
-      <span className={styles.addVehicleHeaderIcon} aria-hidden="true">＋</span>
-      <span className={styles.vehicleHeaderName}>{t('home.add_vehicle')}</span>
-    </button>
-  ) : (
-    <button
-      type="button"
-      className={styles.vehicleHeaderBtn}
-      onClick={() => setVehiclePicker(true)}
-      aria-label="Switch vehicle"
-    >
-      <span className={styles.vehicleHeaderIcon} aria-hidden="true">
-        {activeVehicle ? (VEHICLE_ICONS[activeVehicle.type] ?? '🚘') : '🚗'}
-      </span>
-      <span className={styles.vehicleHeaderName}>
-        {activeVehicle?.name ?? t('home.no_vehicles_title')}
-      </span>
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </button>
-  )
-
-  const pickerModal = vehiclePicker && (
-    <>
-      <div className={styles.pickerBackdrop} onClick={() => setVehiclePicker(false)} aria-hidden="true" />
-      <div className={styles.pickerOverlay} role="dialog" aria-modal="true" aria-label="Switch vehicle">
-        <div className={styles.pickerHeader}>
-          <span className={styles.pickerTitle}>{t('home.your_vehicles')}</span>
-          <button type="button" className={styles.pickerClose} onClick={() => setVehiclePicker(false)} aria-label="Close">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-              <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
-        <ul className={styles.pickerList}>
-          {vehicles.map((v) => (
-            <li key={v.id} className={styles.pickerRow}>
-              <button
-                type="button"
-                className={`${styles.pickerItem} ${v.id === vehicleId ? styles.pickerItemActive : ''}`}
-                onClick={() => { setActiveVehicle(v.id); setVehiclePicker(false) }}
-              >
-                <span className={styles.pickerItemIcon}>{VEHICLE_ICONS[v.type] ?? '🚘'}</span>
-                <span className={styles.pickerItemName}>{v.name}</span>
-                {v.id === vehicleId && (
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-                    <path d="M3 9l5 5 7-8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </button>
-              <button
-                type="button"
-                className={styles.pickerDetailBtn}
-                onClick={() => { setVehiclePicker(false); navigate(`/vehicles/${v.id}`) }}
-                aria-label={`View details for ${v.name}`}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </li>
-          ))}
-          <li>
-            <button type="button" className={styles.pickerAddItem} onClick={() => { setVehiclePicker(false); navigate('/vehicles/add') }}>
-              <span className={styles.pickerItemIcon}>＋</span>
-              <span className={styles.pickerItemName}>{t('home.add_vehicle')}</span>
-            </button>
-          </li>
-          {vehicles.length >= 2 && (
-            <li>
-              <button type="button" className={styles.pickerCompareItem} onClick={() => { setVehiclePicker(false); navigate('/compare') }}>
-                <span className={styles.pickerItemIcon}>⚖️</span>
-                <span className={styles.pickerItemName}>{t('home.compare_vehicles')}</span>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </li>
-          )}
-        </ul>
-      </div>
-    </>
-  )
-
   if (!vehiclesLoaded) {
     // Data still resolving — show the spinner (not a blank screen) so a slow
     // first query never looks like a broken page.
@@ -234,10 +138,10 @@ export function HomeScreen() {
     return (
       <div className={styles.root}>
         <TopBar
+          title="Bahon"
           onMenu={() => openMenu(true)}
-          actions={vehicleLeft}
+          actions={<VehicleSelector />}
         />
-        {pickerModal}
         <Screen paddingBottom="76px">
           <div className={styles.emptyState}>
             <span className={styles.emptyIcon} aria-hidden="true">🚗</span>
@@ -256,10 +160,10 @@ export function HomeScreen() {
   return (
     <div className={styles.root}>
       <TopBar
+        title="Bahon"
         onMenu={() => openMenu(true)}
-        actions={vehicleLeft}
+        actions={<VehicleSelector />}
       />
-      {pickerModal}
 
       <Screen padding="16px" paddingBottom="76px" gap="16px">
 

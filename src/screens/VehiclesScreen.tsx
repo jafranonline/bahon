@@ -31,7 +31,23 @@ export function VehiclesScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={t('nav.vehicles')} onMenu={() => openMenu(true)} />
+      <TopBar
+        title={t('nav.vehicles')}
+        onMenu={() => openMenu(true)}
+        actions={
+          vehicles.length > 0 ? (
+            <button
+              type="button"
+              className={styles.headerAddBtn}
+              onClick={() => navigate('/vehicles/add')}
+              aria-label={t('home.add_vehicle')}
+            >
+              <span className={styles.headerAddIcon} aria-hidden="true">＋</span>
+              <span className={styles.headerAddLabel}>{t('common.add')}</span>
+            </button>
+          ) : undefined
+        }
+      />
       <Screen padding="16px" paddingBottom="76px" gap="12px">
         {vehicles.length === 0 ? (
           <div className={styles.empty}>
@@ -71,15 +87,8 @@ export function VehiclesScreen() {
               ))}
             </ul>
 
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.primaryBtn}
-                onClick={() => navigate('/vehicles/add')}
-              >
-                ＋ {t('home.add_vehicle')}
-              </button>
-              {vehicles.length >= 2 && (
+            {vehicles.length >= 2 && (
+              <div className={styles.actions}>
                 <button
                   type="button"
                   className={styles.secondaryBtn}
@@ -87,8 +96,8 @@ export function VehiclesScreen() {
                 >
                   ⚖️ {t('home.compare_vehicles')}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </>
         )}
       </Screen>

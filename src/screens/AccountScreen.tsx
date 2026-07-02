@@ -39,7 +39,7 @@ export function AccountScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={t('account.title')} onBack={() => navigate(-1)} />
+      <TopBar title={t('account.title')} />
       <Screen>
         <div className={styles.card}>
           <div className={styles.avatar} aria-hidden="true">

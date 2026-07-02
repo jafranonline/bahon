@@ -150,3 +150,22 @@
   max-width: 260px;
   margin-bottom: 8px;
 }
+
+/* ── Header add button ── */
+.headerAddBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 14px 7px 10px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  color: #fff;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.headerAddBtn:active { background: var(--accent-dark); }
+.headerAddIcon { font-size: 18px; line-height: 1; }
+.headerAddLabel { font-size: var(--text-sm); font-weight: 600; }

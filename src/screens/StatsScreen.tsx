@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
+import { VehicleSelector } from '@components/domain/VehicleSelector/VehicleSelector'
 import { Screen } from '@components/layout/Screen'
 import { BottomNav } from '@components/layout/BottomNav'
 import { StackedBarChart } from '@components/charts/StackedBarChart'
@@ -178,7 +179,7 @@ export function StatsScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title="Stats" onMenu={() => openMenu(true)} />
+      <TopBar title="Stats" onMenu={() => openMenu(true)} actions={<VehicleSelector />} />
       <nav aria-label="Stats sections">
       <div className={styles.tabBar} role="tablist" aria-label="Stats tabs">
         {(['summary', 'fuel', 'service'] as Tab[]).map((t) => (

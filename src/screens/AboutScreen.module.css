@@ -202,3 +202,23 @@
   text-align: center;
   margin: 0;
 }
+
+/* ── Header share button ── */
+.headerShareBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.headerShareBtn:active {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}

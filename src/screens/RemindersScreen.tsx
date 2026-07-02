@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { TopBar } from '@components/layout/TopBar'
+import { VehicleSelector } from '@components/domain/VehicleSelector/VehicleSelector'
 import { Screen } from '@components/layout/Screen'
 import { BottomNav } from '@components/layout/BottomNav'
 import { useVehicleStore } from '@store/vehicleStore'
@@ -204,18 +205,7 @@ export function RemindersScreen() {
       <TopBar
         title={t('reminder.title')}
         onMenu={() => openMenu(true)}
-        actions={
-          <button
-            className={styles.addBtn}
-            onClick={() => navigate('/reminders/add')}
-            aria-label={t('reminder.add')}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-              <path d="M9 3v12M3 9h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            {t('common.add')}
-          </button>
-        }
+        actions={<VehicleSelector />}
       />
       <Screen paddingBottom="76px">
         {sorted.length > 0 && (
@@ -260,7 +250,7 @@ export function RemindersScreen() {
       <BottomNav
         activeTab="reminders"
         onHome={() => navigate('/')}
-        onAdd={() => navigate('/log/fuel')}
+        onAdd={() => navigate('/reminders/add')}
         onReminders={() => navigate('/reminders')}
         reminderCount={nearCount}
       />
