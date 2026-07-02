@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { TopBar } from '@components/layout/TopBar'
+import { AgentButton } from '@components/domain/AgentButton/AgentButton'
 import { Screen } from '@components/layout/Screen'
 import { Select } from '@components/primitives/Select'
 import { Input } from '@components/primitives/Input'
@@ -72,7 +73,7 @@ export function LogExpenseScreen() {
 
   return (
     <div className={styles.root}>
-      <TopBar title={isEditing ? t('expense.edit') : t('expense.log')} onBack={() => navigate(-1)} />
+      <TopBar title={isEditing ? t('expense.edit') : t('expense.log')} onBack={() => navigate(-1)} actions={<AgentButton />} />
       <Screen>
         <Input
           type="date"

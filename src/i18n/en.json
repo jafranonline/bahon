@@ -258,7 +258,6 @@
     "section_display": "Display",
     "section_units": "Units & currency",
     "section_backup": "Backup",
-    "export_csv": "Export (CSV)",
     "themes": {
       "light": "Light",
       "dark": "Dark",
@@ -467,7 +466,19 @@
     "verify_sent": "Verification email sent. Check your inbox.",
     "verify_resend": "Resend email",
     "verify_sending": "Sending…",
-    "verify_error": "Couldn't send right now. Please try again shortly."
+    "verify_error": "Couldn't send right now. Please try again shortly.",
+    "security": "Security",
+    "change_email": "Change email",
+    "change_email_desc": "Update the address you sign in with",
+    "new_email": "New email",
+    "current_password": "Current password",
+    "change_email_sent": "Confirmation link sent to {{email}}. Open it to finish changing your email.",
+    "change_password": "Change password",
+    "change_password_desc": "Get a secure reset link by email",
+    "change_password_sent": "Password reset link sent to {{email}}.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "generic_error": "Something went wrong. Please try again."
   },
   "verify": {
     "title": "Email verification",
@@ -499,7 +510,13 @@
     "synced": "Synced",
     "last_synced": "Last synced",
     "never": "Not synced yet",
+    "just_now": "Just now",
+    "minutes_ago": "{{count}}m ago",
+    "hours_ago": "{{count}}h ago",
     "error": "Sync failed",
-    "pro_required": "Sync requires Pro"
+    "pro_required": "Sync requires Pro",
+    "sign_in_required": "Sign in to enable sync",
+    "sign_in_cta": "Sign in",
+    "upgrade_cta": "Upgrade"
   }
 }
