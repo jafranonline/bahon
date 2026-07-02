@@ -399,7 +399,15 @@
     "compare": "তুলনা",
     "compare_vehicles": "যানবাহন তুলনা",
     "your_vehicles": "আপনার যানবাহন",
-    "vs_last_month": "গত মাসের তুলনায়"
+    "vs_last_month": "গত মাসের তুলনায়",
+    "empty_month_title": "এই মাসে এখনো কিছু লগ করা হয়নি",
+    "empty_month_cta": "জ্বালানি লগ করুন",
+    "due_soon": "শীঘ্রই করণীয়",
+    "overdue": "মেয়াদ পেরিয়েছে",
+    "km_left": "{{distance}} বাকি",
+    "no_activity_title": "এখনো কোনো কার্যক্রম নেই",
+    "no_activity_subtitle": "আপনার জ্বালানি, সার্ভিস ও খরচের লগ এখানে দেখা যাবে।",
+    "odometer": "ওডোমিটার"
   },
   "agent": {
     "title": "বাহন AI",

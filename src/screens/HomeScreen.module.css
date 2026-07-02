@@ -192,13 +192,35 @@
   box-shadow: 0 2px 12px rgba(99, 102, 241, 0.08);
 }
 
+.summaryTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
 .summaryMonth {
   font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  margin-bottom: 6px;
+}
+
+.odoPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .summaryMain {
@@ -229,24 +251,87 @@
 .trendDown { background: color-mix(in srgb, var(--success) 14%, transparent); color: var(--success); }
 .trendUp   { background: color-mix(in srgb, var(--danger)  14%, transparent); color: var(--danger); }
 
-.costBreakdown {
+.splitBar {
   display: flex;
-  gap: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.splitSeg {
+  min-width: 6px;
+  border-radius: var(--radius-pill);
+}
+
+.segFuel    { background: var(--warning); }
+.segService { background: var(--accent); }
+.segExpense { background: var(--success); }
+
+.legend {
+  display: flex;
   flex-wrap: wrap;
+  gap: 6px 16px;
   margin-bottom: 14px;
 }
 
-.costChip {
+.legendItem {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: var(--text-xs);
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--surface-2);
+  font-weight: 500;
   color: var(--text-secondary);
 }
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+  flex-shrink: 0;
+}
+
+.dotFuel    { background: var(--warning); }
+.dotService { background: var(--accent); }
+.dotExpense { background: var(--success); }
+
+.legendAmount {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Zero-state inside the hero: explain the ৳0 and offer the next step. */
+.emptyMonth {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.emptyMonthText {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.emptyMonthBtn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.emptyMonthBtn:active { background: var(--accent-dark); }
 
 .effRow {
   display: flex;
@@ -268,6 +353,74 @@
   color: var(--border-strong);
   font-size: var(--text-md);
   line-height: 1;
+}
+
+/* ── Due soon reminders ──────────────────────── */
+.dueSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dueList {
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dueRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-body);
+  text-align: left;
+}
+
+.dueRow + .dueRow { border-top: 1px solid var(--border); }
+.dueRow:active { background: var(--surface-1); }
+
+.dueDot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-circle);
+  flex-shrink: 0;
+}
+
+.dueDotOverdue { background: var(--danger); }
+.dueDotUrgent  { background: var(--warning); }
+
+.dueTitle {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dueWhen {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dueWhenOverdue { color: var(--text-danger); }
+
+.dueChevron {
+  display: flex;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 /* ── Quick actions ───────────────────────────── */
@@ -307,13 +460,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  line-height: 1;
 }
 
-.actionIconFuel    { background: var(--bg-warning); }
-.actionIconService { background: var(--bg-accent);  }
-.actionIconExpense { background: var(--bg-success);  }
+.actionIconFuel    { background: var(--bg-warning); color: var(--text-warning); }
+.actionIconService { background: var(--bg-accent);  color: var(--text-accent);  }
+.actionIconExpense { background: var(--bg-success); color: var(--text-success); }
 
 .actionLabel {
   font-size: var(--text-xs);
@@ -369,8 +520,8 @@
 
 .quickLinkIcon {
   position: relative;
-  font-size: 24px;
-  line-height: 1;
+  display: flex;
+  color: var(--text-secondary);
 }
 
 .quickLinkBadge {
@@ -438,6 +589,36 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   padding: 0 16px;
+}
+
+.recentEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 26px 20px;
+  background: var(--surface-0);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.recentEmptyIcon {
+  display: flex;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.recentEmptyTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.recentEmptySubtitle {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  max-width: 240px;
 }
 
 /* ── Empty state ─────────────────────────────── */

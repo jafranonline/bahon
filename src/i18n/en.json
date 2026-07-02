@@ -400,7 +400,15 @@
     "compare": "Compare",
     "compare_vehicles": "Compare vehicles",
     "your_vehicles": "Your Vehicles",
-    "vs_last_month": "vs last month"
+    "vs_last_month": "vs last month",
+    "empty_month_title": "Nothing logged this month yet",
+    "empty_month_cta": "Log fuel",
+    "due_soon": "Due soon",
+    "overdue": "Overdue",
+    "km_left": "{{distance}} left",
+    "no_activity_title": "No activity yet",
+    "no_activity_subtitle": "Your fuel, service and expense logs will show up here.",
+    "odometer": "Odometer"
   },
   "agent": {
     "title": "Bahon AI",

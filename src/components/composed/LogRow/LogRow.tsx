@@ -1,10 +1,11 @@
+import { FuelTypeIcon, ServiceTypeIcon, ExpenseTypeIcon } from '@components/primitives/icons'
 import styles from './LogRow.module.css'
 
-const TYPE_ICONS: Record<'fuel' | 'service' | 'expense', string> = {
-  fuel: '⛽',
-  service: '🔧',
-  expense: '💳',
-}
+const TYPE_ICONS = {
+  fuel: <FuelTypeIcon size={20} />,
+  service: <ServiceTypeIcon size={20} />,
+  expense: <ExpenseTypeIcon size={20} />,
+} as const
 
 interface LogRowProps {
   type: 'fuel' | 'service' | 'expense'

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TopBar } from '@components/layout/TopBar'
 import { BottomNav } from '@components/layout/BottomNav'
@@ -6,6 +6,7 @@ import { Screen } from '@components/layout/Screen'
 import { LoadingScreen } from '@components/layout/LoadingScreen/LoadingScreen'
 import { VehicleSelector } from '@components/domain/VehicleSelector/VehicleSelector'
 import { LogRow } from '@components/composed/LogRow'
+import { FuelTypeIcon, ServiceTypeIcon, ExpenseTypeIcon } from '@components/primitives/icons'
 import { useVehicles } from '@db/queries/useVehicles'
 import { useRecentFuelLogs, useMonthlyFuelLogs } from '@db/queries/useFuelLogs'
 import { useRecentServiceLogs, useMonthlyServiceLogs } from '@db/queries/useServiceLogs'
@@ -16,7 +17,7 @@ import { useUIStore } from '@store/uiStore'
 import { useCurrency } from '@hooks/useCurrency'
 import { useTranslation } from '@hooks/useTranslation'
 import { useUnits } from '@hooks/useUnits'
-import type { FuelLog, ServiceLog, Expense } from '@/types'
+import type { FuelLog, ServiceLog, Expense, Reminder } from '@/types'
 import styles from './HomeScreen.module.css'
 
 type LogEntry =
@@ -24,9 +25,56 @@ type LogEntry =
   | { kind: 'service'; log: ServiceLog }
   | { kind: 'expense'; log: Expense }
 
+type Urgency = 'overdue' | 'urgent' | 'future'
+
+/* Stroke icon set matching the bottom nav's line style, replacing the
+ * platform-dependent emoji so every icon renders identically everywhere. */
+const icon = (path: ReactNode, size = 22) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true"
+       stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    {path}
+  </svg>
+)
+
+const StatsIcon = () => icon(<path d="M3 3v16a2 2 0 0 0 2 2h16M18 17V9M13 17V5M8 17v-3" />)
+
+const BellIcon = () => icon(<>
+  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+  <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+</>)
+
+const DocumentIcon = () => icon(<>
+  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+  <path d="M14 2v6h6M16 13H8M16 17H8" />
+</>)
+
+const CompareIcon = () => icon(<>
+  <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1ZM2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+  <path d="M7 21h10M12 3v18M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+</>)
+
+const CarIcon = () => icon(<>
+  <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+  <circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /><path d="M9 17h6" />
+</>)
+
+const GaugeIcon = () => icon(<path d="m12 14 4-4M3.34 19a10 10 0 1 1 17.32 0" />, 14)
+
+const RouteIcon = () => icon(<>
+  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+  <circle cx="12" cy="10" r="3" />
+</>, 14)
+
+const InboxIcon = () => icon(<>
+  <path d="M22 12h-6l-2 3h-4l-2-3H2" />
+  <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+</>, 28)
+
+const ChevronIcon = () => icon(<path d="m9 18 6-6-6-6" />, 16)
+
 export function HomeScreen() {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const openMenu = useUIStore((s) => s.setDrawerOpen)
   const { format: formatMoney, symbol } = useCurrency()
   const { formatEfficiency, formatDistance } = useUnits()
@@ -93,9 +141,9 @@ export function HomeScreen() {
 
   const currentOdo = activeVehicle?.odometer
 
-  function getReminderUrgency(r: { daysBeforeAlert: number; kmBeforeAlert?: number; dueDate?: string; nextDueDate?: string; dueOdometer?: number; nextDueOdometer?: number; type: string }): 'overdue' | 'urgent' | 'future' {
+  function getReminderUrgency(r: Reminder): Urgency {
     const due = r.type === 'repeat' ? (r.nextDueDate ?? r.dueDate) : r.dueDate
-    let dateUrgency: 'overdue' | 'urgent' | 'future' = 'future'
+    let dateUrgency: Urgency = 'future'
     if (due) {
       const today = new Date(); today.setHours(0, 0, 0, 0)
       const days = Math.floor((new Date(due).getTime() - today.getTime()) / 86400000)
@@ -103,7 +151,7 @@ export function HomeScreen() {
       else if (days <= r.daysBeforeAlert) dateUrgency = 'urgent'
     }
     const effectiveDueOdo = r.nextDueOdometer ?? r.dueOdometer
-    let odoUrgency: 'overdue' | 'urgent' | 'future' = 'future'
+    let odoUrgency: Urgency = 'future'
     if (effectiveDueOdo != null && currentOdo != null) {
       const remaining = effectiveDueOdo - currentOdo
       if (remaining <= 0) odoUrgency = 'overdue'
@@ -113,11 +161,16 @@ export function HomeScreen() {
     return order[dateUrgency] <= order[odoUrgency] ? dateUrgency : odoUrgency
   }
 
-  const nearReminderCount = useMemo(() =>
-    reminders.filter((r) => getReminderUrgency(r) !== 'future').length,
+  const dueSoon = useMemo(() => {
+    const order = { overdue: 0, urgent: 1, future: 2 }
+    return reminders
+      .map((r) => ({ reminder: r, urgency: getReminderUrgency(r) }))
+      .filter((e) => e.urgency !== 'future')
+      .sort((a, b) => order[a.urgency] - order[b.urgency])
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [reminders, currentOdo]
-  )
+  }, [reminders, currentOdo])
+
+  const nearReminderCount = dueSoon.length
 
   const recentLogs = useMemo((): LogEntry[] => {
     const merged: LogEntry[] = [
@@ -129,7 +182,19 @@ export function HomeScreen() {
     return merged.slice(0, 5)
   }, [recentFuelLogs, recentServiceLogs, recentExpenses])
 
-  const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' })
+  const locale = i18n.language?.startsWith('bn') ? 'bn' : 'en'
+  const monthName = now.toLocaleString(locale, { month: 'long', year: 'numeric' })
+
+  function reminderDueLabel(r: Reminder, urgency: Urgency): string {
+    if (urgency === 'overdue') return t('home.overdue')
+    const due = r.type === 'repeat' ? (r.nextDueDate ?? r.dueDate) : r.dueDate
+    if (due) return due
+    const dueOdo = r.nextDueOdometer ?? r.dueOdometer
+    if (dueOdo != null && currentOdo != null) {
+      return t('home.km_left', { distance: formatDistance(dueOdo - currentOdo) })
+    }
+    return ''
+  }
 
   if (!vehiclesLoaded) {
     // Data still resolving — show the spinner (not a blank screen) so a slow
@@ -160,6 +225,12 @@ export function HomeScreen() {
     )
   }
 
+  const breakdown = [
+    { key: 'fuel' as const,    label: t('home.fuel'),    amount: fuelTotal,    segClass: styles.segFuel,    dotClass: styles.dotFuel },
+    { key: 'service' as const, label: t('home.service'), amount: serviceTotal, segClass: styles.segService, dotClass: styles.dotService },
+    { key: 'expense' as const, label: t('home.expense'), amount: expenseTotal, segClass: styles.segExpense, dotClass: styles.dotExpense },
+  ].filter((b) => b.amount > 0)
+
   return (
     <div className={styles.root}>
       <TopBar
@@ -172,7 +243,15 @@ export function HomeScreen() {
 
         {/* Monthly summary card */}
         <div className={styles.summaryCard}>
-          <span className={styles.summaryMonth}>{monthName}</span>
+          <div className={styles.summaryTopRow}>
+            <span className={styles.summaryMonth}>{monthName}</span>
+            {currentOdo != null && currentOdo > 0 && (
+              <span className={styles.odoPill} aria-label={`${t('home.odometer')}: ${formatDistance(currentOdo)}`}>
+                <GaugeIcon />
+                {formatDistance(currentOdo)}
+              </span>
+            )}
+          </div>
 
           <div className={styles.summaryMain}>
             <span className={styles.summaryTotal}>{formatMoney(monthTotal)}</span>
@@ -183,41 +262,44 @@ export function HomeScreen() {
             )}
           </div>
 
-          <div className={styles.costBreakdown}>
-            {fuelTotal > 0 && (
-              <span className={styles.costChip}>
-                ⛽ {formatMoney(fuelTotal, true)}
-              </span>
-            )}
-            {serviceTotal > 0 && (
-              <span className={styles.costChip}>
-                🔧 {formatMoney(serviceTotal, true)}
-              </span>
-            )}
-            {expenseTotal > 0 && (
-              <span className={styles.costChip}>
-                💰 {formatMoney(expenseTotal, true)}
-              </span>
-            )}
-          </div>
+          {breakdown.length > 0 ? (
+            <>
+              <div className={styles.splitBar} aria-hidden="true">
+                {breakdown.map((b) => (
+                  <span key={b.key} className={`${styles.splitSeg} ${b.segClass}`} style={{ flexGrow: b.amount }} />
+                ))}
+              </div>
+              <div className={styles.legend}>
+                {breakdown.map((b) => (
+                  <span key={b.key} className={styles.legendItem}>
+                    <span className={`${styles.legendDot} ${b.dotClass}`} aria-hidden="true" />
+                    {b.label}
+                    <span className={styles.legendAmount}>{formatMoney(b.amount, true)}</span>
+                  </span>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className={styles.emptyMonth}>
+              <span className={styles.emptyMonthText}>{t('home.empty_month_title')}</span>
+              <button type="button" className={styles.emptyMonthBtn} onClick={() => navigate('/log/fuel')}>
+                {t('home.empty_month_cta')}
+              </button>
+            </div>
+          )}
 
           {(avgEfficiency != null || distanceThisMonth > 0) && (
             <div className={styles.effRow}>
               {avgEfficiency != null && (
                 <span className={styles.effStat}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                    <path d="M7 2a5 5 0 1 0 0 10A5 5 0 0 0 7 2ZM7 7V4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                  </svg>
+                  <GaugeIcon />
                   {formatEfficiency(avgEfficiency)}
                 </span>
               )}
               {avgEfficiency != null && distanceThisMonth > 0 && <span className={styles.effDot}>·</span>}
               {distanceThisMonth > 0 && (
                 <span className={styles.effStat}>
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                    <path d="M7 1.5C4.5 1.5 2.5 3.5 2.5 6c0 3.5 4.5 6.5 4.5 6.5S11.5 9.5 11.5 6c0-2.5-2-4.5-4.5-4.5Z" stroke="currentColor" strokeWidth="1.4"/>
-                    <circle cx="7" cy="6" r="1.2" fill="currentColor"/>
-                  </svg>
+                  <RouteIcon />
                   {formatDistance(distanceThisMonth)}
                 </span>
               )}
@@ -225,13 +307,41 @@ export function HomeScreen() {
           )}
         </div>
 
+        {/* Reminders needing attention — surfaced instead of hiding behind the nav badge */}
+        {dueSoon.length > 0 && (
+          <div className={styles.dueSection}>
+            <span className={styles.sectionTitle}>{t('home.due_soon')}</span>
+            <div className={styles.dueList}>
+              {dueSoon.slice(0, 2).map(({ reminder, urgency }) => (
+                <button
+                  key={reminder.id}
+                  type="button"
+                  className={styles.dueRow}
+                  onClick={() => navigate('/reminders')}
+                  aria-label={`${reminder.title} — ${reminderDueLabel(reminder, urgency)}`}
+                >
+                  <span
+                    className={`${styles.dueDot} ${urgency === 'overdue' ? styles.dueDotOverdue : styles.dueDotUrgent}`}
+                    aria-hidden="true"
+                  />
+                  <span className={styles.dueTitle}>{reminder.title}</span>
+                  <span className={`${styles.dueWhen} ${urgency === 'overdue' ? styles.dueWhenOverdue : ''}`}>
+                    {reminderDueLabel(reminder, urgency)}
+                  </span>
+                  <span className={styles.dueChevron} aria-hidden="true"><ChevronIcon /></span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Quick actions */}
         <div className={styles.actions}>
           {([
-            { key: 'fuel' as const, path: '/log/fuel', icon: '⛽', iconClass: styles.actionIconFuel },
-            { key: 'service' as const, path: '/log/service', icon: '🔧', iconClass: styles.actionIconService },
-            { key: 'expense' as const, path: '/log/expense', icon: '💰', iconClass: styles.actionIconExpense },
-          ] as const).map(({ key, path, icon, iconClass }) => (
+            { key: 'fuel' as const, path: '/log/fuel', Icon: FuelTypeIcon, iconClass: styles.actionIconFuel },
+            { key: 'service' as const, path: '/log/service', Icon: ServiceTypeIcon, iconClass: styles.actionIconService },
+            { key: 'expense' as const, path: '/log/expense', Icon: ExpenseTypeIcon, iconClass: styles.actionIconExpense },
+          ] as const).map(({ key, path, Icon, iconClass }) => (
             <button
               key={path}
               type="button"
@@ -239,7 +349,7 @@ export function HomeScreen() {
               onClick={() => navigate(path)}
               aria-label={t(`home.${key}`)}
             >
-              <span className={`${styles.actionIconWrap} ${iconClass}`} aria-hidden="true">{icon}</span>
+              <span className={`${styles.actionIconWrap} ${iconClass}`} aria-hidden="true"><Icon /></span>
               <span className={styles.actionLabel}>+ {t(`home.${key}`)}</span>
             </button>
           ))}
@@ -250,13 +360,13 @@ export function HomeScreen() {
           <span className={styles.sectionTitle}>{t('home.explore')}</span>
           <div className={styles.quickLinks}>
             {[
-              { label: t('home.stats'), icon: '📊', path: '/stats' },
-              { label: t('home.reminder'), icon: '🔔', path: '/reminders', badge: nearReminderCount > 0 ? nearReminderCount : undefined },
-              { label: t('home.documents'), icon: '📄', path: '/documents' },
+              { label: t('home.stats'), Icon: StatsIcon, path: '/stats' },
+              { label: t('home.reminder'), Icon: BellIcon, path: '/reminders', badge: nearReminderCount > 0 ? nearReminderCount : undefined },
+              { label: t('home.documents'), Icon: DocumentIcon, path: '/documents' },
               ...(vehicles.length >= 2
-                ? [{ label: t('home.compare'), icon: '⚖️', path: '/compare' }]
-                : [{ label: t('home.add_vehicle'), icon: '🚘', path: '/vehicles/add' }]),
-            ].map(({ label, icon, path, badge }) => (
+                ? [{ label: t('home.compare'), Icon: CompareIcon, path: '/compare' }]
+                : [{ label: t('home.add_vehicle'), Icon: CarIcon, path: '/vehicles/add' }]),
+            ].map(({ label, Icon, path, badge }) => (
               <button
                 key={path}
                 type="button"
@@ -265,7 +375,7 @@ export function HomeScreen() {
                 aria-label={label}
               >
                 <span className={styles.quickLinkIcon} aria-hidden="true">
-                  {icon}
+                  <Icon />
                   {badge != null && <span className={styles.quickLinkBadge}>{badge}</span>}
                 </span>
                 <span className={styles.quickLinkLabel}>{label}</span>
@@ -275,14 +385,16 @@ export function HomeScreen() {
         </div>
 
         {/* Recent activity */}
-        {recentLogs.length > 0 && (
-          <div className={styles.recentSection}>
-            <div className={styles.recentHeader}>
-              <span className={styles.recentTitle}>{t('home.recent_activity')}</span>
+        <div className={styles.recentSection}>
+          <div className={styles.recentHeader}>
+            <span className={styles.recentTitle}>{t('home.recent_activity')}</span>
+            {recentLogs.length > 0 && (
               <button type="button" className={styles.seeAllBtn} onClick={() => navigate('/stats')}>
                 {t('home.see_all')}
               </button>
-            </div>
+            )}
+          </div>
+          {recentLogs.length > 0 ? (
             <div className={styles.recentList}>
               {recentLogs.map((entry) => {
                 if (entry.kind === 'fuel') {
@@ -294,8 +406,14 @@ export function HomeScreen() {
                 return <LogRow key={entry.log.id} type="expense" title={entry.log.title} subtitle={entry.log.date} amount={entry.log.amount} currency={symbol} />
               })}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className={styles.recentEmpty}>
+              <span className={styles.recentEmptyIcon} aria-hidden="true"><InboxIcon /></span>
+              <span className={styles.recentEmptyTitle}>{t('home.no_activity_title')}</span>
+              <span className={styles.recentEmptySubtitle}>{t('home.no_activity_subtitle')}</span>
+            </div>
+          )}
+        </div>
 
       </Screen>
 
